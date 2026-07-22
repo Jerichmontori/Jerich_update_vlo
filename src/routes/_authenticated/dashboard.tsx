@@ -1163,6 +1163,8 @@ function PosisiTab() {
   const [peserta, setPeserta] = useState<{ id: string; nama: string; asal: string | null; sesi: string | null; nomor_urut: number }[]>([]);
   const [rankMap, setRankMap] = useState<Record<string, Ranking>>({});
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+
 
   async function load() {
     setLoading(true);
