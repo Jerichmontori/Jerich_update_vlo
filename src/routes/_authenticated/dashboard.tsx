@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: App,
 });
 
-type Peserta = { id: string; nomor_urut: number; nama: string; asal: string | null };
+type Peserta = { id: string; nomor_urut: number; nama: string; asal: string | null; sesi: string | null };
 type Juri = { id: string; nama: string; jabatan: string | null; email: string | null; role: "admin" | "juri" | "viewer" | null; approved: boolean; user_id: string | null };
 type Kriteria = { id: string; nama: string; bobot: number; batas_atas: number; batas_bawah: number };
 type Mazmur = { id: string; bacaan: string; jumlah_ayat: number };
@@ -83,6 +83,7 @@ function PesertaTab() {
   const [nomor, setNomor] = useState("");
   const [nama, setNama] = useState("");
   const [asal, setAsal] = useState("");
+  const [sesi, setSesi] = useState("");
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -98,11 +99,11 @@ function PesertaTab() {
     e.preventDefault();
     if (!nomor || !nama) return toast.error("Nomor urut dan nama wajib diisi");
     setLoading(true);
-    const { error } = await supabase.from("peserta").insert({ nomor_urut: Number(nomor), nama, asal: asal || null });
+    const { error } = await supabase.from("peserta").insert({ nomor_urut: Number(nomor), nama, asal: asal || null, sesi: sesi || null });
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Peserta ditambahkan");
-    setNomor(""); setNama(""); setAsal("");
+    setNomor(""); setNama(""); setAsal(""); setSesi("");
     load();
   }
 
@@ -115,11 +116,11 @@ function PesertaTab() {
 
   function unduhTemplate() {
     const ws = XLSX.utils.aoa_to_sheet([
-      ["nomor_urut", "nama", "asal"],
-      [1, "Contoh Nama", "Jemaat Contoh"],
-      [2, "Contoh Nama 2", ""],
+      ["nomor_urut", "nama", "asal", "sesi"],
+      [1, "Contoh Nama", "Jemaat Contoh", "Sesi 1"],
+      [2, "Contoh Nama 2", "", "Sesi 2"],
     ]);
-    ws["!cols"] = [{ wch: 12 }, { wch: 30 }, { wch: 30 }];
+    ws["!cols"] = [{ wch: 12 }, { wch: 30 }, { wch: 30 }, { wch: 15 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Peserta");
     XLSX.writeFile(wb, "template-peserta.xlsx");
@@ -150,12 +151,14 @@ function PesertaTab() {
           const nama = String(keys["nama"] ?? "").trim();
           const asalRaw = keys["asal"] ?? keys["jemaat"] ?? keys["asal_/_jemaat"] ?? "";
           const asal = String(asalRaw).trim();
-          return { nomor_urut, nama, asal: asal || null };
+          const sesiRaw = keys["sesi"] ?? keys["session"] ?? "";
+          const sesi = String(sesiRaw).trim();
+          return { nomor_urut, nama, asal: asal || null, sesi: sesi || null };
         })
         .filter((r) => r.nama && !isNaN(r.nomor_urut));
 
       if (normalized.length === 0) {
-        toast.error("Tidak ada baris valid. Pastikan kolom: nomor_urut, nama, asal");
+        toast.error("Tidak ada baris valid. Pastikan kolom: nomor_urut, nama, asal, sesi");
         return;
       }
 
@@ -182,10 +185,11 @@ function PesertaTab() {
         </div>
       }
     >
-      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-[100px_1fr_1fr_auto] gap-3 mb-6">
+      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-[100px_1fr_1fr_140px_auto] gap-3 mb-6">
         <div><Label>Nomor</Label><Input type="number" value={nomor} onChange={e=>setNomor(e.target.value)} placeholder="1" /></div>
         <div><Label>Nama</Label><Input value={nama} onChange={e=>setNama(e.target.value)} placeholder="Nama peserta" /></div>
         <div><Label>Asal / Jemaat</Label><Input value={asal} onChange={e=>setAsal(e.target.value)} placeholder="Jemaat / kelompok" /></div>
+        <div><Label>Sesi</Label><Input value={sesi} onChange={e=>setSesi(e.target.value)} placeholder="Sesi 1" /></div>
         <div className="flex items-end"><Button type="submit" disabled={loading} className="gap-1"><Plus className="size-4" />Tambah</Button></div>
       </form>
       <div className="rounded-lg border bg-card">
@@ -195,16 +199,18 @@ function PesertaTab() {
               <TableHead className="w-20">No.</TableHead>
               <TableHead>Nama</TableHead>
               <TableHead>Asal</TableHead>
+              <TableHead className="w-28">Sesi</TableHead>
               <TableHead className="w-20 text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Belum ada peserta.</TableCell></TableRow>}
+            {items.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Belum ada peserta.</TableCell></TableRow>}
             {items.map(p => (
               <TableRow key={p.id}>
                 <TableCell className="font-mono">{p.nomor_urut}</TableCell>
                 <TableCell className="font-medium">{p.nama}</TableCell>
                 <TableCell className="text-muted-foreground">{p.asal || "—"}</TableCell>
+                <TableCell className="text-muted-foreground">{p.sesi || "—"}</TableCell>
                 <TableCell className="text-right"><Button size="icon" variant="ghost" onClick={()=>hapus(p.id)}><Trash2 className="size-4 text-destructive" /></Button></TableCell>
               </TableRow>
             ))}
