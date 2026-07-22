@@ -83,10 +83,12 @@ function PesertaTab() {
   const [nomor, setNomor] = useState("");
   const [nama, setNama] = useState("");
   const [asal, setAsal] = useState("");
-  const [sesi, setSesi] = useState("");
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [updatingSesi, setUpdatingSesi] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const sesiDari = (n: number) => `Sesi ${Math.ceil(n / 10)}`;
 
   async function load() {
     const { data, error } = await supabase.from("peserta").select("*").order("nomor_urut");
@@ -99,11 +101,28 @@ function PesertaTab() {
     e.preventDefault();
     if (!nomor || !nama) return toast.error("Nomor urut dan nama wajib diisi");
     setLoading(true);
-    const { error } = await supabase.from("peserta").insert({ nomor_urut: Number(nomor), nama, asal: asal || null, sesi: sesi || null });
+    const n = Number(nomor);
+    const { error } = await supabase.from("peserta").insert({ nomor_urut: n, nama, asal: asal || null, sesi: sesiDari(n) });
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Peserta ditambahkan");
-    setNomor(""); setNama(""); setAsal(""); setSesi("");
+    setNomor(""); setNama(""); setAsal("");
+    load();
+  }
+
+  async function ubahSesi() {
+    setUpdatingSesi(true);
+    const { data, error } = await supabase.from("peserta").select("id, nomor_urut");
+    if (error) { setUpdatingSesi(false); return toast.error(error.message); }
+    const rows = data ?? [];
+    let gagal = 0;
+    for (const r of rows) {
+      const { error: e } = await supabase.from("peserta").update({ sesi: sesiDari(r.nomor_urut) }).eq("id", r.id);
+      if (e) gagal++;
+    }
+    setUpdatingSesi(false);
+    if (gagal > 0) toast.error(`${gagal} peserta gagal diperbarui`);
+    else toast.success("Sesi diperbarui berdasarkan nomor urut");
     load();
   }
 
@@ -116,11 +135,11 @@ function PesertaTab() {
 
   function unduhTemplate() {
     const ws = XLSX.utils.aoa_to_sheet([
-      ["nomor_urut", "nama", "asal", "sesi"],
-      [1, "Contoh Nama", "Jemaat Contoh", "Sesi 1"],
-      [2, "Contoh Nama 2", "", "Sesi 2"],
+      ["nomor_urut", "nama", "asal"],
+      [1, "Contoh Nama", "Jemaat Contoh"],
+      [2, "Contoh Nama 2", ""],
     ]);
-    ws["!cols"] = [{ wch: 12 }, { wch: 30 }, { wch: 30 }, { wch: 15 }];
+    ws["!cols"] = [{ wch: 12 }, { wch: 30 }, { wch: 30 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Peserta");
     XLSX.writeFile(wb, "template-peserta.xlsx");
@@ -151,14 +170,12 @@ function PesertaTab() {
           const nama = String(keys["nama"] ?? "").trim();
           const asalRaw = keys["asal"] ?? keys["jemaat"] ?? keys["asal_/_jemaat"] ?? "";
           const asal = String(asalRaw).trim();
-          const sesiRaw = keys["sesi"] ?? keys["session"] ?? "";
-          const sesi = String(sesiRaw).trim();
-          return { nomor_urut, nama, asal: asal || null, sesi: sesi || null };
+          return { nomor_urut, nama, asal: asal || null, sesi: isNaN(nomor_urut) ? null : sesiDari(nomor_urut) };
         })
         .filter((r) => r.nama && !isNaN(r.nomor_urut));
 
       if (normalized.length === 0) {
-        toast.error("Tidak ada baris valid. Pastikan kolom: nomor_urut, nama, asal, sesi");
+        toast.error("Tidak ada baris valid. Pastikan kolom: nomor_urut, nama, asal");
         return;
       }
 
@@ -172,6 +189,7 @@ function PesertaTab() {
       setImporting(false);
     }
   }
+
 
   return (
     <SectionCard
