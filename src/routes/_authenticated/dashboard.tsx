@@ -224,15 +224,16 @@ function PesertaTab() {
 
   function unduhTemplate() {
     const ws = XLSX.utils.aoa_to_sheet([
-      ["nomor_urut", "nama", "asal"],
-      [1, "Contoh Nama", "Jemaat Contoh"],
-      [2, "Contoh Nama 2", ""],
+      ["nomor_urut", "nama", "asal", "kategori"],
+      [1, "Contoh Nama", "Jemaat Contoh", "Dewasa"],
+      [2, "Contoh Nama 2", "", "Remaja"],
     ]);
-    ws["!cols"] = [{ wch: 12 }, { wch: 30 }, { wch: 30 }];
+    ws["!cols"] = [{ wch: 12 }, { wch: 30 }, { wch: 30 }, { wch: 20 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Peserta");
     XLSX.writeFile(wb, "template-peserta.xlsx");
   }
+
 
   function pickFile() {
     fileRef.current?.click();
