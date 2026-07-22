@@ -24,6 +24,7 @@ type Kriteria = { id: string; nama: string; bobot: number; batas_atas: number; b
 type Mazmur = { id: string; bacaan: string; jumlah_ayat: number };
 type Penilaian = { id: string; peserta_id: string; juri_id: string; kriteria_id: string; nilai: number; mazmur_id: string | null };
 type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: string | null; total_skor: number; rata_rata: number; jumlah_juri: number };
+type Kategori = { id: string; kategori: string; batas_atas: number; batas_bawah: number };
 
 function App() {
   return (
