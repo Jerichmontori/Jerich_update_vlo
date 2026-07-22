@@ -33,8 +33,9 @@ function App() {
       <Header />
       <main className="mx-auto max-w-6xl px-4 pb-16">
         <Tabs defaultValue="ranking" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-7 h-auto bg-secondary/60 p-1">
+          <TabsList className="grid w-full grid-cols-4 sm:grid-cols-8 h-auto bg-secondary/60 p-1">
             <TabsTrigger value="ranking" className="gap-2"><Trophy className="size-4" />Ranking</TabsTrigger>
+            <TabsTrigger value="posisi" className="gap-2"><Trophy className="size-4" />Posisi</TabsTrigger>
             <TabsTrigger value="penilaian" className="gap-2"><ClipboardCheck className="size-4" />Penilaian</TabsTrigger>
             <TabsTrigger value="peserta" className="gap-2"><Users className="size-4" />Peserta</TabsTrigger>
             <TabsTrigger value="juri" className="gap-2"><Gavel className="size-4" />Juri</TabsTrigger>
@@ -43,6 +44,7 @@ function App() {
             <TabsTrigger value="mazmur" className="gap-2"><BookOpenText className="size-4" />Mazmur</TabsTrigger>
           </TabsList>
           <TabsContent value="ranking"><RankingTab /></TabsContent>
+          <TabsContent value="posisi"><PosisiTab /></TabsContent>
           <TabsContent value="penilaian"><PenilaianTab /></TabsContent>
           <TabsContent value="peserta"><PesertaTab /></TabsContent>
           <TabsContent value="juri"><JuriTab /></TabsContent>
