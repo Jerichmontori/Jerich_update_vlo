@@ -83,6 +83,7 @@ function PesertaTab() {
   const [nomor, setNomor] = useState("");
   const [nama, setNama] = useState("");
   const [asal, setAsal] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [updatingSesi, setUpdatingSesi] = useState(false);
@@ -97,15 +98,31 @@ function PesertaTab() {
   }
   useEffect(() => { load(); }, []);
 
+  function pilihUntukEdit(p: Peserta) {
+    setEditId(p.id);
+    setNomor(String(p.nomor_urut));
+    setNama(p.nama);
+    setAsal(p.asal || "");
+  }
+
+  function batalEdit() {
+    setEditId(null);
+    setNomor(""); setNama(""); setAsal("");
+  }
+
   async function tambah(e: React.FormEvent) {
     e.preventDefault();
     if (!nomor || !nama) return toast.error("Nomor urut dan nama wajib diisi");
     setLoading(true);
     const n = Number(nomor);
-    const { error } = await supabase.from("peserta").insert({ nomor_urut: n, nama, asal: asal || null, sesi: sesiDari(n) });
+    const payload = { nomor_urut: n, nama, asal: asal || null, sesi: sesiDari(n) };
+    const { error } = editId
+      ? await supabase.from("peserta").update(payload).eq("id", editId)
+      : await supabase.from("peserta").insert(payload);
     setLoading(false);
     if (error) return toast.error(error.message);
-    toast.success("Peserta ditambahkan");
+    toast.success(editId ? "Peserta diperbarui" : "Peserta ditambahkan");
+    setEditId(null);
     setNomor(""); setNama(""); setAsal("");
     load();
   }
@@ -208,7 +225,8 @@ function PesertaTab() {
         <div><Label>Nama</Label><Input value={nama} onChange={e=>setNama(e.target.value)} placeholder="Nama peserta" /></div>
         <div><Label>Asal / Jemaat</Label><Input value={asal} onChange={e=>setAsal(e.target.value)} placeholder="Jemaat / kelompok" /></div>
         <div className="flex items-end gap-2">
-          <Button type="submit" disabled={loading} className="gap-1"><Plus className="size-4" />Tambah</Button>
+          <Button type="submit" disabled={loading} className="gap-1"><Plus className="size-4" />{editId ? "Simpan" : "Tambah"}</Button>
+          {editId && <Button type="button" variant="ghost" onClick={batalEdit}>Batal</Button>}
           <Button type="button" variant="outline" onClick={ubahSesi} disabled={updatingSesi} className="gap-1">{updatingSesi ? "Memperbarui..." : "Ubah Sesi"}</Button>
         </div>
       </form>
@@ -229,7 +247,7 @@ function PesertaTab() {
             {items.map(p => (
               <TableRow key={p.id}>
                 <TableCell className="font-mono">{p.nomor_urut}</TableCell>
-                <TableCell className="font-medium">{p.nama}</TableCell>
+                <TableCell className="font-medium"><button type="button" onClick={()=>pilihUntukEdit(p)} className="text-left hover:underline hover:text-primary transition-colors">{p.nama}</button></TableCell>
                 <TableCell className="text-muted-foreground">{p.asal || "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{p.sesi || "—"}</TableCell>
                 <TableCell className="text-right"><Button size="icon" variant="ghost" onClick={()=>hapus(p.id)}><Trash2 className="size-4 text-destructive" /></Button></TableCell>
