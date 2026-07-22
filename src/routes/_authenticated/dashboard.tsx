@@ -685,8 +685,11 @@ function PenilaianTab() {
             <DialogDescription>
               {activeKey === "catatan"
                 ? "Beri nilai 1–5 untuk setiap aspek berikut."
+                : activeKey === "perhatian"
+                ? "Centang setiap ayat yang mengalami masalah pada aspek terkait."
                 : "Pilih grade yang paling sesuai dengan penampilan peserta."}
             </DialogDescription>
+
           </DialogHeader>
 
           {activeKey && activeKey !== "catatan" && (
