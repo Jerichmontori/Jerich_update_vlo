@@ -14,10 +14,142 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      juri: {
+        Row: {
+          created_at: string
+          id: string
+          jabatan: string | null
+          nama: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          jabatan?: string | null
+          nama: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          jabatan?: string | null
+          nama?: string
+        }
+        Relationships: []
+      }
+      kriteria: {
+        Row: {
+          bobot: number
+          created_at: string
+          id: string
+          nama: string
+        }
+        Insert: {
+          bobot?: number
+          created_at?: string
+          id?: string
+          nama: string
+        }
+        Update: {
+          bobot?: number
+          created_at?: string
+          id?: string
+          nama?: string
+        }
+        Relationships: []
+      }
+      penilaian: {
+        Row: {
+          created_at: string
+          id: string
+          juri_id: string
+          kriteria_id: string
+          nilai: number
+          peserta_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          juri_id: string
+          kriteria_id: string
+          nilai: number
+          peserta_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          juri_id?: string
+          kriteria_id?: string
+          nilai?: number
+          peserta_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "penilaian_juri_id_fkey"
+            columns: ["juri_id"]
+            isOneToOne: false
+            referencedRelation: "juri"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "penilaian_kriteria_id_fkey"
+            columns: ["kriteria_id"]
+            isOneToOne: false
+            referencedRelation: "kriteria"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "penilaian_peserta_id_fkey"
+            columns: ["peserta_id"]
+            isOneToOne: false
+            referencedRelation: "peserta"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "penilaian_peserta_id_fkey"
+            columns: ["peserta_id"]
+            isOneToOne: false
+            referencedRelation: "ranking"
+            referencedColumns: ["peserta_id"]
+          },
+        ]
+      }
+      peserta: {
+        Row: {
+          asal: string | null
+          created_at: string
+          id: string
+          nama: string
+          nomor_urut: number
+        }
+        Insert: {
+          asal?: string | null
+          created_at?: string
+          id?: string
+          nama: string
+          nomor_urut: number
+        }
+        Update: {
+          asal?: string | null
+          created_at?: string
+          id?: string
+          nama?: string
+          nomor_urut?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
-      [_ in never]: never
+      ranking: {
+        Row: {
+          asal: string | null
+          jumlah_juri: number | null
+          nama: string | null
+          nomor_urut: number | null
+          peserta_id: string | null
+          rata_rata: number | null
+          total_skor: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
