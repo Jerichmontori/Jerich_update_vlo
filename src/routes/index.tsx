@@ -410,29 +410,36 @@ function PenilaianTab() {
   const [peserta, setPeserta] = useState<Peserta[]>([]);
   const [juri, setJuri] = useState<Juri[]>([]);
   const [kriteria, setKriteria] = useState<Kriteria[]>([]);
-  const [penilaian, setPenilaian] = useState<Penilaian[]>([]);
+  const [mazmur, setMazmur] = useState<Mazmur[]>([]);
+  const [, setPenilaian] = useState<Penilaian[]>([]);
   const [juriId, setJuriId] = useState<string>("");
   const [pesertaId, setPesertaId] = useState<string>("");
   const [kriteriaId, setKriteriaId] = useState<string>("");
+  const [mazmurId, setMazmurId] = useState<string>("");
 
   async function loadAll() {
-    const [p, j, k, n] = await Promise.all([
+    const [p, j, k, m, n] = await Promise.all([
       supabase.from("peserta").select("*").order("nomor_urut"),
       supabase.from("juri").select("*").order("created_at"),
       supabase.from("kriteria").select("*").order("created_at"),
+      supabase.from("mazmur").select("*").order("created_at"),
       supabase.from("penilaian").select("*"),
     ]);
-    if (p.error || j.error || k.error || n.error) return toast.error("Gagal memuat data");
-    setPeserta(p.data ?? []); setJuri(j.data ?? []); setKriteria(k.data ?? []); setPenilaian((n.data ?? []) as Penilaian[]);
+    if (p.error || j.error || k.error || m.error || n.error) return toast.error("Gagal memuat data");
+    setPeserta(p.data ?? []);
+    setJuri(j.data ?? []);
+    setKriteria(k.data ?? []);
+    setMazmur((m.data ?? []) as Mazmur[]);
+    setPenilaian((n.data ?? []) as Penilaian[]);
   }
   useEffect(() => { loadAll(); }, []);
 
-
   const canJudge = peserta.length > 0 && juri.length > 0 && kriteria.length > 0;
   const kriteriaButtons = kriteria.slice(0, 4);
+  const selectedMazmur = mazmur.find(m => m.id === mazmurId);
 
   return (
-    <SectionCard title="Input Penilaian" description="Pilih juri, peserta, dan kriteria — lalu beri nilai (0–100).">
+    <SectionCard title="Input Penilaian" description="Pilih juri, peserta, bacaan mazmur, dan kriteria.">
       {!canJudge && (
         <div className="rounded-lg border-2 border-dashed border-accent/50 bg-accent/5 p-6 text-center text-sm text-muted-foreground">
           Lengkapi dulu data <b>peserta</b>, <b>juri</b>, dan <b>kriteria</b> sebelum memulai penilaian.
@@ -440,7 +447,7 @@ function PenilaianTab() {
       )}
       {canJudge && (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             <div>
               <Label>Juri</Label>
               <Select value={juriId} onValueChange={setJuriId}>
@@ -465,6 +472,26 @@ function PenilaianTab() {
             </div>
           </div>
 
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_180px] gap-4 mb-8">
+            <div>
+              <Label>Bacaan Mazmur</Label>
+              <Select value={mazmurId} onValueChange={setMazmurId}>
+                <SelectTrigger>
+                  <SelectValue placeholder={mazmur.length === 0 ? "Belum ada bacaan — tambahkan di tab Mazmur" : "Pilih bacaan mazmur"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {mazmur.map(m => (
+                    <SelectItem key={m.id} value={m.id}>{m.bacaan}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Jumlah Ayat</Label>
+              <Input readOnly value={selectedMazmur ? String(selectedMazmur.jumlah_ayat) : ""} placeholder="—" className="bg-muted/50" />
+            </div>
+          </div>
+
           <div className="mb-2">
             <Label className="text-base">Pilih Kriteria</Label>
           </div>
@@ -473,13 +500,11 @@ function PenilaianTab() {
               <CriteriaPillButton
                 key={k.id}
                 label={k.nama}
-                
                 active={kriteriaId === k.id}
                 onClick={() => setKriteriaId(k.id)}
               />
             ))}
           </div>
-
         </>
       )}
     </SectionCard>
