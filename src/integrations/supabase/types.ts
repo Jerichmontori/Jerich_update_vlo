@@ -53,6 +53,33 @@ export type Database = {
         }
         Relationships: []
       }
+      kategori: {
+        Row: {
+          batas_atas: number
+          batas_bawah: number
+          created_at: string
+          id: string
+          kategori: string
+          updated_at: string
+        }
+        Insert: {
+          batas_atas?: number
+          batas_bawah?: number
+          created_at?: string
+          id?: string
+          kategori: string
+          updated_at?: string
+        }
+        Update: {
+          batas_atas?: number
+          batas_bawah?: number
+          created_at?: string
+          id?: string
+          kategori?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       kriteria: {
         Row: {
           batas_atas: number
