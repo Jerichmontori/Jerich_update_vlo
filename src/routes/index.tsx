@@ -18,7 +18,7 @@ export const Route = createFileRoute("/")({
 });
 
 type Peserta = { id: string; nomor_urut: number; nama: string; asal: string | null };
-type Juri = { id: string; nama: string; jabatan: string | null };
+type Juri = { id: string; nama: string; jabatan: string | null; bacaan_mazmur: string | null; jumlah_ayat: number | null };
 type Kriteria = { id: string; nama: string; bobot: number };
 type Penilaian = { id: string; peserta_id: string; juri_id: string; kriteria_id: string; nilai: number };
 type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: string | null; total_skor: number; rata_rata: number; jumlah_juri: number };
@@ -208,21 +208,28 @@ function JuriTab() {
   const [items, setItems] = useState<Juri[]>([]);
   const [nama, setNama] = useState("");
   const [jabatan, setJabatan] = useState("");
+  const [bacaanMazmur, setBacaanMazmur] = useState("");
+  const [jumlahAyat, setJumlahAyat] = useState("");
 
   async function load() {
     const { data, error } = await supabase.from("juri").select("*").order("created_at");
     if (error) return toast.error(error.message);
-    setItems(data ?? []);
+    setItems((data ?? []) as Juri[]);
   }
   useEffect(() => { load(); }, []);
 
   async function tambah(e: React.FormEvent) {
     e.preventDefault();
     if (!nama) return toast.error("Nama juri wajib diisi");
-    const { error } = await supabase.from("juri").insert({ nama, jabatan: jabatan || null });
+    const { error } = await supabase.from("juri").insert({
+      nama,
+      jabatan: jabatan || null,
+      bacaan_mazmur: bacaanMazmur || null,
+      jumlah_ayat: jumlahAyat ? Number(jumlahAyat) : null,
+    });
     if (error) return toast.error(error.message);
     toast.success("Juri ditambahkan");
-    setNama(""); setJabatan(""); load();
+    setNama(""); setJabatan(""); setBacaanMazmur(""); setJumlahAyat(""); load();
   }
   async function hapus(id: string) {
     const { error } = await supabase.from("juri").delete().eq("id", id);
@@ -231,20 +238,24 @@ function JuriTab() {
   }
   return (
     <SectionCard title="Dewan Juri" description="Daftar juri yang berhak memberi penilaian.">
-      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-3 mb-6">
+      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_140px_auto] gap-3 mb-6">
         <div><Label>Nama Juri</Label><Input value={nama} onChange={e=>setNama(e.target.value)} placeholder="Nama juri" /></div>
         <div><Label>Jabatan</Label><Input value={jabatan} onChange={e=>setJabatan(e.target.value)} placeholder="Pdt. / Diakon / dll" /></div>
+        <div><Label>Bacaan Mazmur</Label><Input value={bacaanMazmur} onChange={e=>setBacaanMazmur(e.target.value)} placeholder="Mzm. 23" /></div>
+        <div><Label>Jumlah Ayat</Label><Input type="number" min={0} value={jumlahAyat} onChange={e=>setJumlahAyat(e.target.value)} placeholder="6" /></div>
         <div className="flex items-end"><Button type="submit" className="gap-1"><Plus className="size-4" />Tambah</Button></div>
       </form>
       <div className="rounded-lg border bg-card">
         <Table>
-          <TableHeader><TableRow><TableHead>Nama</TableHead><TableHead>Jabatan</TableHead><TableHead className="w-20 text-right">Aksi</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Nama</TableHead><TableHead>Jabatan</TableHead><TableHead>Bacaan Mazmur</TableHead><TableHead className="text-center">Jumlah Ayat</TableHead><TableHead className="w-20 text-right">Aksi</TableHead></TableRow></TableHeader>
           <TableBody>
-            {items.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-8">Belum ada juri.</TableCell></TableRow>}
+            {items.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Belum ada juri.</TableCell></TableRow>}
             {items.map(j => (
               <TableRow key={j.id}>
                 <TableCell className="font-medium">{j.nama}</TableCell>
                 <TableCell className="text-muted-foreground">{j.jabatan || "—"}</TableCell>
+                <TableCell className="text-muted-foreground">{j.bacaan_mazmur || "—"}</TableCell>
+                <TableCell className="text-center text-muted-foreground">{j.jumlah_ayat ?? "—"}</TableCell>
                 <TableCell className="text-right"><Button size="icon" variant="ghost" onClick={()=>hapus(j.id)}><Trash2 className="size-4 text-destructive" /></Button></TableCell>
               </TableRow>
             ))}
@@ -254,6 +265,7 @@ function JuriTab() {
     </SectionCard>
   );
 }
+
 
 /* KRITERIA */
 function KriteriaTab() {

@@ -16,21 +16,27 @@ export type Database = {
     Tables: {
       juri: {
         Row: {
+          bacaan_mazmur: string | null
           created_at: string
           id: string
           jabatan: string | null
+          jumlah_ayat: number | null
           nama: string
         }
         Insert: {
+          bacaan_mazmur?: string | null
           created_at?: string
           id?: string
           jabatan?: string | null
+          jumlah_ayat?: number | null
           nama: string
         }
         Update: {
+          bacaan_mazmur?: string | null
           created_at?: string
           id?: string
           jabatan?: string | null
+          jumlah_ayat?: number | null
           nama?: string
         }
         Relationships: []
