@@ -274,9 +274,8 @@ function PesertaTab() {
         <div><Label>Nama</Label><Input value={nama} onChange={e=>setNama(e.target.value)} placeholder="Nama peserta" /></div>
         <div><Label>Asal / Jemaat</Label><Input value={asal} onChange={e=>setAsal(e.target.value)} placeholder="Jemaat / kelompok" /></div>
         <div className="flex items-end gap-2">
-          <Button type="submit" disabled={loading} className="gap-1"><Plus className="size-4" />{editId ? "Simpan" : "Tambah"}</Button>
+          <Button type="submit" disabled={loading} className="gap-1"><Plus className="size-4" />{editId ? "Ubah" : "Tambah"}</Button>
           {editId && <Button type="button" variant="ghost" onClick={batalEdit}>Batal</Button>}
-          <Button type="button" variant="outline" onClick={ubahSesi} disabled={updatingSesi} className="gap-1">{updatingSesi ? "Memperbarui..." : "Ubah Sesi"}</Button>
         </div>
       </form>
 
