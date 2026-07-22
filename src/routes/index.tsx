@@ -355,8 +355,6 @@ function PenilaianTab() {
   const [juriId, setJuriId] = useState<string>("");
   const [pesertaId, setPesertaId] = useState<string>("");
   const [kriteriaId, setKriteriaId] = useState<string>("");
-  const [nilai, setNilai] = useState<string>("");
-  const [saving, setSaving] = useState(false);
 
   async function loadAll() {
     const [p, j, k, n] = await Promise.all([
@@ -370,28 +368,6 @@ function PenilaianTab() {
   }
   useEffect(() => { loadAll(); }, []);
 
-  useEffect(() => {
-    if (!juriId || !kriteriaId || !pesertaId) { setNilai(""); return; }
-    const found = penilaian.find(x => x.peserta_id === pesertaId && x.juri_id === juriId && x.kriteria_id === kriteriaId);
-    setNilai(found ? String(found.nilai) : "");
-  }, [juriId, kriteriaId, pesertaId, penilaian]);
-
-  async function simpan() {
-    if (!juriId || !kriteriaId || !pesertaId) return toast.error("Pilih juri, peserta, dan kriteria");
-    if (nilai === "") return toast.error("Isi nilai");
-    const num = Number(nilai);
-    if (num < 0 || num > 100) return toast.error("Nilai harus 0-100");
-
-    setSaving(true);
-    const { error } = await supabase.from("penilaian").upsert(
-      [{ peserta_id: pesertaId, juri_id: juriId, kriteria_id: kriteriaId, nilai: num }],
-      { onConflict: "peserta_id,juri_id,kriteria_id" }
-    );
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success("Penilaian tersimpan");
-    loadAll();
-  }
 
   const canJudge = peserta.length > 0 && juri.length > 0 && kriteria.length > 0;
   const kriteriaButtons = kriteria.slice(0, 4);
@@ -445,22 +421,6 @@ function PenilaianTab() {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-4 items-end">
-            <div>
-              <Label>Nilai (0–100)</Label>
-              <Input
-                type="number" min={0} max={100} step="0.1"
-                value={nilai}
-                onChange={e => setNilai(e.target.value)}
-                placeholder="0-100"
-                disabled={!juriId || !kriteriaId || !pesertaId}
-                className="font-mono text-lg"
-              />
-            </div>
-            <Button onClick={simpan} disabled={saving || !juriId || !kriteriaId || !pesertaId} size="lg">
-              {saving ? "Menyimpan..." : "Simpan Penilaian"}
-            </Button>
-          </div>
         </>
       )}
     </SectionCard>
