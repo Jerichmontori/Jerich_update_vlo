@@ -732,10 +732,10 @@ function PenilaianTab() {
             <div className="grid gap-3 py-2 max-h-[60vh] overflow-y-auto pr-2">
               {CATATAN_ASPEK.map((aspek, i) => (
                 <div key={aspek} className="rounded-lg border bg-card p-3">
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="mb-2">
                     <span className="text-sm font-medium">{i + 1}. {aspek}</span>
-                    <Badge variant="secondary">{catatanValues[i]}</Badge>
                   </div>
+
                   <div className="grid grid-cols-5 gap-2">
                     {[1, 2, 3, 4, 5].map(v => (
                       <button
