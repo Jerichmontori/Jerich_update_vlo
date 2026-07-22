@@ -1,0 +1,1 @@
+ALTER TABLE public.peserta ADD COLUMN kategori text;

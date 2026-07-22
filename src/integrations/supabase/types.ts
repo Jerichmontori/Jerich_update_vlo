@@ -172,6 +172,7 @@ export type Database = {
           asal: string | null
           created_at: string
           id: string
+          kategori: string | null
           nama: string
           nomor_urut: number
           sesi: string | null
@@ -180,6 +181,7 @@ export type Database = {
           asal?: string | null
           created_at?: string
           id?: string
+          kategori?: string | null
           nama: string
           nomor_urut: number
           sesi?: string | null
@@ -188,6 +190,7 @@ export type Database = {
           asal?: string | null
           created_at?: string
           id?: string
+          kategori?: string | null
           nama?: string
           nomor_urut?: number
           sesi?: string | null

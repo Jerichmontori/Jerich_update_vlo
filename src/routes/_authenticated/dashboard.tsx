@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: App,
 });
 
-type Peserta = { id: string; nomor_urut: number; nama: string; asal: string | null; sesi: string | null };
+type Peserta = { id: string; nomor_urut: number; nama: string; asal: string | null; sesi: string | null; kategori: string | null };
 type Juri = { id: string; nama: string; jabatan: string | null; email: string | null; role: "admin" | "juri" | "viewer" | null; approved: boolean; user_id: string | null };
 type Kriteria = { id: string; nama: string; bobot: number; batas_atas: number; batas_bawah: number };
 type Mazmur = { id: string; bacaan: string; jumlah_ayat: number };
@@ -84,6 +84,7 @@ function PesertaTab() {
   const [nomor, setNomor] = useState("");
   const [nama, setNama] = useState("");
   const [asal, setAsal] = useState("");
+  const [kategori, setKategori] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -98,7 +99,7 @@ function PesertaTab() {
     ]);
     if (error) return toast.error(error.message);
     if (pe) return toast.error(pe.message);
-    setItems(data ?? []);
+    setItems((data ?? []) as Peserta[]);
     setScoredIds(new Set((pen ?? []).map((r: { peserta_id: string }) => r.peserta_id)));
   }
   useEffect(() => { load(); }, []);
@@ -109,11 +110,12 @@ function PesertaTab() {
     setNomor(String(p.nomor_urut));
     setNama(p.nama);
     setAsal(p.asal || "");
+    setKategori(p.kategori || "");
   }
 
   function batalEdit() {
     setEditId(null);
-    setNomor(""); setNama(""); setAsal("");
+    setNomor(""); setNama(""); setAsal(""); setKategori("");
   }
 
   async function tambah(e: React.FormEvent) {
@@ -123,12 +125,12 @@ function PesertaTab() {
     setLoading(true);
 
     if (!editId) {
-      const payload = { nomor_urut: n, nama, asal: asal || null, sesi: sesiDari(n) };
+      const payload = { nomor_urut: n, nama, asal: asal || null, sesi: sesiDari(n), kategori: kategori || null };
       const { error } = await supabase.from("peserta").insert(payload);
       setLoading(false);
       if (error) return toast.error(error.message);
       toast.success("Peserta ditambahkan");
-      setNomor(""); setNama(""); setAsal("");
+      setNomor(""); setNama(""); setAsal(""); setKategori("");
       load();
       return;
     }
@@ -138,14 +140,15 @@ function PesertaTab() {
     const oldN = original.nomor_urut;
 
     if (n === oldN) {
-      const { error } = await supabase.from("peserta").update({ nama, asal: asal || null }).eq("id", editId);
+      const { error } = await supabase.from("peserta").update({ nama, asal: asal || null, kategori: kategori || null }).eq("id", editId);
       setLoading(false);
       if (error) return toast.error(error.message);
       toast.success("Peserta diperbarui");
-      setEditId(null); setNomor(""); setNama(""); setAsal("");
+      setEditId(null); setNomor(""); setNama(""); setAsal(""); setKategori("");
       load();
       return;
     }
+
 
     // Nomor berubah — validasi peserta yg diedit belum dinilai
     const { count: cntEdit, error: pe1 } = await supabase
@@ -195,7 +198,7 @@ function PesertaTab() {
       if (te) { setLoading(false); return toast.error(te.message); }
     }
     const { error: ue } = await supabase.from("peserta")
-      .update({ nomor_urut: n, nama, asal: asal || null, sesi: sesiDari(n) }).eq("id", editId);
+      .update({ nomor_urut: n, nama, asal: asal || null, sesi: sesiDari(n), kategori: kategori || null }).eq("id", editId);
     if (ue) { setLoading(false); return toast.error(ue.message); }
     for (let i = 0; i < chain.length; i++) {
       const newNum = chain[i].newNum;
@@ -207,7 +210,8 @@ function PesertaTab() {
 
     setLoading(false);
     toast.success("Peserta diperbarui & urutan disesuaikan");
-    setEditId(null); setNomor(""); setNama(""); setAsal("");
+    setEditId(null); setNomor(""); setNama(""); setAsal(""); setKategori("");
+
     load();
   }
 
@@ -220,15 +224,16 @@ function PesertaTab() {
 
   function unduhTemplate() {
     const ws = XLSX.utils.aoa_to_sheet([
-      ["nomor_urut", "nama", "asal"],
-      [1, "Contoh Nama", "Jemaat Contoh"],
-      [2, "Contoh Nama 2", ""],
+      ["nomor_urut", "nama", "asal", "kategori"],
+      [1, "Contoh Nama", "Jemaat Contoh", "Dewasa"],
+      [2, "Contoh Nama 2", "", "Remaja"],
     ]);
-    ws["!cols"] = [{ wch: 12 }, { wch: 30 }, { wch: 30 }];
+    ws["!cols"] = [{ wch: 12 }, { wch: 30 }, { wch: 30 }, { wch: 20 }];
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Peserta");
     XLSX.writeFile(wb, "template-peserta.xlsx");
   }
+
 
   function pickFile() {
     fileRef.current?.click();
@@ -255,7 +260,9 @@ function PesertaTab() {
           const nama = String(keys["nama"] ?? "").trim();
           const asalRaw = keys["asal"] ?? keys["jemaat"] ?? keys["asal_/_jemaat"] ?? "";
           const asal = String(asalRaw).trim();
-          return { nomor_urut, nama, asal: asal || null, sesi: isNaN(nomor_urut) ? null : sesiDari(nomor_urut) };
+          const kategori = String(keys["kategori"] ?? "").trim();
+          return { nomor_urut, nama, asal: asal || null, sesi: isNaN(nomor_urut) ? null : sesiDari(nomor_urut), kategori: kategori || null };
+
         })
         .filter((r) => r.nama && !isNaN(r.nomor_urut));
 
@@ -288,10 +295,11 @@ function PesertaTab() {
         </div>
       }
     >
-      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-[100px_1fr_1fr_auto] gap-3 mb-6">
+      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-[100px_1fr_1fr_1fr_auto] gap-3 mb-6">
         <div><Label>Nomor</Label><Input type="number" value={nomor} onChange={e=>setNomor(e.target.value)} placeholder="1" /></div>
         <div><Label>Nama</Label><Input value={nama} onChange={e=>setNama(e.target.value)} placeholder="Nama peserta" /></div>
         <div><Label>Asal / Jemaat</Label><Input value={asal} onChange={e=>setAsal(e.target.value)} placeholder="Jemaat / kelompok" /></div>
+        <div><Label>Kategori</Label><Input value={kategori} onChange={e=>setKategori(e.target.value)} placeholder="Dewasa / Remaja / dll" /></div>
         <div className="flex items-end gap-2">
           <Button type="submit" disabled={loading} className="gap-1"><Plus className="size-4" />{editId ? "Ubah" : "Tambah"}</Button>
           {editId && <Button type="button" variant="ghost" onClick={batalEdit}>Batal</Button>}
@@ -306,23 +314,26 @@ function PesertaTab() {
               <TableHead>Nama</TableHead>
               <TableHead>Asal</TableHead>
               <TableHead className="w-28">Sesi</TableHead>
+              <TableHead className="w-32">Kategori</TableHead>
               <TableHead className="w-20 text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Belum ada peserta.</TableCell></TableRow>}
+            {items.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Belum ada peserta.</TableCell></TableRow>}
             {items.map(p => (
               <TableRow key={p.id}>
                 <TableCell className="font-mono">{p.nomor_urut}</TableCell>
                 <TableCell className="font-medium"><button type="button" onClick={()=>pilihUntukEdit(p)} className="text-left hover:underline hover:text-primary transition-colors">{p.nama}</button></TableCell>
                 <TableCell className="text-muted-foreground">{p.asal || "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{scoredIds.has(p.id) ? sesiDari(p.nomor_urut) : "—"}</TableCell>
+                <TableCell className="text-muted-foreground">{p.kategori || "—"}</TableCell>
                 <TableCell className="text-right"><Button size="icon" variant="ghost" onClick={()=>hapus(p.id)}><Trash2 className="size-4 text-destructive" /></Button></TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </div>
+
     </SectionCard>
   );
 }
