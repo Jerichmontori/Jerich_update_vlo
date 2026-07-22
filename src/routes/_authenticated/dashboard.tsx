@@ -219,6 +219,10 @@ function JuriTab() {
   const [items, setItems] = useState<Juri[]>([]);
   const [nama, setNama] = useState("");
   const [jabatan, setJabatan] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [role, setRole] = useState<"admin" | "juri">("juri");
+  const [saving, setSaving] = useState(false);
 
   async function load() {
     const { data, error } = await supabase.from("juri").select("*").order("created_at");
@@ -229,14 +233,21 @@ function JuriTab() {
 
   async function tambah(e: React.FormEvent) {
     e.preventDefault();
-    if (!nama) return toast.error("Nama juri wajib diisi");
-    const { error } = await supabase.from("juri").insert({
-      nama,
-      jabatan: jabatan || null,
-    });
-    if (error) return toast.error(error.message);
-    toast.success("Juri ditambahkan");
-    setNama(""); setJabatan(""); load();
+    if (!nama) return toast.error("Nama wajib diisi");
+    if (!email || !password) return toast.error("Email & password wajib diisi");
+    if (password.length < 8) return toast.error("Password minimal 8 karakter");
+    setSaving(true);
+    try {
+      const { createJuriUser } = await import("@/lib/juri-users.functions");
+      await createJuriUser({ data: { nama, jabatan: jabatan || null, email, password, role } });
+      toast.success(`Akun ${role} berhasil dibuat`);
+      setNama(""); setJabatan(""); setEmail(""); setPassword(""); setRole("juri");
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal membuat akun");
+    } finally {
+      setSaving(false);
+    }
   }
   async function hapus(id: string) {
     const { error } = await supabase.from("juri").delete().eq("id", id);
@@ -244,11 +255,23 @@ function JuriTab() {
     load();
   }
   return (
-    <SectionCard title="Dewan Juri" description="Daftar juri yang berhak memberi penilaian.">
-      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-3 mb-6">
-        <div><Label>Nama Juri</Label><Input value={nama} onChange={e=>setNama(e.target.value)} placeholder="Nama juri" /></div>
+    <SectionCard title="Dewan Juri" description="Buat akun login untuk juri/admin. Password minimal 8 karakter.">
+      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+        <div><Label>Nama</Label><Input value={nama} onChange={e=>setNama(e.target.value)} placeholder="Nama lengkap" /></div>
         <div><Label>Jabatan</Label><Input value={jabatan} onChange={e=>setJabatan(e.target.value)} placeholder="Pdt. / Diakon / dll" /></div>
-        <div className="flex items-end"><Button type="submit" className="gap-1"><Plus className="size-4" />Tambah</Button></div>
+        <div><Label>Email</Label><Input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="email@contoh.com" /></div>
+        <div><Label>Password</Label><Input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Min. 8 karakter" /></div>
+        <div>
+          <Label>Role</Label>
+          <Select value={role} onValueChange={(v)=>setRole(v as "admin" | "juri")}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="juri">Juri</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="flex items-end"><Button type="submit" disabled={saving} className="gap-1"><Plus className="size-4" />{saving ? "Menyimpan..." : "Tambah Akun"}</Button></div>
       </form>
       <div className="rounded-lg border bg-card">
         <Table>
