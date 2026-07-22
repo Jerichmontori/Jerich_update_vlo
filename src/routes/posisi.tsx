@@ -111,61 +111,87 @@ function PosisiPublic() {
           <Card className="border-accent/20"><CardContent className="py-16 text-center text-muted-foreground">Belum ada peserta.</CardContent></Card>
         )}
 
-        {!loading && grouped.map(({ key, label, range, list }) => {
+        {!loading && grouped.length > 0 && (() => {
+          const safePage = Math.min(page, grouped.length - 1);
+          const { key, label, range, list } = grouped[safePage];
           const scoredCount = list.filter((r) => r.scored).length;
           let rankedIdx = -1;
           return (
-          <Card key={key} className="border-accent/20 shadow-sm overflow-hidden">
-            <CardHeader className="flex flex-row items-center justify-between gap-4 bg-accent/5">
-              <div className="flex items-center gap-3">
-                <div className="grid place-items-center size-10 rounded-full bg-primary/10 text-primary">
-                  <Users className="size-5" />
+            <>
+              <Card key={key} className="border-accent/20 shadow-sm overflow-hidden">
+                <CardHeader className="flex flex-row items-center justify-between gap-4 bg-accent/5">
+                  <div className="flex items-center gap-3">
+                    <div className="grid place-items-center size-10 rounded-full bg-primary/10 text-primary">
+                      <Users className="size-5" />
+                    </div>
+                    <div>
+                      <CardTitle className="font-serif text-xl">{label} <span className="text-sm font-normal text-muted-foreground">({range})</span></CardTitle>
+                      <CardDescription>{list.length} peserta · {scoredCount} sudah dinilai</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="w-16 text-center">Posisi</TableHead>
+                        <TableHead className="w-16">No.</TableHead>
+                        <TableHead>Peserta</TableHead>
+                        <TableHead>Asal</TableHead>
+                        <TableHead className="text-center w-24">Juri</TableHead>
+                        <TableHead className="text-right w-32">Rata-rata</TableHead>
+                        <TableHead className="text-right w-32">Total Skor</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {list.map((r) => {
+                        if (r.scored) rankedIdx += 1;
+                        const idx = r.scored ? rankedIdx : -1;
+                        return (
+                        <TableRow key={r.id} className={r.scored && idx < 3 ? "bg-accent/10" : ""}>
+                          <TableCell className="text-center text-2xl">
+                            {r.scored ? (medals[idx] ?? idx + 1) : "—"}
+                          </TableCell>
+                          <TableCell className="font-mono">{r.nomor_urut}</TableCell>
+                          <TableCell className="font-semibold">{r.nama}</TableCell>
+                          <TableCell className="text-muted-foreground">{r.asal || "—"}</TableCell>
+                          <TableCell className="text-center">{r.scored ? r.jumlah_juri : <span className="text-muted-foreground italic">belum tampil</span>}</TableCell>
+                          <TableCell className="text-right font-mono">{r.scored ? r.rata_rata.toFixed(2) : <span className="text-muted-foreground italic">belum tampil</span>}</TableCell>
+                          <TableCell className="text-right font-mono font-bold text-primary">{r.scored ? r.total_skor.toFixed(2) : <span className="text-muted-foreground italic font-normal">belum tampil</span>}</TableCell>
+                        </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </CardContent>
+              </Card>
+
+              <div className="flex items-center justify-between gap-4 pt-2">
+                <Button variant="outline" size="sm" disabled={safePage === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>
+                  <ChevronLeft className="size-4" /> Sesi Sebelumnya
+                </Button>
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {grouped.map((g, i) => (
+                    <Button
+                      key={g.key}
+                      size="sm"
+                      variant={i === safePage ? "default" : "outline"}
+                      onClick={() => setPage(i)}
+                    >
+                      {i + 1}
+                    </Button>
+                  ))}
                 </div>
-                <div>
-                  <CardTitle className="font-serif text-xl">{label} <span className="text-sm font-normal text-muted-foreground">({range})</span></CardTitle>
-                  <CardDescription>{list.length} peserta · {scoredCount} sudah dinilai</CardDescription>
-                </div>
+                <Button variant="outline" size="sm" disabled={safePage >= grouped.length - 1} onClick={() => setPage((p) => Math.min(grouped.length - 1, p + 1))}>
+                  Sesi Berikutnya <ChevronRight className="size-4" />
+                </Button>
               </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-16 text-center">Posisi</TableHead>
-                    <TableHead className="w-16">No.</TableHead>
-                    <TableHead>Peserta</TableHead>
-                    <TableHead>Asal</TableHead>
-                    <TableHead className="text-center w-24">Juri</TableHead>
-                    <TableHead className="text-right w-32">Rata-rata</TableHead>
-                    <TableHead className="text-right w-32">Total Skor</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {list.map((r) => {
-                    if (r.scored) rankedIdx += 1;
-                    const idx = r.scored ? rankedIdx : -1;
-                    return (
-                    <TableRow key={r.id} className={r.scored && idx < 3 ? "bg-accent/10" : ""}>
-                      <TableCell className="text-center text-2xl">
-                        {r.scored ? (medals[idx] ?? idx + 1) : "—"}
-                      </TableCell>
-                      <TableCell className="font-mono">{r.nomor_urut}</TableCell>
-                      <TableCell className="font-semibold">{r.nama}</TableCell>
-                      <TableCell className="text-muted-foreground">{r.asal || "—"}</TableCell>
-                      <TableCell className="text-center">{r.scored ? r.jumlah_juri : <span className="text-muted-foreground italic">belum tampil</span>}</TableCell>
-                      <TableCell className="text-right font-mono">{r.scored ? r.rata_rata.toFixed(2) : <span className="text-muted-foreground italic">belum tampil</span>}</TableCell>
-                      <TableCell className="text-right font-mono font-bold text-primary">{r.scored ? r.total_skor.toFixed(2) : <span className="text-muted-foreground italic font-normal">belum tampil</span>}</TableCell>
-                    </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+            </>
           );
-        })}
+        })()}
       </main>
     </div>
   );
 }
+
 
