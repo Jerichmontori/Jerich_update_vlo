@@ -557,7 +557,7 @@ function PenilaianTab() {
     );
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success(`Nilai ${openKriteria.nama} disimpan (${nilai})`);
+    toast.success(`Nilai ${openKriteria.nama} disimpan`);
     setOpenKriteria(null);
     loadAll();
   }
@@ -661,28 +661,38 @@ function PenilaianTab() {
           </DialogHeader>
 
           {activeKey && activeKey !== "catatan" && (
-            <div className="grid gap-3 py-2">
-              {GRADE_DESCRIPTIONS[activeKey].map((desc, i) => {
-                const grade = i + 1;
-                const nilai = grade * 20;
-                return (
+            <div className="grid gap-3 py-2 max-h-[65vh] overflow-y-auto pr-2">
+              {(() => {
+                const descs = GRADE_DESCRIPTIONS[activeKey];
+                const items: { grade: number; label: string; desc: string }[] = [];
+                for (let i = 0; i < descs.length; i++) {
+                  items.push({ grade: i + 1, label: `Grade ${i + 1}`, desc: descs[i] });
+                  if (i < descs.length - 1) {
+                    items.push({
+                      grade: i + 1.5,
+                      label: `Grade ${i + 1}–${i + 2}`,
+                      desc: `Antara "${descs[i]}" dan "${descs[i + 1]}".`,
+                    });
+                  }
+                }
+                return items.map(({ grade, label, desc }) => (
                   <button
                     key={grade}
                     type="button"
                     disabled={saving}
-                    onClick={() => saveNilai(nilai)}
+                    onClick={() => saveNilai(grade * 20)}
                     className="flex items-start gap-4 text-left rounded-xl border-2 border-primary/20 bg-card p-4 hover:border-accent hover:bg-accent/5 transition disabled:opacity-60"
                   >
-                    <div className="grid place-items-center size-12 shrink-0 rounded-full bg-primary text-primary-foreground font-serif text-xl font-bold shadow">
-                      {grade}
+                    <div className="grid place-items-center size-12 shrink-0 rounded-full bg-primary text-primary-foreground font-serif text-lg font-bold shadow">
+                      {Number.isInteger(grade) ? grade : `${Math.floor(grade)}½`}
                     </div>
                     <div className="flex-1">
-                      <div className="font-semibold text-foreground">Grade {grade} <span className="text-muted-foreground font-normal">· {nilai} poin</span></div>
+                      <div className="font-semibold text-foreground">{label}</div>
                       <p className="text-sm text-muted-foreground mt-1">{desc}</p>
                     </div>
                   </button>
-                );
-              })}
+                ));
+              })()}
             </div>
           )}
 
