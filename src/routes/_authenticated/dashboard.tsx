@@ -466,7 +466,70 @@ function MazmurTab() {
 }
 
 
-/* KRITERIA */
+/* KATEGORI */
+function KategoriTab() {
+  const [items, setItems] = useState<Kategori[]>([]);
+  const [kategori, setKategori] = useState("");
+  const [batasAtas, setBatasAtas] = useState("");
+  const [batasBawah, setBatasBawah] = useState("");
+
+  async function load() {
+    const { data, error } = await supabase.from("kategori").select("*").order("created_at");
+    if (error) return toast.error(error.message);
+    setItems((data ?? []) as Kategori[]);
+  }
+  useEffect(() => { load(); }, []);
+
+  async function tambah(e: React.FormEvent) {
+    e.preventDefault();
+    if (!kategori) return toast.error("Kategori wajib diisi");
+    const { error } = await supabase.from("kategori").insert({
+      kategori,
+      batas_atas: Number(batasAtas) || 0,
+      batas_bawah: Number(batasBawah) || 0,
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Kategori ditambahkan");
+    setKategori(""); setBatasAtas(""); setBatasBawah(""); load();
+  }
+
+  async function hapus(id: string) {
+    if (!confirm("Hapus kategori ini?")) return;
+    const { error } = await supabase.from("kategori").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Kategori dihapus");
+    load();
+  }
+
+  return (
+    <SectionCard title="Daftar Kategori" description="Kelola kategori penilaian beserta batas atas dan batas bawah.">
+      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-[1fr_140px_140px_auto] gap-3 mb-6">
+        <div><Label>Kategori</Label><Input value={kategori} onChange={e=>setKategori(e.target.value)} placeholder="Contoh: Anak" /></div>
+        <div><Label>Batas Atas</Label><Input type="number" step="0.01" value={batasAtas} onChange={e=>setBatasAtas(e.target.value)} placeholder="100" /></div>
+        <div><Label>Batas Bawah</Label><Input type="number" step="0.01" value={batasBawah} onChange={e=>setBatasBawah(e.target.value)} placeholder="0" /></div>
+        <div className="flex items-end"><Button type="submit" className="gap-1"><Plus className="size-4" />Tambah</Button></div>
+      </form>
+      <div className="rounded-lg border bg-card">
+        <Table>
+          <TableHeader><TableRow><TableHead>Kategori</TableHead><TableHead className="w-40 text-center">Batas Atas</TableHead><TableHead className="w-40 text-center">Batas Bawah</TableHead><TableHead className="w-20 text-right">Aksi</TableHead></TableRow></TableHeader>
+          <TableBody>
+            {items.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Belum ada kategori.</TableCell></TableRow>}
+            {items.map(k => (
+              <TableRow key={k.id}>
+                <TableCell className="font-medium">{k.kategori}</TableCell>
+                <TableCell className="text-center">{Number(k.batas_atas)}</TableCell>
+                <TableCell className="text-center">{Number(k.batas_bawah)}</TableCell>
+                <TableCell className="text-right"><Button size="icon" variant="ghost" onClick={()=>hapus(k.id)}><Trash2 className="size-4 text-destructive" /></Button></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </SectionCard>
+  );
+}
+
+
 function KriteriaTab() {
   const [items, setItems] = useState<Kriteria[]>([]);
   const [nama, setNama] = useState("");
