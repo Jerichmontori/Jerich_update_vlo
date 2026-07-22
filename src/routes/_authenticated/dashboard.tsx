@@ -350,12 +350,18 @@ function MazmurTab() {
 function KriteriaTab() {
   const [items, setItems] = useState<Kriteria[]>([]);
   const [nama, setNama] = useState("");
+  const [batasAtas, setBatasAtas] = useState("");
+  const [batasBawah, setBatasBawah] = useState("");
   const [bobot, setBobot] = useState("");
+  const [edits, setEdits] = useState<Record<string, string>>({});
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   async function load() {
     const { data, error } = await supabase.from("kriteria").select("*").order("created_at");
     if (error) return toast.error(error.message);
-    setItems(data ?? []);
+    const rows = (data ?? []) as Kriteria[];
+    setItems(rows);
+    setEdits(Object.fromEntries(rows.map(r => [r.id, String(Number(r.bobot))])));
   }
   useEffect(() => { load(); }, []);
 
@@ -363,33 +369,63 @@ function KriteriaTab() {
 
   async function tambah(e: React.FormEvent) {
     e.preventDefault();
-    if (!nama || !bobot) return toast.error("Nama & bobot wajib diisi");
-    const { error } = await supabase.from("kriteria").insert({ nama, bobot: Number(bobot) });
+    if (!nama || !bobot || batasAtas === "" || batasBawah === "") return toast.error("Nama, batas atas, batas bawah & bobot wajib diisi");
+    const atas = Number(batasAtas); const bawah = Number(batasBawah);
+    if (bawah > atas) return toast.error("Batas bawah tidak boleh lebih besar dari batas atas");
+    const { error } = await supabase.from("kriteria").insert({ nama, bobot: Number(bobot), batas_atas: atas, batas_bawah: bawah });
     if (error) return toast.error(error.message);
     toast.success("Kriteria ditambahkan");
-    setNama(""); setBobot(""); load();
+    setNama(""); setBobot(""); setBatasAtas(""); setBatasBawah(""); load();
   }
-  async function hapus(id: string) {
-    const { error } = await supabase.from("kriteria").delete().eq("id", id);
+
+  async function ubah(id: string) {
+    const val = Number(edits[id]);
+    if (isNaN(val)) return toast.error("Bobot tidak valid");
+    setSavingId(id);
+    const { error } = await supabase.from("kriteria").update({ bobot: val }).eq("id", id);
+    setSavingId(null);
     if (error) return toast.error(error.message);
+    toast.success("Bobot diperbarui");
     load();
   }
+
   return (
-    <SectionCard title="Kriteria Penilaian" description="Atur aspek yang dinilai dan bobotnya (dalam persen).">
-      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-[1fr_140px_auto] gap-3 mb-6">
-        <div><Label>Nama Kriteria</Label><Input value={nama} onChange={e=>setNama(e.target.value)} placeholder="Contoh: Penghayatan" /></div>
+    <SectionCard title="Kriteria Penilaian" description="Atur aspek, rentang nilai (batas atas & bawah), dan bobot setiap kriteria.">
+      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-[1fr_130px_130px_120px_auto] gap-3 mb-6">
+        <div><Label>Nama Kriteria</Label><Input value={nama} onChange={e=>setNama(e.target.value)} placeholder="Contoh: Seri Baca Mazmur" /></div>
+        <div><Label>Nilai Batas Atas</Label><Input type="number" step="0.1" value={batasAtas} onChange={e=>setBatasAtas(e.target.value)} placeholder="100" /></div>
+        <div><Label>Nilai Batas Bawah</Label><Input type="number" step="0.1" value={batasBawah} onChange={e=>setBatasBawah(e.target.value)} placeholder="0" /></div>
         <div><Label>Bobot (%)</Label><Input type="number" step="0.1" value={bobot} onChange={e=>setBobot(e.target.value)} placeholder="25" /></div>
         <div className="flex items-end"><Button type="submit" className="gap-1"><Plus className="size-4" />Tambah</Button></div>
       </form>
       <div className="rounded-lg border bg-card">
         <Table>
-          <TableHeader><TableRow><TableHead>Kriteria</TableHead><TableHead className="w-32">Bobot</TableHead><TableHead className="w-20 text-right">Aksi</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Kriteria</TableHead><TableHead className="w-40">Bobot</TableHead><TableHead className="w-28 text-right">Aksi</TableHead></TableRow></TableHeader>
           <TableBody>
+            {items.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-8">Belum ada kriteria.</TableCell></TableRow>}
             {items.map(k => (
               <TableRow key={k.id}>
-                <TableCell className="font-medium">{k.nama}</TableCell>
-                <TableCell><Badge variant="secondary">{Number(k.bobot)}%</Badge></TableCell>
-                <TableCell className="text-right"><Button size="icon" variant="ghost" onClick={()=>hapus(k.id)}><Trash2 className="size-4 text-destructive" /></Button></TableCell>
+                <TableCell>
+                  <div className="font-medium">{k.nama}</div>
+                  <div className="text-xs text-muted-foreground mt-0.5">Rentang nilai: {Number(k.batas_bawah)} – {Number(k.batas_atas)}</div>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1">
+                    <Input
+                      type="number"
+                      step="0.1"
+                      className="h-9 w-24"
+                      value={edits[k.id] ?? ""}
+                      onChange={e => setEdits(prev => ({ ...prev, [k.id]: e.target.value }))}
+                    />
+                    <span className="text-muted-foreground text-sm">%</span>
+                  </div>
+                </TableCell>
+                <TableCell className="text-right">
+                  <Button size="sm" variant="outline" disabled={savingId === k.id} onClick={() => ubah(k.id)}>
+                    {savingId === k.id ? "Menyimpan..." : "Ubah"}
+                  </Button>
+                </TableCell>
               </TableRow>
             ))}
             <TableRow className="bg-muted/50">
