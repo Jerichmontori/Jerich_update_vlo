@@ -31,6 +31,8 @@ function PosisiPublic() {
   const [peserta, setPeserta] = useState<Peserta[]>([]);
   const [rankMap, setRankMap] = useState<Record<string, Ranking>>({});
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+
 
   async function load() {
     setLoading(true);
