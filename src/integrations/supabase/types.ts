@@ -174,6 +174,7 @@ export type Database = {
           id: string
           nama: string
           nomor_urut: number
+          sesi: string | null
         }
         Insert: {
           asal?: string | null
@@ -181,6 +182,7 @@ export type Database = {
           id?: string
           nama: string
           nomor_urut: number
+          sesi?: string | null
         }
         Update: {
           asal?: string | null
@@ -188,6 +190,7 @@ export type Database = {
           id?: string
           nama?: string
           nomor_urut?: number
+          sesi?: string | null
         }
         Relationships: []
       }
