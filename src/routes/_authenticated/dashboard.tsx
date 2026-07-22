@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 type Peserta = { id: string; nomor_urut: number; nama: string; asal: string | null };
-type Juri = { id: string; nama: string; jabatan: string | null };
+type Juri = { id: string; nama: string; jabatan: string | null; email: string | null; role: "admin" | "juri" | "viewer" | null; approved: boolean; user_id: string | null };
 type Kriteria = { id: string; nama: string; bobot: number; batas_atas: number; batas_bawah: number };
 type Mazmur = { id: string; bacaan: string; jumlah_ayat: number };
 type Penilaian = { id: string; peserta_id: string; juri_id: string; kriteria_id: string; nilai: number; mazmur_id: string | null };
@@ -251,12 +251,28 @@ function JuriTab() {
     }
   }
   async function hapus(id: string) {
-    const { error } = await supabase.from("juri").delete().eq("id", id);
-    if (error) return toast.error(error.message);
-    load();
+    if (!confirm("Hapus juri ini? Akun login-nya juga akan dihapus.")) return;
+    try {
+      const { deleteJuriUser } = await import("@/lib/juri-users.functions");
+      await deleteJuriUser({ data: { juriId: id } });
+      toast.success("Juri dihapus");
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menghapus");
+    }
+  }
+  async function approve(id: string) {
+    try {
+      const { approveJuri } = await import("@/lib/juri-users.functions");
+      await approveJuri({ data: { juriId: id } });
+      toast.success("Akun disetujui — dapat login sekarang");
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menyetujui");
+    }
   }
   return (
-    <SectionCard title="Dewan Juri" description="Buat akun login untuk juri/admin. Password minimal 8 karakter.">
+    <SectionCard title="Dewan Juri" description="Buat akun login untuk juri/admin. Akun baru perlu di-approve admin sebelum bisa login.">
       <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
         <div><Label>Nama</Label><Input value={nama} onChange={e=>setNama(e.target.value)} placeholder="Nama lengkap" /></div>
         <div><Label>Jabatan</Label><Input value={jabatan} onChange={e=>setJabatan(e.target.value)} placeholder="Pdt. / Diakon / dll" /></div>
@@ -274,16 +290,43 @@ function JuriTab() {
         </div>
         <div className="flex items-end"><Button type="submit" disabled={saving} className="gap-1"><Plus className="size-4" />{saving ? "Menyimpan..." : "Tambah Akun"}</Button></div>
       </form>
-      <div className="rounded-lg border bg-card">
+      <div className="rounded-lg border bg-card overflow-x-auto">
         <Table>
-          <TableHeader><TableRow><TableHead>Nama</TableHead><TableHead>Jabatan</TableHead><TableHead className="w-20 text-right">Aksi</TableHead></TableRow></TableHeader>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Nama</TableHead>
+              <TableHead>Jabatan</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Password</TableHead>
+              <TableHead>Role</TableHead>
+              <TableHead className="text-right">Aksi</TableHead>
+            </TableRow>
+          </TableHeader>
           <TableBody>
-            {items.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-8">Belum ada juri.</TableCell></TableRow>}
+            {items.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Belum ada juri.</TableCell></TableRow>}
             {items.map(j => (
               <TableRow key={j.id}>
                 <TableCell className="font-medium">{j.nama}</TableCell>
                 <TableCell className="text-muted-foreground">{j.jabatan || "—"}</TableCell>
-                <TableCell className="text-right"><Button size="icon" variant="ghost" onClick={()=>hapus(j.id)}><Trash2 className="size-4 text-destructive" /></Button></TableCell>
+                <TableCell className="text-muted-foreground">{j.email || "—"}</TableCell>
+                <TableCell className="text-muted-foreground font-mono text-xs">••••••••</TableCell>
+                <TableCell>
+                  <Badge variant="outline" className="capitalize">{j.role || "—"}</Badge>
+                </TableCell>
+                <TableCell className="text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    {j.approved ? (
+                      <Badge className="bg-accent text-accent-foreground gap-1"><Check className="size-3" />Disetujui</Badge>
+                    ) : (
+                      <Button size="sm" variant="default" onClick={()=>approve(j.id)} className="gap-1">
+                        <Check className="size-4" />Approve
+                      </Button>
+                    )}
+                    <Button size="icon" variant="ghost" onClick={()=>hapus(j.id)}>
+                      <Trash2 className="size-4 text-destructive" />
+                    </Button>
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -292,6 +335,7 @@ function JuriTab() {
     </SectionCard>
   );
 }
+
 
 /* MAZMUR */
 function MazmurTab() {

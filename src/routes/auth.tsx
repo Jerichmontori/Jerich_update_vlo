@@ -36,15 +36,28 @@ function AuthPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) {
-      toast.error(error.message);
+    const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !signInData.user) {
+      setLoading(false);
+      toast.error(error?.message ?? "Gagal masuk");
       return;
     }
+    // Cek apakah akun sudah di-approve admin (punya role di user_roles).
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", signInData.user.id);
+    if (!roles || roles.length === 0) {
+      await supabase.auth.signOut();
+      setLoading(false);
+      toast.error("Akun Anda belum disetujui admin. Silakan hubungi panitia.");
+      return;
+    }
+    setLoading(false);
     toast.success("Selamat datang kembali");
     navigate({ to: "/dashboard" });
   }
+
 
   return (
     <div className="min-h-screen grid place-items-center px-4 py-12 bg-gradient-to-br from-background via-secondary/30 to-background">
