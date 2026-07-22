@@ -207,7 +207,11 @@ function PesertaTab() {
         <div><Label>Nomor</Label><Input type="number" value={nomor} onChange={e=>setNomor(e.target.value)} placeholder="1" /></div>
         <div><Label>Nama</Label><Input value={nama} onChange={e=>setNama(e.target.value)} placeholder="Nama peserta" /></div>
         <div><Label>Asal / Jemaat</Label><Input value={asal} onChange={e=>setAsal(e.target.value)} placeholder="Jemaat / kelompok" /></div>
-        <div><Label>Sesi</Label><Input value={sesi} onChange={e=>setSesi(e.target.value)} placeholder="Sesi 1" /></div>
+        <div className="flex items-end gap-2">
+          <Button type="submit" disabled={loading} className="gap-1"><Plus className="size-4" />Tambah</Button>
+          <Button type="button" variant="outline" onClick={ubahSesi} disabled={updatingSesi} className="gap-1">{updatingSesi ? "Memperbarui..." : "Ubah Sesi"}</Button>
+        </div>
+
         <div className="flex items-end"><Button type="submit" disabled={loading} className="gap-1"><Plus className="size-4" />Tambah</Button></div>
       </form>
       <div className="rounded-lg border bg-card">
