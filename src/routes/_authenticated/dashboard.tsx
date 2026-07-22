@@ -447,8 +447,23 @@ const CATATAN_ASPEK = [
   "Penguasaan Panggung",
 ];
 
-function kriteriaKey(nama: string): keyof typeof GRADE_DESCRIPTIONS | "catatan" | null {
+const PERHATIAN_ASPEK = [
+  "Tidak Membaca Perikop",
+  "Salah kata",
+  "Mengubah makna teks",
+  "Menambah kata",
+  "Mengurangi kata",
+  "Tidak berhenti pada koma",
+  "Tidak berhenti pada titik",
+  "Jeda mengganggu makna",
+  "Suara kurang jelas",
+  "Tempo terlalu cepat",
+  "Tempo terlalu lambat",
+];
+
+function kriteriaKey(nama: string): keyof typeof GRADE_DESCRIPTIONS | "catatan" | "perhatian" | null {
   const n = nama.toLowerCase();
+  if (n.includes("perhatian")) return "perhatian";
   if (n.includes("catatan")) return "catatan";
   if (n.includes("vokal")) return "vokal";
   if (n.includes("hayat")) return "penghayatan";
@@ -456,6 +471,7 @@ function kriteriaKey(nama: string): keyof typeof GRADE_DESCRIPTIONS | "catatan" 
   if (n.includes("penampilan")) return "penampilan";
   return null;
 }
+
 
 /* PENILAIAN */
 function CriteriaPillButton({
