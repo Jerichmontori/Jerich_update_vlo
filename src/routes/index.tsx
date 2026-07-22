@@ -315,12 +315,10 @@ function KriteriaTab() {
 /* PENILAIAN */
 function CriteriaPillButton({
   label,
-  bobot,
   active,
   onClick,
 }: {
   label: string;
-  bobot: number;
   active: boolean;
   onClick: () => void;
 }) {
@@ -330,7 +328,7 @@ function CriteriaPillButton({
       onClick={onClick}
       className={[
         "group relative w-full rounded-[2rem] border-[2px] border-primary/40 px-6 py-8 sm:py-10",
-        "text-left font-serif transition-all duration-200 ease-out",
+        "text-center font-serif transition-all duration-200 ease-out",
         "focus:outline-none focus-visible:ring-4 focus-visible:ring-accent/50",
         "translate-y-0 hover:-translate-y-1 active:translate-y-1",
         active
@@ -339,18 +337,15 @@ function CriteriaPillButton({
       ].join(" ")}
     >
       <span className="pointer-events-none absolute inset-x-6 top-2 h-[3px] rounded-full bg-white/50 blur-[1px]" />
-      <div className="relative flex items-center justify-between gap-3">
+      <div className="relative flex items-center justify-center">
         <span className="text-xl sm:text-2xl font-semibold tracking-wide">
           {label}
         </span>
-        <span className="shrink-0 rounded-full border border-primary/40 bg-background/70 px-3 py-1 text-xs font-bold text-primary">
-          {bobot}%
-        </span>
       </div>
-
     </button>
   );
 }
+
 
 function PenilaianTab() {
   const [peserta, setPeserta] = useState<Peserta[]>([]);
@@ -443,7 +438,7 @@ function PenilaianTab() {
               <CriteriaPillButton
                 key={k.id}
                 label={k.nama}
-                bobot={Number(k.bobot)}
+                
                 active={kriteriaId === k.id}
                 onClick={() => setKriteriaId(k.id)}
               />
