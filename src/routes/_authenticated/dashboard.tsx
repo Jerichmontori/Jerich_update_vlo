@@ -260,7 +260,9 @@ function PesertaTab() {
           const nama = String(keys["nama"] ?? "").trim();
           const asalRaw = keys["asal"] ?? keys["jemaat"] ?? keys["asal_/_jemaat"] ?? "";
           const asal = String(asalRaw).trim();
-          return { nomor_urut, nama, asal: asal || null, sesi: isNaN(nomor_urut) ? null : sesiDari(nomor_urut) };
+          const kategori = String(keys["kategori"] ?? "").trim();
+          return { nomor_urut, nama, asal: asal || null, sesi: isNaN(nomor_urut) ? null : sesiDari(nomor_urut), kategori: kategori || null };
+
         })
         .filter((r) => r.nama && !isNaN(r.nomor_urut));
 
