@@ -23,7 +23,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -36,13 +36,31 @@ function AuthPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true);
+    let email = identifier.trim();
+    // Jika bukan format email, anggap sebagai nama dan cari email-nya.
+    if (!email.includes("@")) {
+      try {
+        const { getEmailByNama } = await import("@/lib/auth-lookup.functions");
+        const res = await getEmailByNama({ data: { nama: email } });
+        if (!res.email) {
+          setLoading(false);
+          toast.error("Nama tidak ditemukan. Periksa kembali atau gunakan email.");
+          return;
+        }
+        email = res.email;
+      } catch (err) {
+        setLoading(false);
+        toast.error(err instanceof Error ? err.message : "Gagal mencari akun");
+        return;
+      }
+    }
+
     const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error || !signInData.user) {
       setLoading(false);
       toast.error(error?.message ?? "Gagal masuk");
       return;
     }
-    // Cek apakah akun sudah di-approve admin (punya role di user_roles).
     const { data: roles } = await supabase
       .from("user_roles")
       .select("role")
@@ -74,15 +92,16 @@ function AuthPage() {
           <CardHeader>
             <CardTitle>Masuk</CardTitle>
             <CardDescription>
-              Gunakan akun yang telah disediakan admin. Belum punya akun? Hubungi panitia.
+              Masukkan email atau nama Anda. Belum punya akun? Daftar melalui halaman beranda.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={onSubmit} className="space-y-4">
               <div className="space-y-1.5">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" required autoComplete="email"
-                  value={email} onChange={(e) => setEmail(e.target.value)} />
+                <Label htmlFor="identifier">Email atau Nama</Label>
+                <Input id="identifier" type="text" required autoComplete="username"
+                  value={identifier} onChange={(e) => setIdentifier(e.target.value)}
+                  placeholder="email@contoh.com atau nama lengkap" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="password">Kata Sandi</Label>
@@ -93,6 +112,7 @@ function AuthPage() {
                 {loading ? "Memproses…" : "Masuk"}
               </Button>
             </form>
+
             <p className="mt-4 text-center text-sm text-muted-foreground">
               <Link to="/" className="underline underline-offset-4 hover:text-foreground">Kembali ke beranda</Link>
             </p>
