@@ -1182,45 +1182,45 @@ function PosisiTab() {
 
   const medals = ["🥇", "🥈", "🥉"];
   const grouped = useMemo(() => {
-    const buckets: Record<string, (typeof peserta[number] & { total: number; rata: number; juri: number; scored: boolean })[]> = {};
-    peserta.forEach((p) => {
-      const r = rankMap[p.id];
-      const total = Number(r?.total_skor ?? 0);
-      const scored = !!r && total > 0;
-      const sesi = p.sesi ?? "—";
-      (buckets[sesi] ??= []).push({ ...p, total, rata: Number(r?.rata_rata ?? 0), juri: Number(r?.jumlah_juri ?? 0), scored });
-    });
-    Object.values(buckets).forEach((list) =>
-      list.sort((a, b) => (b.total !== a.total ? b.total - a.total : a.nomor_urut - b.nomor_urut))
-    );
-    return Object.entries(buckets).sort(([a], [b]) => {
-      const na = Number(a), nb = Number(b);
-      if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
-      return a.localeCompare(b);
-    });
+    const sorted = [...peserta].sort((a, b) => a.nomor_urut - b.nomor_urut);
+    const chunks: { key: string; label: string; range: string; list: (typeof peserta[number] & { total: number; rata: number; juri: number; scored: boolean })[] }[] = [];
+    for (let i = 0; i < sorted.length; i += 10) {
+      const slice = sorted.slice(i, i + 10);
+      const enriched = slice.map((p) => {
+        const r = rankMap[p.id];
+        const total = Number(r?.total_skor ?? 0);
+        return { ...p, total, rata: Number(r?.rata_rata ?? 0), juri: Number(r?.jumlah_juri ?? 0), scored: !!r && total > 0 };
+      });
+      enriched.sort((a, b) => (b.total !== a.total ? b.total - a.total : a.nomor_urut - b.nomor_urut));
+      const first = slice[0]?.nomor_urut ?? i + 1;
+      const last = slice[slice.length - 1]?.nomor_urut ?? i + slice.length;
+      const idx = Math.floor(i / 10) + 1;
+      chunks.push({ key: `sesi-${idx}`, label: `Sesi ${idx}`, range: `No. ${first}–${last}`, list: enriched });
+    }
+    return chunks;
   }, [peserta, rankMap]);
 
   return (
     <SectionCard
       title="Posisi per Sesi"
-      description="Menampilkan maksimal 10 peserta per sesi beserta nilai dan peringkatnya."
+      description="Setiap sesi berisi 10 peserta (berdasarkan nomor urut) beserta nilai dan peringkatnya."
       action={<Button variant="outline" onClick={load}>Muat Ulang</Button>}
     >
       {loading && <p className="text-center py-10 text-muted-foreground">Memuat…</p>}
       {!loading && grouped.length === 0 && <p className="text-center py-10 text-muted-foreground">Belum ada peserta.</p>}
       <div className="space-y-6">
-        {!loading && grouped.map(([sesi, listAll]) => {
-          const list = listAll.slice(0, 10);
+        {!loading && grouped.map(({ key, label, range, list }) => {
           const scoredCount = list.filter((r) => r.scored).length;
           let rankedIdx = -1;
           return (
-            <div key={sesi} className="rounded-lg border bg-card overflow-hidden">
+            <div key={key} className="rounded-lg border bg-card overflow-hidden">
               <div className="flex items-center justify-between gap-4 px-4 py-3 bg-accent/5 border-b">
                 <div>
-                  <p className="font-serif text-lg font-semibold">Sesi {sesi}</p>
+                  <p className="font-serif text-lg font-semibold">{label} <span className="text-sm font-normal text-muted-foreground">({range})</span></p>
                   <p className="text-xs text-muted-foreground">{list.length} peserta · {scoredCount} sudah dinilai</p>
                 </div>
               </div>
+
               <Table>
                 <TableHeader>
                   <TableRow>

@@ -47,31 +47,28 @@ function PosisiPublic() {
   useEffect(() => { load(); }, []);
 
   const grouped = useMemo(() => {
-    const buckets: Record<string, Row[]> = {};
-    peserta.forEach((p) => {
-      const r = rankMap[p.id];
-      const total = Number(r?.total_skor ?? 0);
-      const scored = !!r && total > 0;
-      const sesi = p.sesi ?? "—";
-      (buckets[sesi] ??= []).push({
-        ...p,
-        total_skor: total,
-        rata_rata: Number(r?.rata_rata ?? 0),
-        jumlah_juri: Number(r?.jumlah_juri ?? 0),
-        scored,
+    const sorted = [...peserta].sort((a, b) => a.nomor_urut - b.nomor_urut);
+    const chunks: { key: string; label: string; range: string; list: Row[] }[] = [];
+    for (let i = 0; i < sorted.length; i += 10) {
+      const slice = sorted.slice(i, i + 10);
+      const enriched: Row[] = slice.map((p) => {
+        const r = rankMap[p.id];
+        const total = Number(r?.total_skor ?? 0);
+        return {
+          ...p,
+          total_skor: total,
+          rata_rata: Number(r?.rata_rata ?? 0),
+          jumlah_juri: Number(r?.jumlah_juri ?? 0),
+          scored: !!r && total > 0,
+        };
       });
-    });
-    Object.values(buckets).forEach((list) =>
-      list.sort((a, b) => {
-        if (b.total_skor !== a.total_skor) return b.total_skor - a.total_skor;
-        return a.nomor_urut - b.nomor_urut;
-      })
-    );
-    return Object.entries(buckets).sort(([a], [b]) => {
-      const na = Number(a), nb = Number(b);
-      if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
-      return a.localeCompare(b);
-    });
+      enriched.sort((a, b) => (b.total_skor !== a.total_skor ? b.total_skor - a.total_skor : a.nomor_urut - b.nomor_urut));
+      const first = slice[0]?.nomor_urut ?? i + 1;
+      const last = slice[slice.length - 1]?.nomor_urut ?? i + slice.length;
+      const idx = Math.floor(i / 10) + 1;
+      chunks.push({ key: `sesi-${idx}`, label: `Sesi ${idx}`, range: `No. ${first}–${last}`, list: enriched });
+    }
+    return chunks;
   }, [peserta, rankMap]);
 
   return (
@@ -101,7 +98,7 @@ function PosisiPublic() {
 
       <main className="mx-auto max-w-6xl px-4 py-8 space-y-6">
         <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground">Setiap sesi menampilkan maksimal 10 peserta beserta nilainya.</p>
+          <p className="text-sm text-muted-foreground">Setiap sesi berisi 10 peserta (berdasarkan nomor urut) beserta nilainya.</p>
           <Button variant="outline" size="sm" onClick={load}>Muat Ulang</Button>
         </div>
 
@@ -110,18 +107,18 @@ function PosisiPublic() {
           <Card className="border-accent/20"><CardContent className="py-16 text-center text-muted-foreground">Belum ada peserta.</CardContent></Card>
         )}
 
-        {!loading && grouped.map(([sesi, listAll]) => {
-          const list = listAll.slice(0, 10);
+        {!loading && grouped.map(({ key, label, range, list }) => {
           const scoredCount = list.filter((r) => r.scored).length;
+          let rankedIdx = -1;
           return (
-          <Card key={sesi} className="border-accent/20 shadow-sm overflow-hidden">
+          <Card key={key} className="border-accent/20 shadow-sm overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between gap-4 bg-accent/5">
               <div className="flex items-center gap-3">
                 <div className="grid place-items-center size-10 rounded-full bg-primary/10 text-primary">
                   <Users className="size-5" />
                 </div>
                 <div>
-                  <CardTitle className="font-serif text-xl">Sesi {sesi}</CardTitle>
+                  <CardTitle className="font-serif text-xl">{label} <span className="text-sm font-normal text-muted-foreground">({range})</span></CardTitle>
                   <CardDescription>{list.length} peserta · {scoredCount} sudah dinilai</CardDescription>
                 </div>
               </div>
@@ -140,12 +137,13 @@ function PosisiPublic() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {list.map((r, i) => {
-                    const rankedIdx = r.scored ? list.filter((x, j) => x.scored && j <= i).length - 1 : -1;
+                  {list.map((r) => {
+                    if (r.scored) rankedIdx += 1;
+                    const idx = r.scored ? rankedIdx : -1;
                     return (
-                    <TableRow key={r.id} className={r.scored && rankedIdx < 3 ? "bg-accent/10" : ""}>
+                    <TableRow key={r.id} className={r.scored && idx < 3 ? "bg-accent/10" : ""}>
                       <TableCell className="text-center text-2xl">
-                        {r.scored ? (medals[rankedIdx] ?? rankedIdx + 1) : "—"}
+                        {r.scored ? (medals[idx] ?? idx + 1) : "—"}
                       </TableCell>
                       <TableCell className="font-mono">{r.nomor_urut}</TableCell>
                       <TableCell className="font-semibold">{r.nama}</TableCell>
@@ -166,3 +164,4 @@ function PosisiPublic() {
     </div>
   );
 }
+
