@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { BookOpenText, ShieldCheck, Gavel, Trophy } from "lucide-react";
+import { BookOpenText, ShieldCheck, Gavel, Trophy, Eye } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -41,6 +41,9 @@ function Landing() {
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg">
               <Link to="/auth">Masuk sebagai Juri / Admin</Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="gap-2">
+              <Link to="/ranking"><Eye className="size-4" />Lihat Ranking (Viewer)</Link>
             </Button>
           </div>
         </section>
