@@ -1210,11 +1210,13 @@ function PosisiTab() {
     >
       {loading && <p className="text-center py-10 text-muted-foreground">Memuat…</p>}
       {!loading && grouped.length === 0 && <p className="text-center py-10 text-muted-foreground">Belum ada peserta.</p>}
-      <div className="space-y-6">
-        {!loading && grouped.map(({ key, label, range, list }) => {
-          const scoredCount = list.filter((r) => r.scored).length;
-          let rankedIdx = -1;
-          return (
+      {!loading && grouped.length > 0 && (() => {
+        const safePage = Math.min(page, grouped.length - 1);
+        const { key, label, range, list } = grouped[safePage];
+        const scoredCount = list.filter((r) => r.scored).length;
+        let rankedIdx = -1;
+        return (
+          <div className="space-y-4">
             <div key={key} className="rounded-lg border bg-card overflow-hidden">
               <div className="flex items-center justify-between gap-4 px-4 py-3 bg-accent/5 border-b">
                 <div>
@@ -1222,7 +1224,6 @@ function PosisiTab() {
                   <p className="text-xs text-muted-foreground">{list.length} peserta · {scoredCount} sudah dinilai</p>
                 </div>
               </div>
-
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -1254,12 +1255,28 @@ function PosisiTab() {
                 </TableBody>
               </Table>
             </div>
-          );
-        })}
-      </div>
+            <div className="flex items-center justify-between gap-4 pt-2">
+              <Button variant="outline" size="sm" disabled={safePage === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>
+                <ChevronLeft className="size-4" /> Sesi Sebelumnya
+              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {grouped.map((g, i) => (
+                  <Button key={g.key} size="sm" variant={i === safePage ? "default" : "outline"} onClick={() => setPage(i)}>
+                    {i + 1}
+                  </Button>
+                ))}
+              </div>
+              <Button variant="outline" size="sm" disabled={safePage >= grouped.length - 1} onClick={() => setPage((p) => Math.min(grouped.length - 1, p + 1))}>
+                Sesi Berikutnya <ChevronRight className="size-4" />
+              </Button>
+            </div>
+          </div>
+        );
+      })()}
     </SectionCard>
   );
 }
+
 
 function SectionCard({ title, description, action, children }: { title: string; description?: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
