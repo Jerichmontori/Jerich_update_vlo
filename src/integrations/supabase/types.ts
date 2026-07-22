@@ -43,18 +43,24 @@ export type Database = {
       }
       kriteria: {
         Row: {
+          batas_atas: number
+          batas_bawah: number
           bobot: number
           created_at: string
           id: string
           nama: string
         }
         Insert: {
+          batas_atas?: number
+          batas_bawah?: number
           bobot?: number
           created_at?: string
           id?: string
           nama: string
         }
         Update: {
+          batas_atas?: number
+          batas_bawah?: number
           bobot?: number
           created_at?: string
           id?: string
