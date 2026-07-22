@@ -10,8 +10,9 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
-import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download } from "lucide-react";
+import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: App,
@@ -402,6 +403,60 @@ function KriteriaTab() {
   );
 }
 
+const GRADE_DESCRIPTIONS: Record<string, string[]> = {
+  vokal: [
+    "Membaca tanpa memahami makna teks.",
+    "Memahami isi tetapi penyampaian terbatas.",
+    "Menyampaikan pesan Mazmur dengan baik.",
+    "Mampu menyampaikan makna dengan penghayatan kuat.",
+    "Penyampaian sangat mendalam, menyentuh, dan membawa pendengar memahami pesan Mazmur.",
+  ],
+  penghayatan: [
+    "Membaca datar tanpa penghayatan.",
+    "Ada usaha menghayati tetapi belum konsisten.",
+    "Penghayatan cukup baik sesuai isi.",
+    "Ekspresi dan emosi mendukung bacaan.",
+    "Sangat menghayati dan mampu menyentuh.",
+  ],
+  intonasi: [
+    "Banyak kesalahan pengucapan.",
+    "Masih terdapat beberapa kesalahan.",
+    "Pengucapan cukup jelas.",
+    "Artikulasi jelas dan nyaman didengar.",
+    "Pengucapan sangat jelas dan sempurna.",
+  ],
+  penampilan: [
+    "Kurang percaya diri.",
+    "Mulai percaya diri tetapi masih kaku.",
+    "Penampilan cukup baik.",
+    "Menguasai panggung dengan baik.",
+    "Penampilan sangat baik dan alami.",
+  ],
+};
+
+const CATATAN_ASPEK = [
+  "Kesan dari teks bacaan",
+  "Penguasaan teks",
+  "Emosi",
+  "Ekspresi",
+  "Intonasi dan Irama",
+  "Kesesuaian Vokal",
+  "Penggunaan kata dan kalimat sesuai teks bacaan",
+  "Sesuai Tanda Baca",
+  "Keserasian Penampilan",
+  "Penguasaan Panggung",
+];
+
+function kriteriaKey(nama: string): keyof typeof GRADE_DESCRIPTIONS | "catatan" | null {
+  const n = nama.toLowerCase();
+  if (n.includes("catatan")) return "catatan";
+  if (n.includes("vokal")) return "vokal";
+  if (n.includes("hayat")) return "penghayatan";
+  if (n.includes("intonasi") || n.includes("pelafalan")) return "intonasi";
+  if (n.includes("penampilan")) return "penampilan";
+  return null;
+}
+
 /* PENILAIAN */
 function CriteriaPillButton({
   label,
@@ -442,11 +497,13 @@ function PenilaianTab() {
   const [juri, setJuri] = useState<Juri[]>([]);
   const [kriteria, setKriteria] = useState<Kriteria[]>([]);
   const [mazmur, setMazmur] = useState<Mazmur[]>([]);
-  const [, setPenilaian] = useState<Penilaian[]>([]);
+  const [penilaian, setPenilaian] = useState<Penilaian[]>([]);
   const [juriId, setJuriId] = useState<string>("");
   const [pesertaId, setPesertaId] = useState<string>("");
-  const [kriteriaId, setKriteriaId] = useState<string>("");
   const [mazmurId, setMazmurId] = useState<string>("");
+  const [openKriteria, setOpenKriteria] = useState<Kriteria | null>(null);
+  const [catatanValues, setCatatanValues] = useState<number[]>(() => CATATAN_ASPEK.map(() => 3));
+  const [saving, setSaving] = useState(false);
 
   async function loadAll() {
     const [p, j, k, m, n] = await Promise.all([
@@ -466,11 +523,55 @@ function PenilaianTab() {
   useEffect(() => { loadAll(); }, []);
 
   const canJudge = peserta.length > 0 && juri.length > 0 && kriteria.length > 0;
-  const kriteriaButtons = kriteria.slice(0, 4);
   const selectedMazmur = mazmur.find(m => m.id === mazmurId);
 
+  function currentNilai(kId: string): number | null {
+    if (!juriId || !pesertaId) return null;
+    const row = penilaian.find(x => x.juri_id === juriId && x.peserta_id === pesertaId && x.kriteria_id === kId);
+    return row ? Number(row.nilai) : null;
+  }
+
+  function openDialog(k: Kriteria) {
+    if (!juriId) return toast.error("Pilih juri terlebih dahulu");
+    if (!pesertaId) return toast.error("Pilih peserta terlebih dahulu");
+    const key = kriteriaKey(k.nama);
+    if (key === "catatan") {
+      // preload existing avg back into sliders if available
+      setCatatanValues(CATATAN_ASPEK.map(() => 3));
+    }
+    setOpenKriteria(k);
+  }
+
+  async function saveNilai(nilai: number) {
+    if (!openKriteria) return;
+    setSaving(true);
+    const { error } = await supabase.from("penilaian").upsert(
+      {
+        juri_id: juriId,
+        peserta_id: pesertaId,
+        kriteria_id: openKriteria.id,
+        nilai,
+        mazmur_id: mazmurId || null,
+      },
+      { onConflict: "peserta_id,juri_id,kriteria_id" }
+    );
+    setSaving(false);
+    if (error) return toast.error(error.message);
+    toast.success(`Nilai ${openKriteria.nama} disimpan (${nilai})`);
+    setOpenKriteria(null);
+    loadAll();
+  }
+
+  async function saveCatatan() {
+    const avg = catatanValues.reduce((a, b) => a + b, 0) / catatanValues.length;
+    const nilai = Math.round(avg * 20 * 100) / 100; // scale 1-5 → 20-100
+    await saveNilai(nilai);
+  }
+
+  const activeKey = openKriteria ? kriteriaKey(openKriteria.nama) : null;
+
   return (
-    <SectionCard title="Input Penilaian" description="Pilih juri, peserta, bacaan mazmur, dan kriteria.">
+    <SectionCard title="Input Penilaian" description="Pilih juri, peserta, bacaan mazmur, lalu klik kriteria untuk memberi nilai.">
       {!canJudge && (
         <div className="rounded-lg border-2 border-dashed border-accent/50 bg-accent/5 p-6 text-center text-sm text-muted-foreground">
           Lengkapi dulu data <b>peserta</b>, <b>juri</b>, dan <b>kriteria</b> sebelum memulai penilaian.
@@ -527,20 +628,112 @@ function PenilaianTab() {
             <Label className="text-base">Pilih Kriteria</Label>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mb-8 pb-4">
-            {kriteriaButtons.map(k => (
-              <CriteriaPillButton
-                key={k.id}
-                label={k.nama}
-                active={kriteriaId === k.id}
-                onClick={() => setKriteriaId(k.id)}
-              />
-            ))}
+            {kriteria.map(k => {
+              const val = currentNilai(k.id);
+              return (
+                <div key={k.id} className="relative">
+                  <CriteriaPillButton
+                    label={k.nama}
+                    active={val !== null}
+                    onClick={() => openDialog(k)}
+                  />
+                  {val !== null && (
+                    <span className="absolute -top-2 -right-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold px-2.5 py-1 shadow">
+                      {val}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
           </div>
         </>
       )}
+
+      <Dialog open={!!openKriteria} onOpenChange={(v) => !v && setOpenKriteria(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl">{openKriteria?.nama}</DialogTitle>
+            <DialogDescription>
+              {activeKey === "catatan"
+                ? "Beri nilai 1–5 untuk setiap aspek berikut."
+                : "Pilih grade yang paling sesuai dengan penampilan peserta."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {activeKey && activeKey !== "catatan" && (
+            <div className="grid gap-3 py-2">
+              {GRADE_DESCRIPTIONS[activeKey].map((desc, i) => {
+                const grade = i + 1;
+                const nilai = grade * 20;
+                return (
+                  <button
+                    key={grade}
+                    type="button"
+                    disabled={saving}
+                    onClick={() => saveNilai(nilai)}
+                    className="flex items-start gap-4 text-left rounded-xl border-2 border-primary/20 bg-card p-4 hover:border-accent hover:bg-accent/5 transition disabled:opacity-60"
+                  >
+                    <div className="grid place-items-center size-12 shrink-0 rounded-full bg-primary text-primary-foreground font-serif text-xl font-bold shadow">
+                      {grade}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-semibold text-foreground">Grade {grade} <span className="text-muted-foreground font-normal">· {nilai} poin</span></div>
+                      <p className="text-sm text-muted-foreground mt-1">{desc}</p>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {activeKey === "catatan" && (
+            <div className="grid gap-3 py-2 max-h-[60vh] overflow-y-auto pr-2">
+              {CATATAN_ASPEK.map((aspek, i) => (
+                <div key={aspek} className="rounded-lg border bg-card p-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium">{i + 1}. {aspek}</span>
+                    <Badge variant="secondary">{catatanValues[i]}</Badge>
+                  </div>
+                  <div className="grid grid-cols-5 gap-2">
+                    {[1, 2, 3, 4, 5].map(v => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setCatatanValues(prev => prev.map((x, idx) => idx === i ? v : x))}
+                        className={[
+                          "rounded-md border-2 py-2 text-sm font-semibold transition",
+                          catatanValues[i] === v
+                            ? "border-accent bg-accent text-accent-foreground"
+                            : "border-primary/20 bg-background hover:border-accent/60",
+                        ].join(" ")}
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <DialogFooter className="pt-2">
+                <Button variant="outline" onClick={() => setOpenKriteria(null)}>Batal</Button>
+                <Button onClick={saveCatatan} disabled={saving} className="gap-1">
+                  <Check className="size-4" />
+                  {saving ? "Menyimpan..." : "Simpan Catatan"}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+
+          {!activeKey && openKriteria && (
+            <div className="py-4 text-sm text-muted-foreground">
+              Kriteria ini belum memiliki panduan grade khusus. Tutup dialog dan gunakan kriteria standar (Vokal, Penghayatan, Intonasi, Penampilan, atau Catatan Juri).
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </SectionCard>
   );
 }
+
 
 
 
