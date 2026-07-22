@@ -765,6 +765,60 @@ function PenilaianTab() {
             </div>
           )}
 
+          {activeKey === "perhatian" && (
+            <div className="grid gap-3 py-2 max-h-[60vh] overflow-y-auto pr-2">
+              {PERHATIAN_ASPEK.map((aspek, i) => {
+                const row = perhatianChecks[i] ?? [];
+                return (
+                  <div key={aspek} className="rounded-lg border bg-card p-3">
+                    <div className="text-sm font-medium mb-2">{i + 1}. {aspek}</div>
+                    <div className="flex flex-wrap gap-2">
+                      {row.map((checked, ayatIdx) => (
+                        <label
+                          key={ayatIdx}
+                          className={[
+                            "cursor-pointer select-none rounded-md border-2 px-3 py-1.5 text-xs font-semibold transition",
+                            checked
+                              ? "border-destructive bg-destructive text-destructive-foreground"
+                              : "border-primary/20 bg-background hover:border-accent/60",
+                          ].join(" ")}
+                        >
+                          <input
+                            type="checkbox"
+                            className="sr-only"
+                            checked={checked}
+                            onChange={() =>
+                              setPerhatianChecks(prev =>
+                                prev.map((r, idx) =>
+                                  idx === i ? r.map((c, ai) => (ai === ayatIdx ? !c : c)) : r
+                                )
+                              )
+                            }
+                          />
+                          Ayat {ayatIdx + 1}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="sticky bottom-0 rounded-lg border-2 border-accent/50 bg-card p-3 flex items-center justify-between">
+                <div className="text-sm">
+                  <div className="text-muted-foreground">Masalah tercentang: <b>{perhatianChecked}</b> / {perhatianTotal}</div>
+                  <div className="font-serif text-lg">Nilai: <b className="text-primary">{perhatianNilai}</b></div>
+                </div>
+              </div>
+              <DialogFooter className="pt-2">
+                <Button variant="outline" onClick={() => setOpenKriteria(null)}>Batal</Button>
+                <Button onClick={savePerhatian} disabled={saving} className="gap-1">
+                  <Check className="size-4" />
+                  {saving ? "Menyimpan..." : "Kirim"}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+
+
           {!activeKey && openKriteria && (
             <div className="py-4 text-sm text-muted-foreground">
               Kriteria ini belum memiliki panduan grade khusus. Tutup dialog dan gunakan kriteria standar (Vokal, Penghayatan, Intonasi, Penampilan, atau Catatan Juri).
