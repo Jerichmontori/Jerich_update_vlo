@@ -33,8 +33,9 @@ function App() {
       <Header />
       <main className="mx-auto max-w-6xl px-4 pb-16">
         <Tabs defaultValue="ranking" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-7 h-auto bg-secondary/60 p-1">
+          <TabsList className="grid w-full grid-cols-4 sm:grid-cols-8 h-auto bg-secondary/60 p-1">
             <TabsTrigger value="ranking" className="gap-2"><Trophy className="size-4" />Ranking</TabsTrigger>
+            <TabsTrigger value="posisi" className="gap-2"><Trophy className="size-4" />Posisi</TabsTrigger>
             <TabsTrigger value="penilaian" className="gap-2"><ClipboardCheck className="size-4" />Penilaian</TabsTrigger>
             <TabsTrigger value="peserta" className="gap-2"><Users className="size-4" />Peserta</TabsTrigger>
             <TabsTrigger value="juri" className="gap-2"><Gavel className="size-4" />Juri</TabsTrigger>
@@ -43,6 +44,7 @@ function App() {
             <TabsTrigger value="mazmur" className="gap-2"><BookOpenText className="size-4" />Mazmur</TabsTrigger>
           </TabsList>
           <TabsContent value="ranking"><RankingTab /></TabsContent>
+          <TabsContent value="posisi"><PosisiTab /></TabsContent>
           <TabsContent value="penilaian"><PenilaianTab /></TabsContent>
           <TabsContent value="peserta"><PesertaTab /></TabsContent>
           <TabsContent value="juri"><JuriTab /></TabsContent>
@@ -1151,6 +1153,107 @@ function RankingTab() {
             })}
           </TableBody>
         </Table>
+      </div>
+    </SectionCard>
+  );
+}
+
+/* POSISI PER SESI */
+function PosisiTab() {
+  const [peserta, setPeserta] = useState<{ id: string; nama: string; asal: string | null; sesi: string | null; nomor_urut: number }[]>([]);
+  const [rankMap, setRankMap] = useState<Record<string, Ranking>>({});
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    const [{ data: rankData, error: rErr }, { data: pesertaData, error: pErr }] = await Promise.all([
+      supabase.from("ranking").select("*"),
+      supabase.from("peserta").select("id, nama, asal, sesi, nomor_urut"),
+    ]);
+    setLoading(false);
+    if (rErr) return toast.error(rErr.message);
+    if (pErr) return toast.error(pErr.message);
+    const rmap: Record<string, Ranking> = {};
+    (rankData ?? []).forEach((r) => { rmap[(r as Ranking).peserta_id] = r as Ranking; });
+    setRankMap(rmap);
+    setPeserta((pesertaData ?? []) as typeof peserta);
+  }
+  useEffect(() => { load(); }, []);
+
+  const medals = ["🥇", "🥈", "🥉"];
+  const grouped = useMemo(() => {
+    const buckets: Record<string, (typeof peserta[number] & { total: number; rata: number; juri: number; scored: boolean })[]> = {};
+    peserta.forEach((p) => {
+      const r = rankMap[p.id];
+      const total = Number(r?.total_skor ?? 0);
+      const scored = !!r && total > 0;
+      const sesi = p.sesi ?? "—";
+      (buckets[sesi] ??= []).push({ ...p, total, rata: Number(r?.rata_rata ?? 0), juri: Number(r?.jumlah_juri ?? 0), scored });
+    });
+    Object.values(buckets).forEach((list) =>
+      list.sort((a, b) => (b.total !== a.total ? b.total - a.total : a.nomor_urut - b.nomor_urut))
+    );
+    return Object.entries(buckets).sort(([a], [b]) => {
+      const na = Number(a), nb = Number(b);
+      if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
+      return a.localeCompare(b);
+    });
+  }, [peserta, rankMap]);
+
+  return (
+    <SectionCard
+      title="Posisi per Sesi"
+      description="Menampilkan maksimal 10 peserta per sesi beserta nilai dan peringkatnya."
+      action={<Button variant="outline" onClick={load}>Muat Ulang</Button>}
+    >
+      {loading && <p className="text-center py-10 text-muted-foreground">Memuat…</p>}
+      {!loading && grouped.length === 0 && <p className="text-center py-10 text-muted-foreground">Belum ada peserta.</p>}
+      <div className="space-y-6">
+        {!loading && grouped.map(([sesi, listAll]) => {
+          const list = listAll.slice(0, 10);
+          const scoredCount = list.filter((r) => r.scored).length;
+          let rankedIdx = -1;
+          return (
+            <div key={sesi} className="rounded-lg border bg-card overflow-hidden">
+              <div className="flex items-center justify-between gap-4 px-4 py-3 bg-accent/5 border-b">
+                <div>
+                  <p className="font-serif text-lg font-semibold">Sesi {sesi}</p>
+                  <p className="text-xs text-muted-foreground">{list.length} peserta · {scoredCount} sudah dinilai</p>
+                </div>
+              </div>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-16 text-center">Posisi</TableHead>
+                    <TableHead className="w-16">No.</TableHead>
+                    <TableHead>Peserta</TableHead>
+                    <TableHead>Asal</TableHead>
+                    <TableHead className="text-center w-24">Juri</TableHead>
+                    <TableHead className="text-right w-32">Rata-rata</TableHead>
+                    <TableHead className="text-right w-32">Total Skor</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {list.map((r) => {
+                    if (r.scored) rankedIdx += 1;
+                    const idx = r.scored ? rankedIdx : -1;
+                    return (
+                      <TableRow key={r.id} className={r.scored && idx < 3 ? "bg-accent/10" : ""}>
+                        <TableCell className="text-center text-2xl">{r.scored ? (medals[idx] ?? idx + 1) : "—"}</TableCell>
+                        <TableCell className="font-mono">{r.nomor_urut}</TableCell>
+                        <TableCell className="font-semibold">{r.nama}</TableCell>
+                        <TableCell className="text-muted-foreground">{r.asal || "—"}</TableCell>
+                        <TableCell className="text-center">{r.scored ? r.juri : <span className="text-muted-foreground italic">belum tampil</span>}</TableCell>
+                        <TableCell className="text-right font-mono">{r.scored ? r.rata.toFixed(2) : <span className="text-muted-foreground italic">belum tampil</span>}</TableCell>
+                        <TableCell className="text-right font-mono font-bold text-primary">{r.scored ? r.total.toFixed(2) : <span className="text-muted-foreground italic font-normal">belum tampil</span>}</TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          );
+        })}
       </div>
     </SectionCard>
   );
