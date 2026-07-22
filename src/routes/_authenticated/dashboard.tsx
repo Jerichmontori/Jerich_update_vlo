@@ -84,6 +84,7 @@ function PesertaTab() {
   const [nomor, setNomor] = useState("");
   const [nama, setNama] = useState("");
   const [asal, setAsal] = useState("");
+  const [kategori, setKategori] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
@@ -98,7 +99,7 @@ function PesertaTab() {
     ]);
     if (error) return toast.error(error.message);
     if (pe) return toast.error(pe.message);
-    setItems(data ?? []);
+    setItems((data ?? []) as Peserta[]);
     setScoredIds(new Set((pen ?? []).map((r: { peserta_id: string }) => r.peserta_id)));
   }
   useEffect(() => { load(); }, []);
@@ -109,11 +110,12 @@ function PesertaTab() {
     setNomor(String(p.nomor_urut));
     setNama(p.nama);
     setAsal(p.asal || "");
+    setKategori(p.kategori || "");
   }
 
   function batalEdit() {
     setEditId(null);
-    setNomor(""); setNama(""); setAsal("");
+    setNomor(""); setNama(""); setAsal(""); setKategori("");
   }
 
   async function tambah(e: React.FormEvent) {
@@ -123,12 +125,12 @@ function PesertaTab() {
     setLoading(true);
 
     if (!editId) {
-      const payload = { nomor_urut: n, nama, asal: asal || null, sesi: sesiDari(n) };
+      const payload = { nomor_urut: n, nama, asal: asal || null, sesi: sesiDari(n), kategori: kategori || null };
       const { error } = await supabase.from("peserta").insert(payload);
       setLoading(false);
       if (error) return toast.error(error.message);
       toast.success("Peserta ditambahkan");
-      setNomor(""); setNama(""); setAsal("");
+      setNomor(""); setNama(""); setAsal(""); setKategori("");
       load();
       return;
     }
@@ -138,14 +140,15 @@ function PesertaTab() {
     const oldN = original.nomor_urut;
 
     if (n === oldN) {
-      const { error } = await supabase.from("peserta").update({ nama, asal: asal || null }).eq("id", editId);
+      const { error } = await supabase.from("peserta").update({ nama, asal: asal || null, kategori: kategori || null }).eq("id", editId);
       setLoading(false);
       if (error) return toast.error(error.message);
       toast.success("Peserta diperbarui");
-      setEditId(null); setNomor(""); setNama(""); setAsal("");
+      setEditId(null); setNomor(""); setNama(""); setAsal(""); setKategori("");
       load();
       return;
     }
+
 
     // Nomor berubah — validasi peserta yg diedit belum dinilai
     const { count: cntEdit, error: pe1 } = await supabase
