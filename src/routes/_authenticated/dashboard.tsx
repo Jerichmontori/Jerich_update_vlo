@@ -675,6 +675,64 @@ function PenilaianTab() {
             })}
 
           </div>
+
+          {(() => {
+            const scored = kriteria
+              .map(k => ({ k, v: currentNilai(k.id) }))
+              .filter(x => x.v !== null) as { k: Kriteria; v: number }[];
+            const totalBobot = scored.reduce((s, x) => s + Number(x.k.bobot || 0), 0);
+            const weighted = totalBobot > 0
+              ? scored.reduce((s, x) => s + x.v * Number(x.k.bobot || 0), 0) / totalBobot
+              : scored.length > 0
+              ? scored.reduce((s, x) => s + x.v, 0) / scored.length
+              : 0;
+            const totalNilai = Math.round(weighted * 100) / 100;
+            const semuaTerisi = scored.length === kriteria.length && kriteria.length > 0;
+
+            async function kirimPenilaian() {
+              if (!juriId || !pesertaId) return toast.error("Pilih juri dan peserta");
+              if (scored.length === 0) return toast.error("Belum ada nilai yang diberikan");
+              toast.success(`Penilaian dikirim. Nilai akhir: ${totalNilai}`);
+              await loadAll();
+            }
+
+            return (
+              <div className="rounded-2xl border-2 border-accent/40 bg-gradient-to-br from-card to-secondary/40 p-5 sm:p-6 mb-4">
+                <div className="grid gap-3 sm:grid-cols-2 sm:items-center">
+                  <div>
+                    <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-semibold">Hasil Perhitungan</div>
+                    <div className="mt-1 font-serif text-3xl sm:text-4xl text-primary">
+                      Nilai: <b>{totalNilai}</b>
+                    </div>
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {scored.length} dari {kriteria.length} kriteria dinilai
+                      {!semuaTerisi && scored.length > 0 && " — lengkapi semua kriteria sebelum mengirim"}
+                    </div>
+                  </div>
+                  <div className="sm:justify-self-end">
+                    <Button
+                      size="lg"
+                      onClick={kirimPenilaian}
+                      disabled={saving || scored.length === 0}
+                      className="gap-2 min-w-[160px]"
+                    >
+                      <Check className="size-4" />
+                      Kirim
+                    </Button>
+                  </div>
+                </div>
+                {scored.length > 0 && (
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    {scored.map(({ k, v }) => (
+                      <span key={k.id} className="rounded-full border bg-background px-3 py-1 text-xs">
+                        {k.nama}: <b className="text-primary">{v}</b>
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })()}
         </>
       )}
 
@@ -802,17 +860,11 @@ function PenilaianTab() {
                   </div>
                 );
               })}
-              <div className="sticky bottom-0 rounded-lg border-2 border-accent/50 bg-card p-3 flex items-center justify-between">
-                <div className="text-sm">
-                  <div className="text-muted-foreground">Masalah tercentang: <b>{perhatianChecked}</b> / {perhatianTotal}</div>
-                  <div className="font-serif text-lg">Nilai: <b className="text-primary">{perhatianNilai}</b></div>
-                </div>
-              </div>
               <DialogFooter className="pt-2">
                 <Button variant="outline" onClick={() => setOpenKriteria(null)}>Batal</Button>
                 <Button onClick={savePerhatian} disabled={saving} className="gap-1">
                   <Check className="size-4" />
-                  {saving ? "Menyimpan..." : "Kirim"}
+                  {saving ? "Menyimpan..." : "Simpan"}
                 </Button>
               </DialogFooter>
             </div>
