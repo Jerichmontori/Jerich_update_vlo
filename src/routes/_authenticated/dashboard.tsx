@@ -692,7 +692,7 @@ function PenilaianTab() {
 
           </DialogHeader>
 
-          {activeKey && activeKey !== "catatan" && (
+          {activeKey && activeKey !== "catatan" && activeKey !== "perhatian" && (
             <div className="grid gap-3 py-2 max-h-[65vh] overflow-y-auto pr-2">
               {(() => {
                 const descs = GRADE_DESCRIPTIONS[activeKey];
