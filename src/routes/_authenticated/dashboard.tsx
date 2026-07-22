@@ -519,7 +519,9 @@ function PenilaianTab() {
   const [mazmurId, setMazmurId] = useState<string>("");
   const [openKriteria, setOpenKriteria] = useState<Kriteria | null>(null);
   const [catatanValues, setCatatanValues] = useState<number[]>(() => CATATAN_ASPEK.map(() => 3));
+  const [perhatianChecks, setPerhatianChecks] = useState<boolean[][]>(() => PERHATIAN_ASPEK.map(() => []));
   const [saving, setSaving] = useState(false);
+
 
   async function loadAll() {
     const [p, j, k, m, n] = await Promise.all([
