@@ -62,12 +62,34 @@ export type Database = {
         }
         Relationships: []
       }
+      mazmur: {
+        Row: {
+          bacaan: string
+          created_at: string
+          id: string
+          jumlah_ayat: number
+        }
+        Insert: {
+          bacaan: string
+          created_at?: string
+          id?: string
+          jumlah_ayat?: number
+        }
+        Update: {
+          bacaan?: string
+          created_at?: string
+          id?: string
+          jumlah_ayat?: number
+        }
+        Relationships: []
+      }
       penilaian: {
         Row: {
           created_at: string
           id: string
           juri_id: string
           kriteria_id: string
+          mazmur_id: string | null
           nilai: number
           peserta_id: string
         }
@@ -76,6 +98,7 @@ export type Database = {
           id?: string
           juri_id: string
           kriteria_id: string
+          mazmur_id?: string | null
           nilai: number
           peserta_id: string
         }
@@ -84,6 +107,7 @@ export type Database = {
           id?: string
           juri_id?: string
           kriteria_id?: string
+          mazmur_id?: string | null
           nilai?: number
           peserta_id?: string
         }
@@ -100,6 +124,13 @@ export type Database = {
             columns: ["kriteria_id"]
             isOneToOne: false
             referencedRelation: "kriteria"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "penilaian_mazmur_id_fkey"
+            columns: ["mazmur_id"]
+            isOneToOne: false
+            referencedRelation: "mazmur"
             referencedColumns: ["id"]
           },
           {
