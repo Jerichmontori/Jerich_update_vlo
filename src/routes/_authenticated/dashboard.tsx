@@ -378,16 +378,14 @@ function KriteriaTab() {
     setNama(""); setBobot(""); setBatasAtas(""); setBatasBawah(""); load();
   }
 
-  async function ubah(id: string) {
-    const val = Number(edits[id]);
-    if (isNaN(val)) return toast.error("Bobot tidak valid");
-    setSavingId(id);
-    const { error } = await supabase.from("kriteria").update({ bobot: val }).eq("id", id);
-    setSavingId(null);
+  async function hapus(id: string) {
+    if (!confirm("Hapus kriteria ini?")) return;
+    const { error } = await supabase.from("kriteria").delete().eq("id", id);
     if (error) return toast.error(error.message);
-    toast.success("Bobot diperbarui");
+    toast.success("Kriteria dihapus");
     load();
   }
+
 
   return (
     <SectionCard title="Kriteria Penilaian" description="Atur aspek, rentang nilai (batas atas & bawah), dan bobot setiap kriteria.">
@@ -422,10 +420,11 @@ function KriteriaTab() {
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button size="sm" variant="outline" disabled={savingId === k.id} onClick={() => ubah(k.id)}>
-                    {savingId === k.id ? "Menyimpan..." : "Ubah"}
+                  <Button size="icon" variant="ghost" onClick={() => hapus(k.id)}>
+                    <Trash2 className="size-4 text-destructive" />
                   </Button>
                 </TableCell>
+
               </TableRow>
             ))}
             <TableRow className="bg-muted/50">
