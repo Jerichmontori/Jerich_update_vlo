@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Toaster, toast } from "sonner";
 import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download } from "lucide-react";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/dashboard")({
   component: App,
 });
 
@@ -52,17 +52,25 @@ function App() {
 }
 
 function Header() {
+  const router = (typeof window !== "undefined") ? undefined : undefined;
+  async function signOut() {
+    await supabase.auth.signOut();
+    window.location.href = "/auth";
+  }
   return (
     <header className="border-b bg-card/60 backdrop-blur mb-8">
-      <div className="mx-auto max-w-6xl px-4 py-8 flex items-center gap-4">
-        <div className="grid place-items-center size-14 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/20 ring-4 ring-accent/30">
-          <BookOpenText className="size-7" />
+      <div className="mx-auto max-w-6xl px-4 py-8 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+        <div className="flex min-w-0 items-center gap-4">
+          <div className="grid place-items-center size-14 shrink-0 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/20 ring-4 ring-accent/30">
+            <BookOpenText className="size-7" />
+          </div>
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">Lomba Rohani</p>
+            <h1 className="truncate text-2xl sm:text-4xl font-serif font-semibold text-foreground">Sistem Penjurian Baca Mazmur</h1>
+            <p className="text-sm text-muted-foreground mt-1">Kelola peserta, juri, kriteria, dan lihat ranking secara langsung.</p>
+          </div>
         </div>
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">Lomba Rohani</p>
-          <h1 className="text-3xl sm:text-4xl font-serif font-semibold text-foreground">Sistem Penjurian Baca Mazmur</h1>
-          <p className="text-sm text-muted-foreground mt-1">Kelola peserta, juri, kriteria, dan lihat ranking secara langsung.</p>
-        </div>
+        <Button variant="outline" onClick={signOut} className="shrink-0">Keluar</Button>
       </div>
     </header>
   );
