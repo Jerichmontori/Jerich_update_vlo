@@ -590,6 +590,17 @@ function PenilaianTab() {
     await saveNilai(nilai);
   }
 
+  const perhatianTotal = perhatianChecks.reduce((s, row) => s + row.length, 0);
+  const perhatianChecked = perhatianChecks.reduce((s, row) => s + row.filter(Boolean).length, 0);
+  const perhatianNilai = perhatianTotal === 0
+    ? 0
+    : Math.round(((perhatianTotal - perhatianChecked) / perhatianTotal) * 100 * 100) / 100;
+
+  async function savePerhatian() {
+    await saveNilai(perhatianNilai);
+  }
+
+
   const activeKey = openKriteria ? kriteriaKey(openKriteria.nama) : null;
 
   return (
