@@ -16,28 +16,40 @@ export type Database = {
     Tables: {
       juri: {
         Row: {
+          approved: boolean
           bacaan_mazmur: string | null
           created_at: string
+          email: string | null
           id: string
           jabatan: string | null
           jumlah_ayat: number | null
           nama: string
+          role: Database["public"]["Enums"]["app_role"] | null
+          user_id: string | null
         }
         Insert: {
+          approved?: boolean
           bacaan_mazmur?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           jabatan?: string | null
           jumlah_ayat?: number | null
           nama: string
+          role?: Database["public"]["Enums"]["app_role"] | null
+          user_id?: string | null
         }
         Update: {
+          approved?: boolean
           bacaan_mazmur?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           jabatan?: string | null
           jumlah_ayat?: number | null
           nama?: string
+          role?: Database["public"]["Enums"]["app_role"] | null
+          user_id?: string | null
         }
         Relationships: []
       }
