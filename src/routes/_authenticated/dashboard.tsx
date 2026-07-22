@@ -19,7 +19,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 type Peserta = { id: string; nomor_urut: number; nama: string; asal: string | null };
-type Juri = { id: string; nama: string; jabatan: string | null; email: string | null; role: "admin" | "juri" | null; approved: boolean; user_id: string | null };
+type Juri = { id: string; nama: string; jabatan: string | null; email: string | null; role: "admin" | "juri" | "viewer" | null; approved: boolean; user_id: string | null };
 type Kriteria = { id: string; nama: string; bobot: number; batas_atas: number; batas_bawah: number };
 type Mazmur = { id: string; bacaan: string; jumlah_ayat: number };
 type Penilaian = { id: string; peserta_id: string; juri_id: string; kriteria_id: string; nilai: number; mazmur_id: string | null };
