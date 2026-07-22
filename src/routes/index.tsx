@@ -438,7 +438,7 @@ function PenilaianTab() {
               <CriteriaPillButton
                 key={k.id}
                 label={k.nama}
-                bobot={Number(k.bobot)}
+                
                 active={kriteriaId === k.id}
                 onClick={() => setKriteriaId(k.id)}
               />
