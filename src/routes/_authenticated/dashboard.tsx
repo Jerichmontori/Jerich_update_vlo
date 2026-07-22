@@ -86,7 +86,6 @@ function PesertaTab() {
   const [editId, setEditId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [updatingSesi, setUpdatingSesi] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const sesiDari = (n: number) => `Sesi ${Math.ceil(n / 10)}`;
@@ -113,33 +112,83 @@ function PesertaTab() {
   async function tambah(e: React.FormEvent) {
     e.preventDefault();
     if (!nomor || !nama) return toast.error("Nomor urut dan nama wajib diisi");
-    setLoading(true);
     const n = Number(nomor);
-    const payload = { nomor_urut: n, nama, asal: asal || null, sesi: sesiDari(n) };
-    const { error } = editId
-      ? await supabase.from("peserta").update(payload).eq("id", editId)
-      : await supabase.from("peserta").insert(payload);
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success(editId ? "Peserta diperbarui" : "Peserta ditambahkan");
-    setEditId(null);
-    setNomor(""); setNama(""); setAsal("");
-    load();
-  }
+    setLoading(true);
 
-  async function ubahSesi() {
-    setUpdatingSesi(true);
-    const { data, error } = await supabase.from("peserta").select("id, nomor_urut");
-    if (error) { setUpdatingSesi(false); return toast.error(error.message); }
-    const rows = data ?? [];
-    let gagal = 0;
-    for (const r of rows) {
-      const { error: e } = await supabase.from("peserta").update({ sesi: sesiDari(r.nomor_urut) }).eq("id", r.id);
-      if (e) gagal++;
+    if (!editId) {
+      const payload = { nomor_urut: n, nama, asal: asal || null, sesi: sesiDari(n) };
+      const { error } = await supabase.from("peserta").insert(payload);
+      setLoading(false);
+      if (error) return toast.error(error.message);
+      toast.success("Peserta ditambahkan");
+      setNomor(""); setNama(""); setAsal("");
+      load();
+      return;
     }
-    setUpdatingSesi(false);
-    if (gagal > 0) toast.error(`${gagal} peserta gagal diperbarui`);
-    else toast.success("Sesi diperbarui berdasarkan nomor urut");
+
+    const original = items.find(x => x.id === editId);
+    if (!original) { setLoading(false); return; }
+    const oldN = original.nomor_urut;
+
+    if (n === oldN) {
+      const { error } = await supabase.from("peserta").update({ nama, asal: asal || null }).eq("id", editId);
+      setLoading(false);
+      if (error) return toast.error(error.message);
+      toast.success("Peserta diperbarui");
+      setEditId(null); setNomor(""); setNama(""); setAsal("");
+      load();
+      return;
+    }
+
+    // Nomor berubah — validasi peserta yg diedit belum dinilai
+    const { count: cntEdit, error: pe1 } = await supabase
+      .from("penilaian").select("id", { count: "exact", head: true }).eq("peserta_id", editId);
+    if (pe1) { setLoading(false); return toast.error(pe1.message); }
+    if ((cntEdit ?? 0) > 0) {
+      setLoading(false);
+      return toast.error("Peserta ini sudah dinilai, nomor urut tidak bisa diubah");
+    }
+
+    // Rantai peserta yang tergeser (+1 berantai) mulai dari nomor tujuan
+    const byNum = new Map(items.map(p => [p.nomor_urut, p]));
+    const chain: Peserta[] = [];
+    let cur = n;
+    while (byNum.has(cur) && byNum.get(cur)!.id !== editId) {
+      chain.push(byNum.get(cur)!);
+      cur++;
+    }
+
+    if (chain.length > 0) {
+      const ids = chain.map(c => c.id);
+      const { data: assessed, error: aerr } = await supabase
+        .from("penilaian").select("peserta_id").in("peserta_id", ids).limit(1);
+      if (aerr) { setLoading(false); return toast.error(aerr.message); }
+      if (assessed && assessed.length > 0) {
+        setLoading(false);
+        return toast.error("Ada peserta terdampak yang sudah dinilai, nomor tidak bisa diubah");
+      }
+    }
+
+    // Hindari konflik unique: bump rantai ke nomor sementara dulu
+    const TEMP_BASE = 1000000;
+    for (let i = 0; i < chain.length; i++) {
+      const { error: te } = await supabase.from("peserta")
+        .update({ nomor_urut: TEMP_BASE + i }).eq("id", chain[i].id);
+      if (te) { setLoading(false); return toast.error(te.message); }
+    }
+    const { error: ue } = await supabase.from("peserta")
+      .update({ nomor_urut: n, nama, asal: asal || null, sesi: sesiDari(n) }).eq("id", editId);
+    if (ue) { setLoading(false); return toast.error(ue.message); }
+    for (let i = 0; i < chain.length; i++) {
+      const newNum = n + 1 + i;
+      const { error: fe } = await supabase.from("peserta")
+        .update({ nomor_urut: newNum, sesi: sesiDari(newNum) }).eq("id", chain[i].id);
+      if (fe) { setLoading(false); return toast.error(fe.message); }
+    }
+
+    setLoading(false);
+    toast.success("Peserta diperbarui & urutan disesuaikan");
+    setEditId(null); setNomor(""); setNama(""); setAsal("");
     load();
   }
 
