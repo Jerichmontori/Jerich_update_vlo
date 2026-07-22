@@ -83,6 +83,7 @@ function PesertaTab() {
   const [nomor, setNomor] = useState("");
   const [nama, setNama] = useState("");
   const [asal, setAsal] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [importing, setImporting] = useState(false);
   const [updatingSesi, setUpdatingSesi] = useState(false);
@@ -97,15 +98,31 @@ function PesertaTab() {
   }
   useEffect(() => { load(); }, []);
 
+  function pilihUntukEdit(p: Peserta) {
+    setEditId(p.id);
+    setNomor(String(p.nomor_urut));
+    setNama(p.nama);
+    setAsal(p.asal || "");
+  }
+
+  function batalEdit() {
+    setEditId(null);
+    setNomor(""); setNama(""); setAsal("");
+  }
+
   async function tambah(e: React.FormEvent) {
     e.preventDefault();
     if (!nomor || !nama) return toast.error("Nomor urut dan nama wajib diisi");
     setLoading(true);
     const n = Number(nomor);
-    const { error } = await supabase.from("peserta").insert({ nomor_urut: n, nama, asal: asal || null, sesi: sesiDari(n) });
+    const payload = { nomor_urut: n, nama, asal: asal || null, sesi: sesiDari(n) };
+    const { error } = editId
+      ? await supabase.from("peserta").update(payload).eq("id", editId)
+      : await supabase.from("peserta").insert(payload);
     setLoading(false);
     if (error) return toast.error(error.message);
-    toast.success("Peserta ditambahkan");
+    toast.success(editId ? "Peserta diperbarui" : "Peserta ditambahkan");
+    setEditId(null);
     setNomor(""); setNama(""); setAsal("");
     load();
   }
