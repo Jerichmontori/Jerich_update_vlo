@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
-import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check } from "lucide-react";
+import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: App,
@@ -24,6 +24,7 @@ type Kriteria = { id: string; nama: string; bobot: number; batas_atas: number; b
 type Mazmur = { id: string; bacaan: string; jumlah_ayat: number };
 type Penilaian = { id: string; peserta_id: string; juri_id: string; kriteria_id: string; nilai: number; mazmur_id: string | null };
 type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: string | null; total_skor: number; rata_rata: number; jumlah_juri: number };
+type Kategori = { id: string; kategori: string; batas_atas: number; batas_bawah: number };
 
 function App() {
   return (
@@ -32,12 +33,13 @@ function App() {
       <Header />
       <main className="mx-auto max-w-6xl px-4 pb-16">
         <Tabs defaultValue="ranking" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-6 h-auto bg-secondary/60 p-1">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-7 h-auto bg-secondary/60 p-1">
             <TabsTrigger value="ranking" className="gap-2"><Trophy className="size-4" />Ranking</TabsTrigger>
             <TabsTrigger value="penilaian" className="gap-2"><ClipboardCheck className="size-4" />Penilaian</TabsTrigger>
             <TabsTrigger value="peserta" className="gap-2"><Users className="size-4" />Peserta</TabsTrigger>
             <TabsTrigger value="juri" className="gap-2"><Gavel className="size-4" />Juri</TabsTrigger>
             <TabsTrigger value="kriteria" className="gap-2"><ListChecks className="size-4" />Kriteria</TabsTrigger>
+            <TabsTrigger value="kategori" className="gap-2"><Tags className="size-4" />Kategori</TabsTrigger>
             <TabsTrigger value="mazmur" className="gap-2"><BookOpenText className="size-4" />Mazmur</TabsTrigger>
           </TabsList>
           <TabsContent value="ranking"><RankingTab /></TabsContent>
@@ -45,6 +47,7 @@ function App() {
           <TabsContent value="peserta"><PesertaTab /></TabsContent>
           <TabsContent value="juri"><JuriTab /></TabsContent>
           <TabsContent value="kriteria"><KriteriaTab /></TabsContent>
+          <TabsContent value="kategori"><KategoriTab /></TabsContent>
           <TabsContent value="mazmur"><MazmurTab /></TabsContent>
         </Tabs>
       </main>
@@ -463,7 +466,70 @@ function MazmurTab() {
 }
 
 
-/* KRITERIA */
+/* KATEGORI */
+function KategoriTab() {
+  const [items, setItems] = useState<Kategori[]>([]);
+  const [kategori, setKategori] = useState("");
+  const [batasAtas, setBatasAtas] = useState("");
+  const [batasBawah, setBatasBawah] = useState("");
+
+  async function load() {
+    const { data, error } = await supabase.from("kategori").select("*").order("created_at");
+    if (error) return toast.error(error.message);
+    setItems((data ?? []) as Kategori[]);
+  }
+  useEffect(() => { load(); }, []);
+
+  async function tambah(e: React.FormEvent) {
+    e.preventDefault();
+    if (!kategori) return toast.error("Kategori wajib diisi");
+    const { error } = await supabase.from("kategori").insert({
+      kategori,
+      batas_atas: Number(batasAtas) || 0,
+      batas_bawah: Number(batasBawah) || 0,
+    });
+    if (error) return toast.error(error.message);
+    toast.success("Kategori ditambahkan");
+    setKategori(""); setBatasAtas(""); setBatasBawah(""); load();
+  }
+
+  async function hapus(id: string) {
+    if (!confirm("Hapus kategori ini?")) return;
+    const { error } = await supabase.from("kategori").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Kategori dihapus");
+    load();
+  }
+
+  return (
+    <SectionCard title="Daftar Kategori" description="Kelola kategori penilaian beserta batas atas dan batas bawah.">
+      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-[1fr_140px_140px_auto] gap-3 mb-6">
+        <div><Label>Kategori</Label><Input value={kategori} onChange={e=>setKategori(e.target.value)} placeholder="Contoh: Anak" /></div>
+        <div><Label>Batas Atas</Label><Input type="number" step="0.01" value={batasAtas} onChange={e=>setBatasAtas(e.target.value)} placeholder="100" /></div>
+        <div><Label>Batas Bawah</Label><Input type="number" step="0.01" value={batasBawah} onChange={e=>setBatasBawah(e.target.value)} placeholder="0" /></div>
+        <div className="flex items-end"><Button type="submit" className="gap-1"><Plus className="size-4" />Tambah</Button></div>
+      </form>
+      <div className="rounded-lg border bg-card">
+        <Table>
+          <TableHeader><TableRow><TableHead>Kategori</TableHead><TableHead className="w-40 text-center">Batas Atas</TableHead><TableHead className="w-40 text-center">Batas Bawah</TableHead><TableHead className="w-20 text-right">Aksi</TableHead></TableRow></TableHeader>
+          <TableBody>
+            {items.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Belum ada kategori.</TableCell></TableRow>}
+            {items.map(k => (
+              <TableRow key={k.id}>
+                <TableCell className="font-medium">{k.kategori}</TableCell>
+                <TableCell className="text-center">{Number(k.batas_atas)}</TableCell>
+                <TableCell className="text-center">{Number(k.batas_bawah)}</TableCell>
+                <TableCell className="text-right"><Button size="icon" variant="ghost" onClick={()=>hapus(k.id)}><Trash2 className="size-4 text-destructive" /></Button></TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+    </SectionCard>
+  );
+}
+
+
 function KriteriaTab() {
   const [items, setItems] = useState<Kriteria[]>([]);
   const [nama, setNama] = useState("");
