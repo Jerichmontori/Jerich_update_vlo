@@ -218,12 +218,6 @@ function PesertaTab() {
 /* JURI */
 function JuriTab() {
   const [items, setItems] = useState<Juri[]>([]);
-  const [nama, setNama] = useState("");
-  const [jabatan, setJabatan] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [role, setRole] = useState<"admin" | "juri">("juri");
-  const [saving, setSaving] = useState(false);
 
   async function load() {
     const { data, error } = await supabase.from("juri").select("*").order("created_at");
@@ -232,35 +226,6 @@ function JuriTab() {
   }
   useEffect(() => { load(); }, []);
 
-  async function tambah(e: React.FormEvent) {
-    e.preventDefault();
-    if (!nama) return toast.error("Nama wajib diisi");
-    if (!email || !password) return toast.error("Email & password wajib diisi");
-    if (password.length < 8) return toast.error("Password minimal 8 karakter");
-    setSaving(true);
-    try {
-      const { createJuriUser } = await import("@/lib/juri-users.functions");
-      await createJuriUser({ data: { nama, jabatan: jabatan || null, email, password, role } });
-      toast.success(`Akun ${role} berhasil dibuat`);
-      setNama(""); setJabatan(""); setEmail(""); setPassword(""); setRole("juri");
-      load();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Gagal membuat akun");
-    } finally {
-      setSaving(false);
-    }
-  }
-  async function hapus(id: string) {
-    if (!confirm("Hapus juri ini? Akun login-nya juga akan dihapus.")) return;
-    try {
-      const { deleteJuriUser } = await import("@/lib/juri-users.functions");
-      await deleteJuriUser({ data: { juriId: id } });
-      toast.success("Juri dihapus");
-      load();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Gagal menghapus");
-    }
-  }
   async function approve(id: string) {
     try {
       const { approveJuri } = await import("@/lib/juri-users.functions");
@@ -272,24 +237,7 @@ function JuriTab() {
     }
   }
   return (
-    <SectionCard title="Dewan Juri" description="Buat akun login untuk juri/admin. Akun baru perlu di-approve admin sebelum bisa login.">
-      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
-        <div><Label>Nama</Label><Input value={nama} onChange={e=>setNama(e.target.value)} placeholder="Nama lengkap" /></div>
-        <div><Label>Jabatan</Label><Input value={jabatan} onChange={e=>setJabatan(e.target.value)} placeholder="Pdt. / Diakon / dll" /></div>
-        <div><Label>Email</Label><Input type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="email@contoh.com" /></div>
-        <div><Label>Password</Label><Input type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="Min. 8 karakter" /></div>
-        <div>
-          <Label>Role</Label>
-          <Select value={role} onValueChange={(v)=>setRole(v as "admin" | "juri")}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              <SelectItem value="juri">Juri</SelectItem>
-              <SelectItem value="admin">Admin</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex items-end"><Button type="submit" disabled={saving} className="gap-1"><Plus className="size-4" />{saving ? "Menyimpan..." : "Tambah Akun"}</Button></div>
-      </form>
+    <SectionCard title="Dewan Juri" description="Daftar pendaftar juri dari halaman beranda. Setujui akun agar dapat login.">
       <div className="rounded-lg border bg-card overflow-x-auto">
         <Table>
           <TableHeader>
@@ -297,35 +245,36 @@ function JuriTab() {
               <TableHead>Nama</TableHead>
               <TableHead>Jabatan</TableHead>
               <TableHead>Email</TableHead>
-              <TableHead>Password</TableHead>
               <TableHead>Role</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Belum ada juri.</TableCell></TableRow>}
+            {items.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Belum ada pendaftar juri.</TableCell></TableRow>}
             {items.map(j => (
               <TableRow key={j.id}>
                 <TableCell className="font-medium">{j.nama}</TableCell>
                 <TableCell className="text-muted-foreground">{j.jabatan || "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{j.email || "—"}</TableCell>
-                <TableCell className="text-muted-foreground font-mono text-xs">••••••••</TableCell>
                 <TableCell>
                   <Badge variant="outline" className="capitalize">{j.role || "—"}</Badge>
                 </TableCell>
+                <TableCell>
+                  {j.approved ? (
+                    <Badge className="bg-accent text-accent-foreground gap-1"><Check className="size-3" />Disetujui</Badge>
+                  ) : (
+                    <Badge variant="outline" className="text-muted-foreground">Menunggu disetujui</Badge>
+                  )}
+                </TableCell>
                 <TableCell className="text-right">
-                  <div className="flex items-center justify-end gap-2">
-                    {j.approved ? (
-                      <Badge className="bg-accent text-accent-foreground gap-1"><Check className="size-3" />Disetujui</Badge>
-                    ) : (
-                      <Button size="sm" variant="default" onClick={()=>approve(j.id)} className="gap-1">
-                        <Check className="size-4" />Approve
-                      </Button>
-                    )}
-                    <Button size="icon" variant="ghost" onClick={()=>hapus(j.id)}>
-                      <Trash2 className="size-4 text-destructive" />
+                  {j.approved ? (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  ) : (
+                    <Button size="sm" variant="default" onClick={()=>approve(j.id)} className="gap-1">
+                      <Check className="size-4" />Approve
                     </Button>
-                  </div>
+                  )}
                 </TableCell>
               </TableRow>
             ))}
@@ -335,6 +284,7 @@ function JuriTab() {
     </SectionCard>
   );
 }
+
 
 
 /* MAZMUR */
