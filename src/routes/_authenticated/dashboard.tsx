@@ -670,14 +670,10 @@ function PenilaianTab() {
                     active={val !== null}
                     onClick={() => openDialog(k)}
                   />
-                  {val !== null && (
-                    <span className="absolute -top-2 -right-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold px-2.5 py-1 shadow">
-                      {val}
-                    </span>
-                  )}
                 </div>
               );
             })}
+
           </div>
         </>
       )}
