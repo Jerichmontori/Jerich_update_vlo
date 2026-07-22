@@ -80,6 +80,7 @@ function Header() {
 /* PESERTA */
 function PesertaTab() {
   const [items, setItems] = useState<Peserta[]>([]);
+  const [scoredIds, setScoredIds] = useState<Set<string>>(new Set());
   const [nomor, setNomor] = useState("");
   const [nama, setNama] = useState("");
   const [asal, setAsal] = useState("");
@@ -91,11 +92,17 @@ function PesertaTab() {
   const sesiDari = (n: number) => `Sesi ${Math.ceil(n / 10)}`;
 
   async function load() {
-    const { data, error } = await supabase.from("peserta").select("*").order("nomor_urut");
+    const [{ data, error }, { data: pen, error: pe }] = await Promise.all([
+      supabase.from("peserta").select("*").order("nomor_urut"),
+      supabase.from("penilaian").select("peserta_id"),
+    ]);
     if (error) return toast.error(error.message);
+    if (pe) return toast.error(pe.message);
     setItems(data ?? []);
+    setScoredIds(new Set((pen ?? []).map((r: { peserta_id: string }) => r.peserta_id)));
   }
   useEffect(() => { load(); }, []);
+
 
   function pilihUntukEdit(p: Peserta) {
     setEditId(p.id);
