@@ -344,11 +344,8 @@ function MazmurTab() {
 function KriteriaTab() {
   const [items, setItems] = useState<Kriteria[]>([]);
   const [nama, setNama] = useState("");
-  const [batasAtas, setBatasAtas] = useState("");
-  const [batasBawah, setBatasBawah] = useState("");
   const [bobot, setBobot] = useState("");
   const [edits, setEdits] = useState<Record<string, string>>({});
-  const [savingId, setSavingId] = useState<string | null>(null);
 
   async function load() {
     const { data, error } = await supabase.from("kriteria").select("*").order("created_at");
@@ -363,13 +360,11 @@ function KriteriaTab() {
 
   async function tambah(e: React.FormEvent) {
     e.preventDefault();
-    if (!nama || !bobot || batasAtas === "" || batasBawah === "") return toast.error("Nama, batas atas, batas bawah & bobot wajib diisi");
-    const atas = Number(batasAtas); const bawah = Number(batasBawah);
-    if (bawah > atas) return toast.error("Batas bawah tidak boleh lebih besar dari batas atas");
-    const { error } = await supabase.from("kriteria").insert({ nama, bobot: Number(bobot), batas_atas: atas, batas_bawah: bawah });
+    if (!nama || !bobot) return toast.error("Nama & bobot wajib diisi");
+    const { error } = await supabase.from("kriteria").insert({ nama, bobot: Number(bobot) });
     if (error) return toast.error(error.message);
     toast.success("Kriteria ditambahkan");
-    setNama(""); setBobot(""); setBatasAtas(""); setBatasBawah(""); load();
+    setNama(""); setBobot(""); load();
   }
 
   async function hapus(id: string) {
@@ -382,11 +377,9 @@ function KriteriaTab() {
 
 
   return (
-    <SectionCard title="Kriteria Penilaian" description="Atur aspek, rentang nilai (batas atas & bawah), dan bobot setiap kriteria.">
-      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-[1fr_130px_130px_120px_auto] gap-3 mb-6">
+    <SectionCard title="Kriteria Penilaian" description="Atur aspek dan bobot setiap kriteria.">
+      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-[1fr_120px_auto] gap-3 mb-6">
         <div><Label>Nama Kriteria</Label><Input value={nama} onChange={e=>setNama(e.target.value)} placeholder="Contoh: Seri Baca Mazmur" /></div>
-        <div><Label>Nilai Batas Atas</Label><Input type="number" step="0.1" value={batasAtas} onChange={e=>setBatasAtas(e.target.value)} placeholder="100" /></div>
-        <div><Label>Nilai Batas Bawah</Label><Input type="number" step="0.1" value={batasBawah} onChange={e=>setBatasBawah(e.target.value)} placeholder="0" /></div>
         <div><Label>Bobot (%)</Label><Input type="number" step="0.1" value={bobot} onChange={e=>setBobot(e.target.value)} placeholder="25" /></div>
         <div className="flex items-end"><Button type="submit" className="gap-1"><Plus className="size-4" />Tambah</Button></div>
       </form>
@@ -399,8 +392,8 @@ function KriteriaTab() {
               <TableRow key={k.id}>
                 <TableCell>
                   <div className="font-medium">{k.nama}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">Rentang nilai: {Number(k.batas_bawah)} – {Number(k.batas_atas)}</div>
                 </TableCell>
+
                 <TableCell>
                   <div className="flex items-center gap-1">
                     <Input
