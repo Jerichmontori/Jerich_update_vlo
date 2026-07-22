@@ -378,16 +378,14 @@ function KriteriaTab() {
     setNama(""); setBobot(""); setBatasAtas(""); setBatasBawah(""); load();
   }
 
-  async function ubah(id: string) {
-    const val = Number(edits[id]);
-    if (isNaN(val)) return toast.error("Bobot tidak valid");
-    setSavingId(id);
-    const { error } = await supabase.from("kriteria").update({ bobot: val }).eq("id", id);
-    setSavingId(null);
+  async function hapus(id: string) {
+    if (!confirm("Hapus kriteria ini?")) return;
+    const { error } = await supabase.from("kriteria").delete().eq("id", id);
     if (error) return toast.error(error.message);
-    toast.success("Bobot diperbarui");
+    toast.success("Kriteria dihapus");
     load();
   }
+
 
   return (
     <SectionCard title="Kriteria Penilaian" description="Atur aspek, rentang nilai (batas atas & bawah), dan bobot setiap kriteria.">
