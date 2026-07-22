@@ -1135,17 +1135,20 @@ function RankingTab() {
           <TableBody>
             {loading && <TableRow><TableCell colSpan={7} className="text-center py-10 text-muted-foreground">Memuat…</TableCell></TableRow>}
             {!loading && rows.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-10 text-muted-foreground">Belum ada penilaian.</TableCell></TableRow>}
-            {rows.map((r, i) => (
-              <TableRow key={r.peserta_id} className={i < 3 && Number(r.total_skor) > 0 ? "bg-accent/10" : ""}>
-                <TableCell className="text-center text-2xl">{Number(r.total_skor) > 0 ? (medals[i] ?? i + 1) : "—"}</TableCell>
+            {rows.map((r, i) => {
+              const belum = !(Number(r.total_skor) > 0);
+              return (
+              <TableRow key={r.peserta_id} className={!belum && i < 3 ? "bg-accent/10" : ""}>
+                <TableCell className="text-center text-2xl">{belum ? "—" : (medals[i] ?? i + 1)}</TableCell>
                 <TableCell className="font-mono">{r.nomor_urut}</TableCell>
                 <TableCell className="font-semibold">{r.nama}</TableCell>
                 <TableCell className="text-muted-foreground">{r.asal || "—"}</TableCell>
-                <TableCell className="text-center">{r.jumlah_juri}</TableCell>
-                <TableCell className="text-right font-mono">{Number(r.rata_rata).toFixed(2)}</TableCell>
-                <TableCell className="text-right font-mono font-bold text-primary">{Number(r.total_skor).toFixed(2)}</TableCell>
+                <TableCell className="text-center">{belum ? <span className="text-muted-foreground italic">belum tampil</span> : r.jumlah_juri}</TableCell>
+                <TableCell className="text-right font-mono">{belum ? <span className="text-muted-foreground italic">belum tampil</span> : Number(r.rata_rata).toFixed(2)}</TableCell>
+                <TableCell className="text-right font-mono font-bold text-primary">{belum ? <span className="text-muted-foreground italic font-normal">belum tampil</span> : Number(r.total_skor).toFixed(2)}</TableCell>
               </TableRow>
-            ))}
+              );
+            })}
           </TableBody>
         </Table>
       </div>
