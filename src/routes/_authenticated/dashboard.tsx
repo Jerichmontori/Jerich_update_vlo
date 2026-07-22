@@ -420,10 +420,11 @@ function KriteriaTab() {
                   </div>
                 </TableCell>
                 <TableCell className="text-right">
-                  <Button size="sm" variant="outline" disabled={savingId === k.id} onClick={() => ubah(k.id)}>
-                    {savingId === k.id ? "Menyimpan..." : "Ubah"}
+                  <Button size="icon" variant="ghost" onClick={() => hapus(k.id)}>
+                    <Trash2 className="size-4 text-destructive" />
                   </Button>
                 </TableCell>
+
               </TableRow>
             ))}
             <TableRow className="bg-muted/50">
