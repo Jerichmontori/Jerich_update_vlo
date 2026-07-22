@@ -198,7 +198,7 @@ function PesertaTab() {
       if (te) { setLoading(false); return toast.error(te.message); }
     }
     const { error: ue } = await supabase.from("peserta")
-      .update({ nomor_urut: n, nama, asal: asal || null, sesi: sesiDari(n) }).eq("id", editId);
+      .update({ nomor_urut: n, nama, asal: asal || null, sesi: sesiDari(n), kategori: kategori || null }).eq("id", editId);
     if (ue) { setLoading(false); return toast.error(ue.message); }
     for (let i = 0; i < chain.length; i++) {
       const newNum = chain[i].newNum;
@@ -210,7 +210,8 @@ function PesertaTab() {
 
     setLoading(false);
     toast.success("Peserta diperbarui & urutan disesuaikan");
-    setEditId(null); setNomor(""); setNama(""); setAsal("");
+    setEditId(null); setNomor(""); setNama(""); setAsal(""); setKategori("");
+
     load();
   }
 
