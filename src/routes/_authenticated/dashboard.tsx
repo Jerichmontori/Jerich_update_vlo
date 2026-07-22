@@ -52,7 +52,7 @@ function App() {
 }
 
 function Header() {
-  const router = (typeof window !== "undefined") ? undefined : undefined;
+  
   async function signOut() {
     await supabase.auth.signOut();
     window.location.href = "/auth";
