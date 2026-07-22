@@ -20,44 +20,59 @@ export const Route = createFileRoute("/posisi")({
 });
 
 type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: string | null; total_skor: number; rata_rata: number; jumlah_juri: number };
-type PesertaSesi = { id: string; sesi: string | null; nomor_urut: number };
+type Peserta = { id: string; nama: string; asal: string | null; sesi: string | null; nomor_urut: number };
+type Row = Peserta & { total_skor: number; rata_rata: number; jumlah_juri: number; scored: boolean };
 
 const medals = ["🥇", "🥈", "🥉"];
 
 function PosisiPublic() {
-  const [rows, setRows] = useState<Ranking[]>([]);
-  const [pesertaMap, setPesertaMap] = useState<Record<string, PesertaSesi>>({});
+  const [peserta, setPeserta] = useState<Peserta[]>([]);
+  const [rankMap, setRankMap] = useState<Record<string, Ranking>>({});
   const [loading, setLoading] = useState(true);
 
   async function load() {
     setLoading(true);
     const [{ data: rankData, error: rankErr }, { data: pesertaData, error: pesertaErr }] = await Promise.all([
       supabase.from("ranking").select("*"),
-      supabase.from("peserta").select("id, sesi, nomor_urut"),
+      supabase.from("peserta").select("id, nama, asal, sesi, nomor_urut"),
     ]);
     setLoading(false);
     if (rankErr) return toast.error(rankErr.message);
     if (pesertaErr) return toast.error(pesertaErr.message);
-    const map: Record<string, PesertaSesi> = {};
-    (pesertaData ?? []).forEach((p) => { map[p.id] = p as PesertaSesi; });
-    setPesertaMap(map);
-    setRows(((rankData ?? []) as Ranking[]).filter((r) => Number(r.total_skor) > 0));
+    const rmap: Record<string, Ranking> = {};
+    (rankData ?? []).forEach((r) => { rmap[(r as Ranking).peserta_id] = r as Ranking; });
+    setRankMap(rmap);
+    setPeserta((pesertaData ?? []) as Peserta[]);
   }
   useEffect(() => { load(); }, []);
 
   const grouped = useMemo(() => {
-    const buckets: Record<string, Ranking[]> = {};
-    rows.forEach((r) => {
-      const sesi = pesertaMap[r.peserta_id]?.sesi ?? "—";
-      (buckets[sesi] ??= []).push(r);
+    const buckets: Record<string, Row[]> = {};
+    peserta.forEach((p) => {
+      const r = rankMap[p.id];
+      const total = Number(r?.total_skor ?? 0);
+      const scored = !!r && total > 0;
+      const sesi = p.sesi ?? "—";
+      (buckets[sesi] ??= []).push({
+        ...p,
+        total_skor: total,
+        rata_rata: Number(r?.rata_rata ?? 0),
+        jumlah_juri: Number(r?.jumlah_juri ?? 0),
+        scored,
+      });
     });
-    Object.values(buckets).forEach((list) => list.sort((a, b) => Number(b.total_skor) - Number(a.total_skor)));
+    Object.values(buckets).forEach((list) =>
+      list.sort((a, b) => {
+        if (b.total_skor !== a.total_skor) return b.total_skor - a.total_skor;
+        return a.nomor_urut - b.nomor_urut;
+      })
+    );
     return Object.entries(buckets).sort(([a], [b]) => {
       const na = Number(a), nb = Number(b);
       if (!Number.isNaN(na) && !Number.isNaN(nb)) return na - nb;
       return a.localeCompare(b);
     });
-  }, [rows, pesertaMap]);
+  }, [peserta, rankMap]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/40 to-background">
@@ -86,16 +101,19 @@ function PosisiPublic() {
 
       <main className="mx-auto max-w-6xl px-4 py-8 space-y-6">
         <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground">Menampilkan urutan peringkat peserta yang sudah dinilai pada setiap sesi tampil.</p>
+          <p className="text-sm text-muted-foreground">Setiap sesi menampilkan maksimal 10 peserta beserta nilainya.</p>
           <Button variant="outline" size="sm" onClick={load}>Muat Ulang</Button>
         </div>
 
         {loading && <p className="text-center py-10 text-muted-foreground">Memuat…</p>}
         {!loading && grouped.length === 0 && (
-          <Card className="border-accent/20"><CardContent className="py-16 text-center text-muted-foreground">Belum ada peserta yang dinilai.</CardContent></Card>
+          <Card className="border-accent/20"><CardContent className="py-16 text-center text-muted-foreground">Belum ada peserta.</CardContent></Card>
         )}
 
-        {!loading && grouped.map(([sesi, list]) => (
+        {!loading && grouped.map(([sesi, listAll]) => {
+          const list = listAll.slice(0, 10);
+          const scoredCount = list.filter((r) => r.scored).length;
+          return (
           <Card key={sesi} className="border-accent/20 shadow-sm overflow-hidden">
             <CardHeader className="flex flex-row items-center justify-between gap-4 bg-accent/5">
               <div className="flex items-center gap-3">
@@ -104,7 +122,7 @@ function PosisiPublic() {
                 </div>
                 <div>
                   <CardTitle className="font-serif text-xl">Sesi {sesi}</CardTitle>
-                  <CardDescription>{list.length} peserta sudah dinilai</CardDescription>
+                  <CardDescription>{list.length} peserta · {scoredCount} sudah dinilai</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -122,22 +140,28 @@ function PosisiPublic() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {list.map((r, i) => (
-                    <TableRow key={r.peserta_id} className={i < 3 ? "bg-accent/10" : ""}>
-                      <TableCell className="text-center text-2xl">{medals[i] ?? i + 1}</TableCell>
+                  {list.map((r, i) => {
+                    const rankedIdx = r.scored ? list.filter((x, j) => x.scored && j <= i).length - 1 : -1;
+                    return (
+                    <TableRow key={r.id} className={r.scored && rankedIdx < 3 ? "bg-accent/10" : ""}>
+                      <TableCell className="text-center text-2xl">
+                        {r.scored ? (medals[rankedIdx] ?? rankedIdx + 1) : "—"}
+                      </TableCell>
                       <TableCell className="font-mono">{r.nomor_urut}</TableCell>
                       <TableCell className="font-semibold">{r.nama}</TableCell>
                       <TableCell className="text-muted-foreground">{r.asal || "—"}</TableCell>
-                      <TableCell className="text-center">{r.jumlah_juri}</TableCell>
-                      <TableCell className="text-right font-mono">{Number(r.rata_rata).toFixed(2)}</TableCell>
-                      <TableCell className="text-right font-mono font-bold text-primary">{Number(r.total_skor).toFixed(2)}</TableCell>
+                      <TableCell className="text-center">{r.scored ? r.jumlah_juri : <span className="text-muted-foreground italic">belum tampil</span>}</TableCell>
+                      <TableCell className="text-right font-mono">{r.scored ? r.rata_rata.toFixed(2) : <span className="text-muted-foreground italic">belum tampil</span>}</TableCell>
+                      <TableCell className="text-right font-mono font-bold text-primary">{r.scored ? r.total_skor.toFixed(2) : <span className="text-muted-foreground italic font-normal">belum tampil</span>}</TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             </CardContent>
           </Card>
-        ))}
+          );
+        })}
       </main>
     </div>
   );
