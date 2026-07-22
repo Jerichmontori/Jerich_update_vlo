@@ -860,17 +860,11 @@ function PenilaianTab() {
                   </div>
                 );
               })}
-              <div className="sticky bottom-0 rounded-lg border-2 border-accent/50 bg-card p-3 flex items-center justify-between">
-                <div className="text-sm">
-                  <div className="text-muted-foreground">Masalah tercentang: <b>{perhatianChecked}</b> / {perhatianTotal}</div>
-                  <div className="font-serif text-lg">Nilai: <b className="text-primary">{perhatianNilai}</b></div>
-                </div>
-              </div>
               <DialogFooter className="pt-2">
                 <Button variant="outline" onClick={() => setOpenKriteria(null)}>Batal</Button>
                 <Button onClick={savePerhatian} disabled={saving} className="gap-1">
                   <Check className="size-4" />
-                  {saving ? "Menyimpan..." : "Kirim"}
+                  {saving ? "Menyimpan..." : "Simpan"}
                 </Button>
               </DialogFooter>
             </div>
