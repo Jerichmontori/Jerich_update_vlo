@@ -42,10 +42,14 @@ function Landing() {
             <Button asChild size="lg">
               <Link to="/auth">Masuk sebagai Juri / Admin</Link>
             </Button>
+            <Button asChild size="lg" variant="secondary">
+              <Link to="/daftar">Daftar sebagai Juri</Link>
+            </Button>
             <Button asChild size="lg" variant="outline" className="gap-2">
               <Link to="/ranking"><Eye className="size-4" />Lihat Ranking (Viewer)</Link>
             </Button>
           </div>
+
         </section>
 
         <section className="mt-20 grid gap-6 sm:grid-cols-3">
