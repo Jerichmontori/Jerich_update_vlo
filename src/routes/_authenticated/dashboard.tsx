@@ -18,7 +18,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   component: App,
 });
 
-type Peserta = { id: string; nomor_urut: number; nama: string; asal: string | null; sesi: string | null };
+type Peserta = { id: string; nomor_urut: number; nama: string; asal: string | null; sesi: string | null; kategori: string | null };
 type Juri = { id: string; nama: string; jabatan: string | null; email: string | null; role: "admin" | "juri" | "viewer" | null; approved: boolean; user_id: string | null };
 type Kriteria = { id: string; nama: string; bobot: number; batas_atas: number; batas_bawah: number };
 type Mazmur = { id: string; bacaan: string; jumlah_ayat: number };
