@@ -318,8 +318,8 @@ function PenilaianTab() {
   const [juri, setJuri] = useState<Juri[]>([]);
   const [kriteria, setKriteria] = useState<Kriteria[]>([]);
   const [penilaian, setPenilaian] = useState<Penilaian[]>([]);
-  const [pesertaId, setPesertaId] = useState<string>("");
   const [juriId, setJuriId] = useState<string>("");
+  const [kriteriaId, setKriteriaId] = useState<string>("");
   const [values, setValues] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
 
@@ -336,24 +336,24 @@ function PenilaianTab() {
   useEffect(() => { loadAll(); }, []);
 
   useEffect(() => {
-    if (!pesertaId || !juriId) { setValues({}); return; }
+    if (!juriId || !kriteriaId) { setValues({}); return; }
     const v: Record<string, string> = {};
-    for (const k of kriteria) {
-      const found = penilaian.find(x => x.peserta_id === pesertaId && x.juri_id === juriId && x.kriteria_id === k.id);
-      if (found) v[k.id] = String(found.nilai);
+    for (const p of peserta) {
+      const found = penilaian.find(x => x.peserta_id === p.id && x.juri_id === juriId && x.kriteria_id === kriteriaId);
+      if (found) v[p.id] = String(found.nilai);
     }
     setValues(v);
-  }, [pesertaId, juriId, kriteria, penilaian]);
+  }, [juriId, kriteriaId, peserta, penilaian]);
 
   async function simpan() {
-    if (!pesertaId || !juriId) return toast.error("Pilih peserta dan juri terlebih dahulu");
-    const rows = kriteria
-      .filter(k => values[k.id] !== undefined && values[k.id] !== "")
-      .map(k => ({
-        peserta_id: pesertaId,
+    if (!juriId || !kriteriaId) return toast.error("Pilih juri dan kriteria terlebih dahulu");
+    const rows = peserta
+      .filter(p => values[p.id] !== undefined && values[p.id] !== "")
+      .map(p => ({
+        peserta_id: p.id,
         juri_id: juriId,
-        kriteria_id: k.id,
-        nilai: Number(values[k.id]),
+        kriteria_id: kriteriaId,
+        nilai: Number(values[p.id]),
       }));
     if (rows.length === 0) return toast.error("Isi minimal satu nilai");
     for (const r of rows) if (r.nilai < 0 || r.nilai > 100) return toast.error("Nilai harus 0-100");
@@ -367,9 +367,10 @@ function PenilaianTab() {
   }
 
   const canJudge = peserta.length > 0 && juri.length > 0 && kriteria.length > 0;
+  const selectedKriteria = kriteria.find(k => k.id === kriteriaId);
 
   return (
-    <SectionCard title="Input Penilaian" description="Pilih peserta dan juri, lalu berikan nilai untuk setiap kriteria (0–100).">
+    <SectionCard title="Input Penilaian" description="Pilih juri dan kriteria, lalu berikan nilai untuk setiap peserta (0–100).">
       {!canJudge && (
         <div className="rounded-lg border-2 border-dashed border-accent/50 bg-accent/5 p-6 text-center text-sm text-muted-foreground">
           Lengkapi dulu data <b>peserta</b>, <b>juri</b>, dan <b>kriteria</b> sebelum memulai penilaian.
@@ -379,15 +380,6 @@ function PenilaianTab() {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             <div>
-              <Label>Peserta</Label>
-              <Select value={pesertaId} onValueChange={setPesertaId}>
-                <SelectTrigger><SelectValue placeholder="Pilih peserta" /></SelectTrigger>
-                <SelectContent>
-                  {peserta.map(p => <SelectItem key={p.id} value={p.id}>{p.nomor_urut}. {p.nama}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
               <Label>Juri</Label>
               <Select value={juriId} onValueChange={setJuriId}>
                 <SelectTrigger><SelectValue placeholder="Pilih juri" /></SelectTrigger>
@@ -396,29 +388,44 @@ function PenilaianTab() {
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label>Kriteria</Label>
+              <Select value={kriteriaId} onValueChange={setKriteriaId}>
+                <SelectTrigger><SelectValue placeholder="Pilih kriteria" /></SelectTrigger>
+                <SelectContent>
+                  {kriteria.map(k => <SelectItem key={k.id} value={k.id}>{k.nama} ({Number(k.bobot)}%)</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
+          {selectedKriteria && (
+            <div className="mb-4 rounded-md bg-accent/10 border border-accent/30 px-4 py-2 text-sm">
+              Menilai kriteria: <b>{selectedKriteria.nama}</b> — Bobot <Badge variant="secondary">{Number(selectedKriteria.bobot)}%</Badge>
+            </div>
+          )}
+
           <div className="rounded-lg border bg-card divide-y">
-            {kriteria.map(k => (
-              <div key={k.id} className="flex items-center justify-between gap-4 p-4">
+            {peserta.map(p => (
+              <div key={p.id} className="flex items-center justify-between gap-4 p-4">
                 <div>
-                  <p className="font-medium">{k.nama}</p>
-                  <p className="text-xs text-muted-foreground">Bobot {Number(k.bobot)}%</p>
+                  <p className="font-medium"><span className="font-mono text-muted-foreground mr-2">{p.nomor_urut}.</span>{p.nama}</p>
+                  {p.asal && <p className="text-xs text-muted-foreground">{p.asal}</p>}
                 </div>
                 <Input
                   type="number" min={0} max={100} step="0.1"
                   className="w-28 text-right font-mono text-lg"
-                  value={values[k.id] ?? ""}
-                  onChange={e => setValues(v => ({ ...v, [k.id]: e.target.value }))}
+                  value={values[p.id] ?? ""}
+                  onChange={e => setValues(v => ({ ...v, [p.id]: e.target.value }))}
                   placeholder="0-100"
-                  disabled={!pesertaId || !juriId}
+                  disabled={!juriId || !kriteriaId}
                 />
               </div>
             ))}
           </div>
 
           <div className="flex justify-end mt-6">
-            <Button onClick={simpan} disabled={saving || !pesertaId || !juriId} size="lg">
+            <Button onClick={simpan} disabled={saving || !juriId || !kriteriaId} size="lg">
               {saving ? "Menyimpan..." : "Simpan Penilaian"}
             </Button>
           </div>
@@ -427,6 +434,7 @@ function PenilaianTab() {
     </SectionCard>
   );
 }
+
 
 /* RANKING */
 function RankingTab() {
