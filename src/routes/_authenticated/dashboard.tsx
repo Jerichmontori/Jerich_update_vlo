@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
-import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags } from "lucide-react";
+import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: App,
@@ -1163,6 +1163,8 @@ function PosisiTab() {
   const [peserta, setPeserta] = useState<{ id: string; nama: string; asal: string | null; sesi: string | null; nomor_urut: number }[]>([]);
   const [rankMap, setRankMap] = useState<Record<string, Ranking>>({});
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(0);
+
 
   async function load() {
     setLoading(true);
@@ -1208,11 +1210,13 @@ function PosisiTab() {
     >
       {loading && <p className="text-center py-10 text-muted-foreground">Memuat…</p>}
       {!loading && grouped.length === 0 && <p className="text-center py-10 text-muted-foreground">Belum ada peserta.</p>}
-      <div className="space-y-6">
-        {!loading && grouped.map(({ key, label, range, list }) => {
-          const scoredCount = list.filter((r) => r.scored).length;
-          let rankedIdx = -1;
-          return (
+      {!loading && grouped.length > 0 && (() => {
+        const safePage = Math.min(page, grouped.length - 1);
+        const { key, label, range, list } = grouped[safePage];
+        const scoredCount = list.filter((r) => r.scored).length;
+        let rankedIdx = -1;
+        return (
+          <div className="space-y-4">
             <div key={key} className="rounded-lg border bg-card overflow-hidden">
               <div className="flex items-center justify-between gap-4 px-4 py-3 bg-accent/5 border-b">
                 <div>
@@ -1220,7 +1224,6 @@ function PosisiTab() {
                   <p className="text-xs text-muted-foreground">{list.length} peserta · {scoredCount} sudah dinilai</p>
                 </div>
               </div>
-
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -1252,12 +1255,28 @@ function PosisiTab() {
                 </TableBody>
               </Table>
             </div>
-          );
-        })}
-      </div>
+            <div className="flex items-center justify-between gap-4 pt-2">
+              <Button variant="outline" size="sm" disabled={safePage === 0} onClick={() => setPage((p) => Math.max(0, p - 1))}>
+                <ChevronLeft className="size-4" /> Sesi Sebelumnya
+              </Button>
+              <div className="flex flex-wrap items-center justify-center gap-2">
+                {grouped.map((g, i) => (
+                  <Button key={g.key} size="sm" variant={i === safePage ? "default" : "outline"} onClick={() => setPage(i)}>
+                    {i + 1}
+                  </Button>
+                ))}
+              </div>
+              <Button variant="outline" size="sm" disabled={safePage >= grouped.length - 1} onClick={() => setPage((p) => Math.min(grouped.length - 1, p + 1))}>
+                Sesi Berikutnya <ChevronRight className="size-4" />
+              </Button>
+            </div>
+          </div>
+        );
+      })()}
     </SectionCard>
   );
 }
+
 
 function SectionCard({ title, description, action, children }: { title: string; description?: string; action?: React.ReactNode; children: React.ReactNode }) {
   return (
