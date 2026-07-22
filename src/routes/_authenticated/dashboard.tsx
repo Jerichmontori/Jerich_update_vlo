@@ -554,11 +554,15 @@ function PenilaianTab() {
     if (!pesertaId) return toast.error("Pilih peserta terlebih dahulu");
     const key = kriteriaKey(k.nama);
     if (key === "catatan") {
-      // preload existing avg back into sliders if available
       setCatatanValues(CATATAN_ASPEK.map(() => 3));
+    }
+    if (key === "perhatian") {
+      if (!selectedMazmur) return toast.error("Pilih bacaan mazmur terlebih dahulu");
+      setPerhatianChecks(PERHATIAN_ASPEK.map(() => Array(selectedMazmur.jumlah_ayat).fill(false)));
     }
     setOpenKriteria(k);
   }
+
 
   async function saveNilai(nilai: number) {
     if (!openKriteria) return;
