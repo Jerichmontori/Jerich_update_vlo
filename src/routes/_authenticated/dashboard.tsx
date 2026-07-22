@@ -316,7 +316,7 @@ function PesertaTab() {
                 <TableCell className="font-mono">{p.nomor_urut}</TableCell>
                 <TableCell className="font-medium"><button type="button" onClick={()=>pilihUntukEdit(p)} className="text-left hover:underline hover:text-primary transition-colors">{p.nama}</button></TableCell>
                 <TableCell className="text-muted-foreground">{p.asal || "—"}</TableCell>
-                <TableCell className="text-muted-foreground">{p.sesi || "—"}</TableCell>
+                <TableCell className="text-muted-foreground">{scoredIds.has(p.id) ? sesiDari(p.nomor_urut) : "—"}</TableCell>
                 <TableCell className="text-right"><Button size="icon" variant="ghost" onClick={()=>hapus(p.id)}><Trash2 className="size-4 text-destructive" /></Button></TableCell>
               </TableRow>
             ))}
