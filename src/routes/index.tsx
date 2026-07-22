@@ -18,7 +18,7 @@ export const Route = createFileRoute("/")({
 });
 
 type Peserta = { id: string; nomor_urut: number; nama: string; asal: string | null };
-type Juri = { id: string; nama: string; jabatan: string | null };
+type Juri = { id: string; nama: string; jabatan: string | null; bacaan_mazmur: string | null; jumlah_ayat: number | null };
 type Kriteria = { id: string; nama: string; bobot: number };
 type Penilaian = { id: string; peserta_id: string; juri_id: string; kriteria_id: string; nilai: number };
 type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: string | null; total_skor: number; rata_rata: number; jumlah_juri: number };
