@@ -445,22 +445,6 @@ function PenilaianTab() {
             ))}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-4 items-end">
-            <div>
-              <Label>Nilai (0–100)</Label>
-              <Input
-                type="number" min={0} max={100} step="0.1"
-                value={nilai}
-                onChange={e => setNilai(e.target.value)}
-                placeholder="0-100"
-                disabled={!juriId || !kriteriaId || !pesertaId}
-                className="font-mono text-lg"
-              />
-            </div>
-            <Button onClick={simpan} disabled={saving || !juriId || !kriteriaId || !pesertaId} size="lg">
-              {saving ? "Menyimpan..." : "Simpan Penilaian"}
-            </Button>
-          </div>
         </>
       )}
     </SectionCard>
