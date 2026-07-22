@@ -557,7 +557,7 @@ function PenilaianTab() {
     );
     setSaving(false);
     if (error) return toast.error(error.message);
-    toast.success(`Nilai ${openKriteria.nama} disimpan (${nilai})`);
+    toast.success(`Nilai ${openKriteria.nama} disimpan`);
     setOpenKriteria(null);
     loadAll();
   }
