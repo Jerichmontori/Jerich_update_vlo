@@ -447,8 +447,23 @@ const CATATAN_ASPEK = [
   "Penguasaan Panggung",
 ];
 
-function kriteriaKey(nama: string): keyof typeof GRADE_DESCRIPTIONS | "catatan" | null {
+const PERHATIAN_ASPEK = [
+  "Tidak Membaca Perikop",
+  "Salah kata",
+  "Mengubah makna teks",
+  "Menambah kata",
+  "Mengurangi kata",
+  "Tidak berhenti pada koma",
+  "Tidak berhenti pada titik",
+  "Jeda mengganggu makna",
+  "Suara kurang jelas",
+  "Tempo terlalu cepat",
+  "Tempo terlalu lambat",
+];
+
+function kriteriaKey(nama: string): keyof typeof GRADE_DESCRIPTIONS | "catatan" | "perhatian" | null {
   const n = nama.toLowerCase();
+  if (n.includes("perhatian")) return "perhatian";
   if (n.includes("catatan")) return "catatan";
   if (n.includes("vokal")) return "vokal";
   if (n.includes("hayat")) return "penghayatan";
@@ -456,6 +471,7 @@ function kriteriaKey(nama: string): keyof typeof GRADE_DESCRIPTIONS | "catatan" 
   if (n.includes("penampilan")) return "penampilan";
   return null;
 }
+
 
 /* PENILAIAN */
 function CriteriaPillButton({
@@ -503,7 +519,9 @@ function PenilaianTab() {
   const [mazmurId, setMazmurId] = useState<string>("");
   const [openKriteria, setOpenKriteria] = useState<Kriteria | null>(null);
   const [catatanValues, setCatatanValues] = useState<number[]>(() => CATATAN_ASPEK.map(() => 3));
+  const [perhatianChecks, setPerhatianChecks] = useState<boolean[][]>(() => PERHATIAN_ASPEK.map(() => []));
   const [saving, setSaving] = useState(false);
+
 
   async function loadAll() {
     const [p, j, k, m, n] = await Promise.all([
@@ -536,11 +554,15 @@ function PenilaianTab() {
     if (!pesertaId) return toast.error("Pilih peserta terlebih dahulu");
     const key = kriteriaKey(k.nama);
     if (key === "catatan") {
-      // preload existing avg back into sliders if available
       setCatatanValues(CATATAN_ASPEK.map(() => 3));
+    }
+    if (key === "perhatian") {
+      if (!selectedMazmur) return toast.error("Pilih bacaan mazmur terlebih dahulu");
+      setPerhatianChecks(PERHATIAN_ASPEK.map(() => Array(selectedMazmur.jumlah_ayat).fill(false)));
     }
     setOpenKriteria(k);
   }
+
 
   async function saveNilai(nilai: number) {
     if (!openKriteria) return;
@@ -567,6 +589,17 @@ function PenilaianTab() {
     const nilai = Math.round(avg * 20 * 100) / 100; // scale 1-5 → 20-100
     await saveNilai(nilai);
   }
+
+  const perhatianTotal = perhatianChecks.reduce((s, row) => s + row.length, 0);
+  const perhatianChecked = perhatianChecks.reduce((s, row) => s + row.filter(Boolean).length, 0);
+  const perhatianNilai = perhatianTotal === 0
+    ? 0
+    : Math.round(((perhatianTotal - perhatianChecked) / perhatianTotal) * 100 * 100) / 100;
+
+  async function savePerhatian() {
+    await saveNilai(perhatianNilai);
+  }
+
 
   const activeKey = openKriteria ? kriteriaKey(openKriteria.nama) : null;
 
@@ -637,14 +670,10 @@ function PenilaianTab() {
                     active={val !== null}
                     onClick={() => openDialog(k)}
                   />
-                  {val !== null && (
-                    <span className="absolute -top-2 -right-2 rounded-full bg-primary text-primary-foreground text-xs font-semibold px-2.5 py-1 shadow">
-                      {val}
-                    </span>
-                  )}
                 </div>
               );
             })}
+
           </div>
         </>
       )}
@@ -656,11 +685,14 @@ function PenilaianTab() {
             <DialogDescription>
               {activeKey === "catatan"
                 ? "Beri nilai 1–5 untuk setiap aspek berikut."
+                : activeKey === "perhatian"
+                ? "Centang setiap ayat yang mengalami masalah pada aspek terkait."
                 : "Pilih grade yang paling sesuai dengan penampilan peserta."}
             </DialogDescription>
+
           </DialogHeader>
 
-          {activeKey && activeKey !== "catatan" && (
+          {activeKey && activeKey !== "catatan" && activeKey !== "perhatian" && (
             <div className="grid gap-3 py-2 max-h-[65vh] overflow-y-auto pr-2">
               {(() => {
                 const descs = GRADE_DESCRIPTIONS[activeKey];
@@ -700,10 +732,10 @@ function PenilaianTab() {
             <div className="grid gap-3 py-2 max-h-[60vh] overflow-y-auto pr-2">
               {CATATAN_ASPEK.map((aspek, i) => (
                 <div key={aspek} className="rounded-lg border bg-card p-3">
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="mb-2">
                     <span className="text-sm font-medium">{i + 1}. {aspek}</span>
-                    <Badge variant="secondary">{catatanValues[i]}</Badge>
                   </div>
+
                   <div className="grid grid-cols-5 gap-2">
                     {[1, 2, 3, 4, 5].map(v => (
                       <button
@@ -732,6 +764,60 @@ function PenilaianTab() {
               </DialogFooter>
             </div>
           )}
+
+          {activeKey === "perhatian" && (
+            <div className="grid gap-3 py-2 max-h-[60vh] overflow-y-auto pr-2">
+              {PERHATIAN_ASPEK.map((aspek, i) => {
+                const row = perhatianChecks[i] ?? [];
+                return (
+                  <div key={aspek} className="rounded-lg border bg-card p-3">
+                    <div className="text-sm font-medium mb-2">{i + 1}. {aspek}</div>
+                    <div className="flex flex-wrap gap-2">
+                      {row.map((checked, ayatIdx) => (
+                        <label
+                          key={ayatIdx}
+                          className={[
+                            "cursor-pointer select-none rounded-md border-2 px-3 py-1.5 text-xs font-semibold transition",
+                            checked
+                              ? "border-destructive bg-destructive text-destructive-foreground"
+                              : "border-primary/20 bg-background hover:border-accent/60",
+                          ].join(" ")}
+                        >
+                          <input
+                            type="checkbox"
+                            className="sr-only"
+                            checked={checked}
+                            onChange={() =>
+                              setPerhatianChecks(prev =>
+                                prev.map((r, idx) =>
+                                  idx === i ? r.map((c, ai) => (ai === ayatIdx ? !c : c)) : r
+                                )
+                              )
+                            }
+                          />
+                          Ayat {ayatIdx + 1}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="sticky bottom-0 rounded-lg border-2 border-accent/50 bg-card p-3 flex items-center justify-between">
+                <div className="text-sm">
+                  <div className="text-muted-foreground">Masalah tercentang: <b>{perhatianChecked}</b> / {perhatianTotal}</div>
+                  <div className="font-serif text-lg">Nilai: <b className="text-primary">{perhatianNilai}</b></div>
+                </div>
+              </div>
+              <DialogFooter className="pt-2">
+                <Button variant="outline" onClick={() => setOpenKriteria(null)}>Batal</Button>
+                <Button onClick={savePerhatian} disabled={saving} className="gap-1">
+                  <Check className="size-4" />
+                  {saving ? "Menyimpan..." : "Kirim"}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+
 
           {!activeKey && openKriteria && (
             <div className="py-4 text-sm text-muted-foreground">
