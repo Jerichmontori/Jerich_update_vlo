@@ -313,14 +313,53 @@ function KriteriaTab() {
 }
 
 /* PENILAIAN */
+function CriteriaPillButton({
+  label,
+  bobot,
+  active,
+  onClick,
+}: {
+  label: string;
+  bobot: number;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={[
+        "group relative w-full rounded-[2rem] border-[3px] border-black px-6 py-8 sm:py-10",
+        "text-left font-serif transition-all duration-200 ease-out",
+        "focus:outline-none focus-visible:ring-4 focus-visible:ring-accent/60",
+        "translate-y-0 hover:-translate-y-1 active:translate-y-1",
+        active
+          ? "bg-gradient-to-b from-amber-300 to-amber-500 shadow-[0_10px_0_0_#000,0_14px_20px_-4px_rgba(0,0,0,0.5)] active:shadow-[0_4px_0_0_#000,0_6px_10px_-2px_rgba(0,0,0,0.4)]"
+          : "bg-gradient-to-b from-yellow-200 to-yellow-400 shadow-[0_8px_0_0_#000,0_12px_16px_-4px_rgba(0,0,0,0.35)] hover:shadow-[0_12px_0_0_#000,0_18px_24px_-4px_rgba(0,0,0,0.45)] active:shadow-[0_4px_0_0_#000,0_6px_10px_-2px_rgba(0,0,0,0.3)]",
+      ].join(" ")}
+    >
+      <span className="pointer-events-none absolute inset-x-4 top-2 h-2 rounded-full bg-white/60 blur-[1px]" />
+      <div className="relative flex items-center justify-between gap-3">
+        <span className="text-xl sm:text-2xl font-semibold text-black drop-shadow-[0_1px_0_rgba(255,255,255,0.6)]">
+          {label}
+        </span>
+        <span className="shrink-0 rounded-full border-2 border-black bg-white/70 px-3 py-1 text-xs font-bold text-black">
+          {bobot}%
+        </span>
+      </div>
+    </button>
+  );
+}
+
 function PenilaianTab() {
   const [peserta, setPeserta] = useState<Peserta[]>([]);
   const [juri, setJuri] = useState<Juri[]>([]);
   const [kriteria, setKriteria] = useState<Kriteria[]>([]);
   const [penilaian, setPenilaian] = useState<Penilaian[]>([]);
   const [juriId, setJuriId] = useState<string>("");
+  const [pesertaId, setPesertaId] = useState<string>("");
   const [kriteriaId, setKriteriaId] = useState<string>("");
-  const [values, setValues] = useState<Record<string, string>>({});
+  const [nilai, setNilai] = useState<string>("");
   const [saving, setSaving] = useState(false);
 
   async function loadAll() {
@@ -336,30 +375,22 @@ function PenilaianTab() {
   useEffect(() => { loadAll(); }, []);
 
   useEffect(() => {
-    if (!juriId || !kriteriaId) { setValues({}); return; }
-    const v: Record<string, string> = {};
-    for (const p of peserta) {
-      const found = penilaian.find(x => x.peserta_id === p.id && x.juri_id === juriId && x.kriteria_id === kriteriaId);
-      if (found) v[p.id] = String(found.nilai);
-    }
-    setValues(v);
-  }, [juriId, kriteriaId, peserta, penilaian]);
+    if (!juriId || !kriteriaId || !pesertaId) { setNilai(""); return; }
+    const found = penilaian.find(x => x.peserta_id === pesertaId && x.juri_id === juriId && x.kriteria_id === kriteriaId);
+    setNilai(found ? String(found.nilai) : "");
+  }, [juriId, kriteriaId, pesertaId, penilaian]);
 
   async function simpan() {
-    if (!juriId || !kriteriaId) return toast.error("Pilih juri dan kriteria terlebih dahulu");
-    const rows = peserta
-      .filter(p => values[p.id] !== undefined && values[p.id] !== "")
-      .map(p => ({
-        peserta_id: p.id,
-        juri_id: juriId,
-        kriteria_id: kriteriaId,
-        nilai: Number(values[p.id]),
-      }));
-    if (rows.length === 0) return toast.error("Isi minimal satu nilai");
-    for (const r of rows) if (r.nilai < 0 || r.nilai > 100) return toast.error("Nilai harus 0-100");
+    if (!juriId || !kriteriaId || !pesertaId) return toast.error("Pilih juri, peserta, dan kriteria");
+    if (nilai === "") return toast.error("Isi nilai");
+    const num = Number(nilai);
+    if (num < 0 || num > 100) return toast.error("Nilai harus 0-100");
 
     setSaving(true);
-    const { error } = await supabase.from("penilaian").upsert(rows, { onConflict: "peserta_id,juri_id,kriteria_id" });
+    const { error } = await supabase.from("penilaian").upsert(
+      [{ peserta_id: pesertaId, juri_id: juriId, kriteria_id: kriteriaId, nilai: num }],
+      { onConflict: "peserta_id,juri_id,kriteria_id" }
+    );
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Penilaian tersimpan");
@@ -367,10 +398,10 @@ function PenilaianTab() {
   }
 
   const canJudge = peserta.length > 0 && juri.length > 0 && kriteria.length > 0;
-  const selectedKriteria = kriteria.find(k => k.id === kriteriaId);
+  const kriteriaButtons = kriteria.slice(0, 4);
 
   return (
-    <SectionCard title="Input Penilaian" description="Pilih juri dan kriteria, lalu berikan nilai untuk setiap peserta (0–100).">
+    <SectionCard title="Input Penilaian" description="Pilih juri, peserta, dan kriteria — lalu beri nilai (0–100).">
       {!canJudge && (
         <div className="rounded-lg border-2 border-dashed border-accent/50 bg-accent/5 p-6 text-center text-sm text-muted-foreground">
           Lengkapi dulu data <b>peserta</b>, <b>juri</b>, dan <b>kriteria</b> sebelum memulai penilaian.
@@ -378,7 +409,7 @@ function PenilaianTab() {
       )}
       {canJudge && (
         <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
             <div>
               <Label>Juri</Label>
               <Select value={juriId} onValueChange={setJuriId}>
@@ -389,43 +420,48 @@ function PenilaianTab() {
               </Select>
             </div>
             <div>
-              <Label>Kriteria</Label>
-              <Select value={kriteriaId} onValueChange={setKriteriaId}>
-                <SelectTrigger><SelectValue placeholder="Pilih kriteria" /></SelectTrigger>
+              <Label>Peserta</Label>
+              <Select value={pesertaId} onValueChange={setPesertaId}>
+                <SelectTrigger><SelectValue placeholder="Pilih peserta" /></SelectTrigger>
                 <SelectContent>
-                  {kriteria.map(k => <SelectItem key={k.id} value={k.id}>{k.nama} ({Number(k.bobot)}%)</SelectItem>)}
+                  {peserta.map(p => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.nomor_urut}. {p.nama}{p.asal ? ` — ${p.asal}` : ""}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
           </div>
 
-          {selectedKriteria && (
-            <div className="mb-4 rounded-md bg-accent/10 border border-accent/30 px-4 py-2 text-sm">
-              Menilai kriteria: <b>{selectedKriteria.nama}</b> — Bobot <Badge variant="secondary">{Number(selectedKriteria.bobot)}%</Badge>
-            </div>
-          )}
-
-          <div className="rounded-lg border bg-card divide-y">
-            {peserta.map(p => (
-              <div key={p.id} className="flex items-center justify-between gap-4 p-4">
-                <div>
-                  <p className="font-medium"><span className="font-mono text-muted-foreground mr-2">{p.nomor_urut}.</span>{p.nama}</p>
-                  {p.asal && <p className="text-xs text-muted-foreground">{p.asal}</p>}
-                </div>
-                <Input
-                  type="number" min={0} max={100} step="0.1"
-                  className="w-28 text-right font-mono text-lg"
-                  value={values[p.id] ?? ""}
-                  onChange={e => setValues(v => ({ ...v, [p.id]: e.target.value }))}
-                  placeholder="0-100"
-                  disabled={!juriId || !kriteriaId}
-                />
-              </div>
+          <div className="mb-2">
+            <Label className="text-base">Pilih Kriteria</Label>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mb-8 pb-4">
+            {kriteriaButtons.map(k => (
+              <CriteriaPillButton
+                key={k.id}
+                label={k.nama}
+                bobot={Number(k.bobot)}
+                active={kriteriaId === k.id}
+                onClick={() => setKriteriaId(k.id)}
+              />
             ))}
           </div>
 
-          <div className="flex justify-end mt-6">
-            <Button onClick={simpan} disabled={saving || !juriId || !kriteriaId} size="lg">
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-4 items-end">
+            <div>
+              <Label>Nilai (0–100)</Label>
+              <Input
+                type="number" min={0} max={100} step="0.1"
+                value={nilai}
+                onChange={e => setNilai(e.target.value)}
+                placeholder="0-100"
+                disabled={!juriId || !kriteriaId || !pesertaId}
+                className="font-mono text-lg"
+              />
+            </div>
+            <Button onClick={simpan} disabled={saving || !juriId || !kriteriaId || !pesertaId} size="lg">
               {saving ? "Menyimpan..." : "Simpan Penilaian"}
             </Button>
           </div>
@@ -434,6 +470,7 @@ function PenilaianTab() {
     </SectionCard>
   );
 }
+
 
 
 /* RANKING */
