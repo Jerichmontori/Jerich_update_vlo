@@ -48,6 +48,9 @@ function Landing() {
             <Button asChild size="lg" variant="outline" className="gap-2">
               <Link to="/ranking"><Eye className="size-4" />Lihat Ranking (Viewer)</Link>
             </Button>
+            <Button asChild size="lg" variant="outline" className="gap-2">
+              <Link to="/posisi"><Trophy className="size-4" />Posisi per Sesi</Link>
+            </Button>
           </div>
 
         </section>

@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RankingRouteImport } from './routes/ranking'
+import { Route as PosisiRouteImport } from './routes/posisi'
 import { Route as DaftarRouteImport } from './routes/daftar'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -19,6 +20,11 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 const RankingRoute = RankingRouteImport.update({
   id: '/ranking',
   path: '/ranking',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PosisiRoute = PosisiRouteImport.update({
+  id: '/posisi',
+  path: '/posisi',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DaftarRoute = DaftarRouteImport.update({
@@ -50,6 +56,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/daftar': typeof DaftarRoute
+  '/posisi': typeof PosisiRoute
   '/ranking': typeof RankingRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
 }
@@ -57,6 +64,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/daftar': typeof DaftarRoute
+  '/posisi': typeof PosisiRoute
   '/ranking': typeof RankingRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
 }
@@ -66,20 +74,22 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/daftar': typeof DaftarRoute
+  '/posisi': typeof PosisiRoute
   '/ranking': typeof RankingRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/daftar' | '/ranking' | '/dashboard'
+  fullPaths: '/' | '/auth' | '/daftar' | '/posisi' | '/ranking' | '/dashboard'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/daftar' | '/ranking' | '/dashboard'
+  to: '/' | '/auth' | '/daftar' | '/posisi' | '/ranking' | '/dashboard'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/daftar'
+    | '/posisi'
     | '/ranking'
     | '/_authenticated/dashboard'
   fileRoutesById: FileRoutesById
@@ -89,6 +99,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   DaftarRoute: typeof DaftarRoute
+  PosisiRoute: typeof PosisiRoute
   RankingRoute: typeof RankingRoute
 }
 
@@ -99,6 +110,13 @@ declare module '@tanstack/react-router' {
       path: '/ranking'
       fullPath: '/ranking'
       preLoaderRoute: typeof RankingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/posisi': {
+      id: '/posisi'
+      path: '/posisi'
+      fullPath: '/posisi'
+      preLoaderRoute: typeof PosisiRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/daftar': {
@@ -155,6 +173,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   DaftarRoute: DaftarRoute,
+  PosisiRoute: PosisiRoute,
   RankingRoute: RankingRoute,
 }
 export const routeTree = rootRouteImport
