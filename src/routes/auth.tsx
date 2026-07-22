@@ -35,6 +35,12 @@ function AuthPage() {
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (loading) return;
+    // Guard: hindari submit terpicu autofill/keystroke tunggal.
+    if (!identifier.trim() || password.length < 6) {
+      toast.error("Isi email/nama dan kata sandi (min. 6 karakter) sebelum masuk.");
+      return;
+    }
     setLoading(true);
     let email = identifier.trim();
     // Jika bukan format email, anggap sebagai nama dan cari email-nya.
