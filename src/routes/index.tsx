@@ -72,6 +72,8 @@ function PesertaTab() {
   const [nama, setNama] = useState("");
   const [asal, setAsal] = useState("");
   const [loading, setLoading] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   async function load() {
     const { data, error } = await supabase.from("peserta").select("*").order("nomor_urut");
@@ -99,8 +101,75 @@ function PesertaTab() {
     load();
   }
 
+  function unduhTemplate() {
+    const ws = XLSX.utils.aoa_to_sheet([
+      ["nomor_urut", "nama", "asal"],
+      [1, "Contoh Nama", "Jemaat Contoh"],
+      [2, "Contoh Nama 2", ""],
+    ]);
+    ws["!cols"] = [{ wch: 12 }, { wch: 30 }, { wch: 30 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Peserta");
+    XLSX.writeFile(wb, "template-peserta.xlsx");
+  }
+
+  function pickFile() {
+    fileRef.current?.click();
+  }
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setImporting(true);
+    try {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array" });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(ws, { defval: "" });
+
+      const normalized = rows
+        .map((r) => {
+          const keys = Object.keys(r).reduce<Record<string, unknown>>((acc, k) => {
+            acc[k.toString().trim().toLowerCase().replace(/\s+/g, "_")] = r[k];
+            return acc;
+          }, {});
+          const nomor_urut = Number(keys["nomor_urut"] ?? keys["no"] ?? keys["nomor"]);
+          const nama = String(keys["nama"] ?? "").trim();
+          const asalRaw = keys["asal"] ?? keys["jemaat"] ?? keys["asal_/_jemaat"] ?? "";
+          const asal = String(asalRaw).trim();
+          return { nomor_urut, nama, asal: asal || null };
+        })
+        .filter((r) => r.nama && !isNaN(r.nomor_urut));
+
+      if (normalized.length === 0) {
+        toast.error("Tidak ada baris valid. Pastikan kolom: nomor_urut, nama, asal");
+        return;
+      }
+
+      const { error } = await supabase.from("peserta").insert(normalized);
+      if (error) return toast.error(error.message);
+      toast.success(`${normalized.length} peserta berhasil diimpor`);
+      load();
+    } catch (err) {
+      toast.error("Gagal membaca file: " + (err instanceof Error ? err.message : "unknown"));
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
-    <SectionCard title="Daftar Peserta" description="Tambahkan peserta yang akan membacakan Mazmur.">
+    <SectionCard
+      title="Daftar Peserta"
+      description="Tambahkan peserta satu per satu atau impor banyak sekaligus dari file Excel."
+      action={
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={unduhTemplate} className="gap-1"><Download className="size-4" />Template</Button>
+          <Button variant="secondary" size="sm" onClick={pickFile} disabled={importing} className="gap-1"><Upload className="size-4" />{importing ? "Mengimpor..." : "Impor Excel"}</Button>
+          <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFile} />
+        </div>
+      }
+    >
       <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-[100px_1fr_1fr_auto] gap-3 mb-6">
         <div><Label>Nomor</Label><Input type="number" value={nomor} onChange={e=>setNomor(e.target.value)} placeholder="1" /></div>
         <div><Label>Nama</Label><Input value={nama} onChange={e=>setNama(e.target.value)} placeholder="Nama peserta" /></div>
