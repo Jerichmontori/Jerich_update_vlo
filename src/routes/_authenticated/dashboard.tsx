@@ -1184,20 +1184,22 @@ function PosisiTab() {
 
   const medals = ["🥇", "🥈", "🥉"];
   const grouped = useMemo(() => {
-    const sorted = [...peserta].sort((a, b) => a.nomor_urut - b.nomor_urut);
-    const chunks: { key: string; label: string; range: string; list: (typeof peserta[number] & { total: number; rata: number; juri: number; scored: boolean })[] }[] = [];
-    for (let i = 0; i < sorted.length; i += 10) {
-      const slice = sorted.slice(i, i + 10);
-      const enriched = slice.map((p) => {
-        const r = rankMap[p.id];
-        const total = Number(r?.total_skor ?? 0);
-        return { ...p, total, rata: Number(r?.rata_rata ?? 0), juri: Number(r?.jumlah_juri ?? 0), scored: !!r && total > 0 };
-      });
-      enriched.sort((a, b) => (b.total !== a.total ? b.total - a.total : a.nomor_urut - b.nomor_urut));
+    const enrichedAll = peserta.map((p) => {
+      const r = rankMap[p.id];
+      const total = Number(r?.total_skor ?? 0);
+      return { ...p, total, rata: Number(r?.rata_rata ?? 0), juri: Number(r?.jumlah_juri ?? 0), scored: !!r && total > 0 };
+    });
+    const scoredSorted = enrichedAll
+      .filter((r) => r.scored)
+      .sort((a, b) => a.nomor_urut - b.nomor_urut);
+    const chunks: { key: string; label: string; range: string; list: typeof scoredSorted }[] = [];
+    for (let i = 0; i < scoredSorted.length; i += 10) {
+      const slice = scoredSorted.slice(i, i + 10);
+      const ranked = [...slice].sort((a, b) => (b.total !== a.total ? b.total - a.total : a.nomor_urut - b.nomor_urut));
       const first = slice[0]?.nomor_urut ?? i + 1;
       const last = slice[slice.length - 1]?.nomor_urut ?? i + slice.length;
       const idx = Math.floor(i / 10) + 1;
-      chunks.push({ key: `sesi-${idx}`, label: `Sesi ${idx}`, range: `No. ${first}–${last}`, list: enriched });
+      chunks.push({ key: `sesi-${idx}`, label: `Sesi ${idx}`, range: `No. ${first}–${last}`, list: ranked });
     }
     return chunks;
   }, [peserta, rankMap]);
@@ -1205,7 +1207,7 @@ function PosisiTab() {
   return (
     <SectionCard
       title="Posisi per Sesi"
-      description="Setiap sesi berisi 10 peserta (berdasarkan nomor urut) beserta nilai dan peringkatnya."
+      description="Setiap sesi berisi 10 peserta yang sudah dinilai beserta peringkatnya."
       action={<Button variant="outline" onClick={load}>Muat Ulang</Button>}
     >
       {loading && <p className="text-center py-10 text-muted-foreground">Memuat…</p>}
