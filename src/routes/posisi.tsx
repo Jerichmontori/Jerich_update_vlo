@@ -112,7 +112,7 @@ function PosisiPublic() {
 
         {loading && <p className="text-center py-10 text-muted-foreground">Memuat…</p>}
         {!loading && grouped.length === 0 && (
-          <Card className="border-accent/20"><CardContent className="py-16 text-center text-muted-foreground">Belum ada peserta.</CardContent></Card>
+          <Card className="border-accent/20"><CardContent className="py-16 text-center text-muted-foreground">Belum ada peserta yang dinilai.</CardContent></Card>
         )}
 
         {!loading && grouped.length > 0 && (() => {
