@@ -106,7 +106,7 @@ function PosisiPublic() {
 
       <main className="mx-auto max-w-6xl px-4 py-8 space-y-6">
         <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground">Setiap sesi berisi 10 peserta (berdasarkan nomor urut) beserta nilainya.</p>
+          <p className="text-sm text-muted-foreground">Setiap sesi berisi 10 peserta yang sudah dinilai beserta peringkatnya.</p>
           <Button variant="outline" size="sm" onClick={load}>Muat Ulang</Button>
         </div>
 
