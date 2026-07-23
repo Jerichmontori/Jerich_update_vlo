@@ -51,26 +51,30 @@ function PosisiPublic() {
   useEffect(() => { load(); }, []);
 
   const grouped = useMemo(() => {
-    const sorted = [...peserta].sort((a, b) => a.nomor_urut - b.nomor_urut);
+    const enrichedAll: Row[] = peserta.map((p) => {
+      const r = rankMap[p.id];
+      const total = Number(r?.total_skor ?? 0);
+      return {
+        ...p,
+        total_skor: total,
+        rata_rata: Number(r?.rata_rata ?? 0),
+        jumlah_juri: Number(r?.jumlah_juri ?? 0),
+        scored: !!r && total > 0,
+      };
+    });
+    const scoredSorted = enrichedAll
+      .filter((r) => r.scored)
+      .sort((a, b) => a.nomor_urut - b.nomor_urut);
     const chunks: { key: string; label: string; range: string; list: Row[] }[] = [];
-    for (let i = 0; i < sorted.length; i += 10) {
-      const slice = sorted.slice(i, i + 10);
-      const enriched: Row[] = slice.map((p) => {
-        const r = rankMap[p.id];
-        const total = Number(r?.total_skor ?? 0);
-        return {
-          ...p,
-          total_skor: total,
-          rata_rata: Number(r?.rata_rata ?? 0),
-          jumlah_juri: Number(r?.jumlah_juri ?? 0),
-          scored: !!r && total > 0,
-        };
-      });
-      enriched.sort((a, b) => (b.total_skor !== a.total_skor ? b.total_skor - a.total_skor : a.nomor_urut - b.nomor_urut));
+    for (let i = 0; i < scoredSorted.length; i += 10) {
+      const slice = scoredSorted.slice(i, i + 10);
+      const ranked = [...slice].sort((a, b) =>
+        b.total_skor !== a.total_skor ? b.total_skor - a.total_skor : a.nomor_urut - b.nomor_urut
+      );
       const first = slice[0]?.nomor_urut ?? i + 1;
       const last = slice[slice.length - 1]?.nomor_urut ?? i + slice.length;
       const idx = Math.floor(i / 10) + 1;
-      chunks.push({ key: `sesi-${idx}`, label: `Sesi ${idx}`, range: `No. ${first}–${last}`, list: enriched });
+      chunks.push({ key: `sesi-${idx}`, label: `Sesi ${idx}`, range: `No. ${first}–${last}`, list: ranked });
     }
     return chunks;
   }, [peserta, rankMap]);
@@ -102,13 +106,13 @@ function PosisiPublic() {
 
       <main className="mx-auto max-w-6xl px-4 py-8 space-y-6">
         <div className="flex items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground">Setiap sesi berisi 10 peserta (berdasarkan nomor urut) beserta nilainya.</p>
+          <p className="text-sm text-muted-foreground">Setiap sesi berisi 10 peserta yang sudah dinilai beserta peringkatnya.</p>
           <Button variant="outline" size="sm" onClick={load}>Muat Ulang</Button>
         </div>
 
         {loading && <p className="text-center py-10 text-muted-foreground">Memuat…</p>}
         {!loading && grouped.length === 0 && (
-          <Card className="border-accent/20"><CardContent className="py-16 text-center text-muted-foreground">Belum ada peserta.</CardContent></Card>
+          <Card className="border-accent/20"><CardContent className="py-16 text-center text-muted-foreground">Belum ada peserta yang dinilai.</CardContent></Card>
         )}
 
         {!loading && grouped.length > 0 && (() => {
