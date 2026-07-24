@@ -980,8 +980,22 @@ function PenilaianTab() {
         </>
       )}
 
-      <Dialog open={!!openKriteria} onOpenChange={(v) => !v && setOpenKriteria(null)}>
-        <DialogContent className="max-w-2xl">
+      <Dialog
+        open={!!openKriteria}
+        onOpenChange={(v) => {
+          if (saving) return; // jangan tutup saat sedang menyimpan
+          if (!v) setOpenKriteria(null);
+        }}
+      >
+        <DialogContent
+          className="max-w-2xl w-[95vw] max-h-[90dvh] p-4 sm:p-6 flex flex-col overflow-hidden"
+          onPointerDownOutside={(e) => {
+            // Cegah dialog tertutup akibat scroll sentuh / klik tidak sengaja di HP.
+            e.preventDefault();
+          }}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+
           <DialogHeader>
             <DialogTitle className="font-serif text-2xl">{openKriteria?.nama}</DialogTitle>
             <DialogDescription>
@@ -995,7 +1009,7 @@ function PenilaianTab() {
           </DialogHeader>
 
           {activeKey && activeKey !== "catatan" && activeKey !== "perhatian" && (
-            <div className="grid gap-3 py-2 max-h-[65vh] overflow-y-auto pr-2">
+            <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
               {(() => {
                 const descs = GRADE_DESCRIPTIONS[activeKey];
                 const items: { grade: number; label: string; desc: string }[] = [];
@@ -1031,7 +1045,7 @@ function PenilaianTab() {
           )}
 
           {activeKey === "catatan" && (
-            <div className="grid gap-3 py-2 max-h-[60vh] overflow-y-auto pr-2">
+            <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
               {CATATAN_ASPEK.map((aspek, i) => (
                 <div key={aspek} className="rounded-lg border bg-card p-3">
                   <div className="mb-2">
@@ -1068,7 +1082,7 @@ function PenilaianTab() {
           )}
 
           {activeKey === "perhatian" && (
-            <div className="grid gap-3 py-2 max-h-[60vh] overflow-y-auto pr-2">
+            <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
               {PERHATIAN_ASPEK.map((aspek, i) => {
                 const row = perhatianChecks[i] ?? [];
                 return (
