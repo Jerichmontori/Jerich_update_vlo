@@ -57,25 +57,40 @@ export type Database = {
         Row: {
           batas_atas: number
           batas_bawah: number
+          bobot: number
           created_at: string
           id: string
-          kategori: string
+          kategori: string | null
+          kriteria_penilaian: string | null
+          kriteria_peserta: string | null
+          nilai_standart: number
+          nilai_tengah: number
           updated_at: string
         }
         Insert: {
           batas_atas?: number
           batas_bawah?: number
+          bobot?: number
           created_at?: string
           id?: string
-          kategori: string
+          kategori?: string | null
+          kriteria_penilaian?: string | null
+          kriteria_peserta?: string | null
+          nilai_standart?: number
+          nilai_tengah?: number
           updated_at?: string
         }
         Update: {
           batas_atas?: number
           batas_bawah?: number
+          bobot?: number
           created_at?: string
           id?: string
-          kategori?: string
+          kategori?: string | null
+          kriteria_penilaian?: string | null
+          kriteria_peserta?: string | null
+          nilai_standart?: number
+          nilai_tengah?: number
           updated_at?: string
         }
         Relationships: []
