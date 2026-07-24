@@ -451,6 +451,7 @@ function MazmurTab() {
   const [items, setItems] = useState<Mazmur[]>([]);
   const [bacaan, setBacaan] = useState("");
   const [jumlahAyat, setJumlahAyat] = useState("");
+  const [kategori, setKategori] = useState("");
 
   async function load() {
     const { data, error } = await supabase.from("mazmur").select("*").order("created_at");
@@ -462,10 +463,14 @@ function MazmurTab() {
   async function tambah(e: React.FormEvent) {
     e.preventDefault();
     if (!bacaan || !jumlahAyat) return toast.error("Bacaan & jumlah ayat wajib diisi");
-    const { error } = await supabase.from("mazmur").insert({ bacaan, jumlah_ayat: Number(jumlahAyat) });
+    const { error } = await supabase.from("mazmur").insert({
+      bacaan,
+      jumlah_ayat: Number(jumlahAyat),
+      kategori: kategori.trim() || null,
+    });
     if (error) return toast.error(error.message);
     toast.success("Bacaan mazmur ditambahkan");
-    setBacaan(""); setJumlahAyat(""); load();
+    setBacaan(""); setJumlahAyat(""); setKategori(""); load();
   }
   async function hapus(id: string) {
     const { error } = await supabase.from("mazmur").delete().eq("id", id);
@@ -473,21 +478,23 @@ function MazmurTab() {
     load();
   }
   return (
-    <SectionCard title="Daftar Bacaan Mazmur" description="Kelola daftar bacaan mazmur beserta jumlah ayatnya.">
-      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-[1fr_160px_auto] gap-3 mb-6">
+    <SectionCard title="Daftar Bacaan Mazmur" description="Kelola daftar bacaan mazmur beserta jumlah ayat dan kategorinya.">
+      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-[1fr_160px_160px_auto] gap-3 mb-6">
         <div><Label>Bacaan Mazmur</Label><Input value={bacaan} onChange={e=>setBacaan(e.target.value)} placeholder="Mzm. 23" /></div>
         <div><Label>Jumlah Ayat</Label><Input type="number" min={0} value={jumlahAyat} onChange={e=>setJumlahAyat(e.target.value)} placeholder="6" /></div>
+        <div><Label>Kategori</Label><Input value={kategori} onChange={e=>setKategori(e.target.value)} placeholder="Contoh: Anak" /></div>
         <div className="flex items-end"><Button type="submit" className="gap-1"><Plus className="size-4" />Tambah</Button></div>
       </form>
-      <div className="rounded-lg border bg-card">
+      <div className="rounded-lg border bg-card overflow-x-auto">
         <Table>
-          <TableHeader><TableRow><TableHead>Bacaan</TableHead><TableHead className="text-center w-40">Jumlah Ayat</TableHead><TableHead className="w-20 text-right">Aksi</TableHead></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Bacaan</TableHead><TableHead className="text-center w-40">Jumlah Ayat</TableHead><TableHead className="w-40">Kategori</TableHead><TableHead className="w-20 text-right">Aksi</TableHead></TableRow></TableHeader>
           <TableBody>
-            {items.length === 0 && <TableRow><TableCell colSpan={3} className="text-center text-muted-foreground py-8">Belum ada bacaan.</TableCell></TableRow>}
+            {items.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Belum ada bacaan.</TableCell></TableRow>}
             {items.map(m => (
               <TableRow key={m.id}>
                 <TableCell className="font-medium">{m.bacaan}</TableCell>
                 <TableCell className="text-center"><Badge variant="secondary">{m.jumlah_ayat} ayat</Badge></TableCell>
+                <TableCell>{m.kategori || <span className="text-muted-foreground">—</span>}</TableCell>
                 <TableCell className="text-right"><Button size="icon" variant="ghost" onClick={()=>hapus(m.id)}><Trash2 className="size-4 text-destructive" /></Button></TableCell>
               </TableRow>
             ))}
@@ -497,6 +504,7 @@ function MazmurTab() {
     </SectionCard>
   );
 }
+
 
 
 /* KATEGORI */
