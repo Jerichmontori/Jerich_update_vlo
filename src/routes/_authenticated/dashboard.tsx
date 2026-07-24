@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
-import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight } from "lucide-react";
+import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight, LayoutDashboard, CheckCircle2, XCircle } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: App,
@@ -32,8 +32,9 @@ function App() {
       <Toaster richColors position="top-center" />
       <Header />
       <main className="mx-auto max-w-6xl px-4 pb-16">
-        <Tabs defaultValue="ranking" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 sm:grid-cols-8 h-auto bg-secondary/60 p-1">
+        <Tabs defaultValue="dashboard" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-9 h-auto bg-secondary/60 p-1">
+            <TabsTrigger value="dashboard" className="gap-2"><LayoutDashboard className="size-4" />Dashboard</TabsTrigger>
             <TabsTrigger value="ranking" className="gap-2"><Trophy className="size-4" />Ranking</TabsTrigger>
             <TabsTrigger value="posisi" className="gap-2"><Trophy className="size-4" />Posisi</TabsTrigger>
             <TabsTrigger value="penilaian" className="gap-2"><ClipboardCheck className="size-4" />Penilaian</TabsTrigger>
@@ -43,6 +44,7 @@ function App() {
             <TabsTrigger value="kategori" className="gap-2"><Tags className="size-4" />Kategori</TabsTrigger>
             <TabsTrigger value="mazmur" className="gap-2"><BookOpenText className="size-4" />Mazmur</TabsTrigger>
           </TabsList>
+          <TabsContent value="dashboard"><DashboardTab /></TabsContent>
           <TabsContent value="ranking"><RankingTab /></TabsContent>
           <TabsContent value="posisi"><PosisiTab /></TabsContent>
           <TabsContent value="penilaian"><PenilaianTab /></TabsContent>
@@ -1415,5 +1417,132 @@ function SectionCard({ title, description, action, children }: { title: string; 
       </CardHeader>
       <CardContent>{children}</CardContent>
     </Card>
+  );
+}
+
+function DashboardTab() {
+  const [juri, setJuri] = useState<Juri[]>([]);
+  const [peserta, setPeserta] = useState<Peserta[]>([]);
+  const [penilaian, setPenilaian] = useState<Penilaian[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    const [j, p, n] = await Promise.all([
+      supabase.from("juri").select("*").eq("approved", true).eq("role", "juri").order("nama"),
+      supabase.from("peserta").select("*"),
+      supabase.from("penilaian").select("*"),
+    ]);
+    setJuri((j.data as Juri[]) || []);
+    setPeserta((p.data as Peserta[]) || []);
+    setPenilaian((n.data as Penilaian[]) || []);
+    setLoading(false);
+  }
+
+  useEffect(() => { load(); }, []);
+
+  const totalPeserta = peserta.length;
+
+  const rows = useMemo(() => {
+    return juri.map((j) => {
+      const mine = penilaian.filter((p) => p.juri_id === j.id);
+      const scoredIds = new Set(mine.map((p) => p.peserta_id));
+      const sudahList = peserta.filter((p) => scoredIds.has(p.id)).sort((a, b) => a.nomor_urut - b.nomor_urut);
+      const belumList = peserta.filter((p) => !scoredIds.has(p.id)).sort((a, b) => a.nomor_urut - b.nomor_urut);
+      return {
+        juri: j,
+        sudah: sudahList.length,
+        belum: belumList.length,
+        sudahList,
+        belumList,
+        status: sudahList.length === 0 ? "belum" : belumList.length === 0 && totalPeserta > 0 ? "selesai" : "sebagian",
+      };
+    });
+  }, [juri, peserta, penilaian, totalPeserta]);
+
+  const totalSudahKirim = rows.filter((r) => r.sudah > 0).length;
+  const totalBelumKirim = rows.filter((r) => r.sudah === 0).length;
+  const totalSelesai = rows.filter((r) => r.status === "selesai").length;
+
+  return (
+    <SectionCard
+      title="Dashboard Progres Juri"
+      description="Pantau juri mana yang sudah dan belum mengirim nilai."
+      action={<Button variant="outline" size="sm" onClick={load} disabled={loading}>Refresh</Button>}
+    >
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <StatCard label="Total Juri" value={juri.length} />
+        <StatCard label="Sudah Mengirim" value={totalSudahKirim} tone="ok" />
+        <StatCard label="Belum Mengirim" value={totalBelumKirim} tone="warn" />
+        <StatCard label="Selesai Semua" value={totalSelesai} tone="ok" />
+      </div>
+
+      {loading ? (
+        <p className="text-muted-foreground">Memuat…</p>
+      ) : rows.length === 0 ? (
+        <p className="text-muted-foreground">Belum ada juri yang disetujui.</p>
+      ) : (
+        <div className="space-y-3">
+          {rows.map((r) => (
+            <div key={r.juri.id} className="rounded-lg border p-4 bg-card">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="font-semibold truncate">{r.juri.nama}</div>
+                  <div className="text-xs text-muted-foreground truncate">{r.juri.jabatan || "—"}</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {r.status === "selesai" ? (
+                    <Badge className="bg-green-600 hover:bg-green-600 text-white gap-1"><CheckCircle2 className="size-3.5" />Selesai</Badge>
+                  ) : r.status === "sebagian" ? (
+                    <Badge className="bg-amber-500 hover:bg-amber-500 text-white gap-1"><CheckCircle2 className="size-3.5" />Sebagian</Badge>
+                  ) : (
+                    <Badge variant="destructive" className="gap-1"><XCircle className="size-3.5" />Belum Mengirim</Badge>
+                  )}
+                  <span className="text-sm text-muted-foreground">
+                    {r.sudah}/{totalPeserta} peserta
+                  </span>
+                </div>
+              </div>
+
+              {totalPeserta > 0 && (
+                <div className="mt-3">
+                  <div className="h-2 rounded-full bg-secondary overflow-hidden">
+                    <div
+                      className="h-full bg-primary transition-all"
+                      style={{ width: `${(r.sudah / totalPeserta) * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {r.belumList.length > 0 && (
+                <details className="mt-3">
+                  <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+                    Lihat {r.belumList.length} peserta yang belum dinilai
+                  </summary>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {r.belumList.map((p) => (
+                      <Badge key={p.id} variant="outline" className="text-xs">
+                        #{p.nomor_urut} {p.nama}
+                      </Badge>
+                    ))}
+                  </div>
+                </details>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </SectionCard>
+  );
+}
+
+function StatCard({ label, value, tone }: { label: string; value: number; tone?: "ok" | "warn" }) {
+  const color = tone === "ok" ? "text-green-600" : tone === "warn" ? "text-amber-600" : "text-foreground";
+  return (
+    <div className="rounded-lg border p-4 bg-card">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className={`text-2xl font-bold ${color}`}>{value}</div>
+    </div>
   );
 }
