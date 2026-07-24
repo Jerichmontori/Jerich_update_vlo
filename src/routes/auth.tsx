@@ -28,10 +28,11 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data.user) navigate({ to: "/dashboard" });
-    });
-  }, [navigate]);
+    // Selalu bersihkan sesi lama saat membuka halaman /auth agar tidak
+    // ada "login instan" akibat sesi tertinggal dari percobaan sebelumnya.
+    supabase.auth.signOut().catch(() => {});
+  }, []);
+
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
