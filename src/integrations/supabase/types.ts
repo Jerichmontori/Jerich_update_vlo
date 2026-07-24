@@ -113,18 +113,21 @@ export type Database = {
           created_at: string
           id: string
           jumlah_ayat: number
+          kategori: string | null
         }
         Insert: {
           bacaan: string
           created_at?: string
           id?: string
           jumlah_ayat?: number
+          kategori?: string | null
         }
         Update: {
           bacaan?: string
           created_at?: string
           id?: string
           jumlah_ayat?: number
+          kategori?: string | null
         }
         Relationships: []
       }
