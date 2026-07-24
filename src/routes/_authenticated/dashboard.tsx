@@ -32,8 +32,9 @@ function App() {
       <Toaster richColors position="top-center" />
       <Header />
       <main className="mx-auto max-w-6xl px-4 pb-16">
-        <Tabs defaultValue="ranking" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 sm:grid-cols-8 h-auto bg-secondary/60 p-1">
+        <Tabs defaultValue="dashboard" className="w-full">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-9 h-auto bg-secondary/60 p-1">
+            <TabsTrigger value="dashboard" className="gap-2"><LayoutDashboard className="size-4" />Dashboard</TabsTrigger>
             <TabsTrigger value="ranking" className="gap-2"><Trophy className="size-4" />Ranking</TabsTrigger>
             <TabsTrigger value="posisi" className="gap-2"><Trophy className="size-4" />Posisi</TabsTrigger>
             <TabsTrigger value="penilaian" className="gap-2"><ClipboardCheck className="size-4" />Penilaian</TabsTrigger>
@@ -43,6 +44,7 @@ function App() {
             <TabsTrigger value="kategori" className="gap-2"><Tags className="size-4" />Kategori</TabsTrigger>
             <TabsTrigger value="mazmur" className="gap-2"><BookOpenText className="size-4" />Mazmur</TabsTrigger>
           </TabsList>
+          <TabsContent value="dashboard"><DashboardTab /></TabsContent>
           <TabsContent value="ranking"><RankingTab /></TabsContent>
           <TabsContent value="posisi"><PosisiTab /></TabsContent>
           <TabsContent value="penilaian"><PenilaianTab /></TabsContent>
