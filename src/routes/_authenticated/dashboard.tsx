@@ -1009,7 +1009,7 @@ function PenilaianTab() {
           </DialogHeader>
 
           {activeKey && activeKey !== "catatan" && activeKey !== "perhatian" && (
-            <div className="grid gap-3 py-2 max-h-[65vh] overflow-y-auto pr-2">
+            <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
               {(() => {
                 const descs = GRADE_DESCRIPTIONS[activeKey];
                 const items: { grade: number; label: string; desc: string }[] = [];
@@ -1045,7 +1045,7 @@ function PenilaianTab() {
           )}
 
           {activeKey === "catatan" && (
-            <div className="grid gap-3 py-2 max-h-[60vh] overflow-y-auto pr-2">
+            <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
               {CATATAN_ASPEK.map((aspek, i) => (
                 <div key={aspek} className="rounded-lg border bg-card p-3">
                   <div className="mb-2">
@@ -1082,7 +1082,7 @@ function PenilaianTab() {
           )}
 
           {activeKey === "perhatian" && (
-            <div className="grid gap-3 py-2 max-h-[60vh] overflow-y-auto pr-2">
+            <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
               {PERHATIAN_ASPEK.map((aspek, i) => {
                 const row = perhatianChecks[i] ?? [];
                 return (
