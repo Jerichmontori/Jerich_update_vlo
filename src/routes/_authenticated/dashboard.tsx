@@ -907,6 +907,7 @@ function PenilaianTab() {
     const avg = catatanValues.reduce((a, b) => a + b, 0) / catatanValues.length;
     const nilai = Math.round(avg * 20 * 100) / 100; // scale 1-5 → 20-100
     await saveNilai(nilai);
+    setCatatanValues(CATATAN_ASPEK.map(() => 3));
   }
 
   const perhatianTotal = perhatianChecks.reduce((s, row) => s + row.length, 0);
