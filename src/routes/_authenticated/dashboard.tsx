@@ -366,7 +366,38 @@ function JuriTab() {
   }
   return (
     <SectionCard title="Dewan Juri" description="Daftar pendaftar juri dari halaman beranda. Setujui akun agar dapat login.">
-      <div className="rounded-lg border bg-card overflow-x-auto">
+      {/* Mobile: card list */}
+      <div className="grid gap-3 md:hidden">
+        {items.length === 0 && (
+          <div className="rounded-lg border bg-card p-6 text-center text-muted-foreground text-sm">Belum ada pendaftar juri.</div>
+        )}
+        {items.map(j => (
+          <div key={j.id} className="rounded-lg border bg-card p-4 space-y-2">
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="font-semibold truncate">{j.nama}</div>
+                <div className="text-xs text-muted-foreground truncate">{j.jabatan || "—"}</div>
+              </div>
+              <Badge variant="outline" className="capitalize shrink-0">{j.role || "—"}</Badge>
+            </div>
+            <div className="text-xs text-muted-foreground break-all">{j.email || "—"}</div>
+            <div className="flex items-center justify-between gap-2 pt-1">
+              {j.approved ? (
+                <Badge className="bg-accent text-accent-foreground gap-1"><Check className="size-3" />Disetujui</Badge>
+              ) : (
+                <Badge variant="outline" className="text-muted-foreground">Menunggu</Badge>
+              )}
+              {!j.approved && (
+                <Button size="sm" variant="default" onClick={()=>approve(j.id)} className="gap-1">
+                  <Check className="size-4" />Approve
+                </Button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+      {/* Desktop: table */}
+      <div className="hidden md:block rounded-lg border bg-card overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
