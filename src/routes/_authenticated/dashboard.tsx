@@ -521,11 +521,24 @@ function MazmurTab() {
 
 
 /* KATEGORI */
+const KRITERIA_PENILAIAN_OPTIONS = [
+  "Vocal dan Artikulasi",
+  "Penghayatan",
+  "Intonasi & Pelafalan",
+  "Penampilan",
+  "Catatan Juri",
+  "Perhatian",
+] as const;
+
 function KategoriTab() {
   const [items, setItems] = useState<Kategori[]>([]);
-  const [kategori, setKategori] = useState("");
+  const [kriteriaPenilaian, setKriteriaPenilaian] = useState<string>("");
+  const [kriteriaPeserta, setKriteriaPeserta] = useState("");
+  const [bobot, setBobot] = useState("");
   const [batasAtas, setBatasAtas] = useState("");
   const [batasBawah, setBatasBawah] = useState("");
+  const [nilaiTengah, setNilaiTengah] = useState("");
+  const [nilaiStandart, setNilaiStandart] = useState("");
 
   async function load() {
     const { data, error } = await supabase.from("kategori").select("*").order("created_at");
@@ -536,15 +549,21 @@ function KategoriTab() {
 
   async function tambah(e: React.FormEvent) {
     e.preventDefault();
-    if (!kategori) return toast.error("Kategori wajib diisi");
+    if (!kriteriaPenilaian) return toast.error("Kriteria Penilaian wajib dipilih");
     const { error } = await supabase.from("kategori").insert({
-      kategori,
+      kriteria_penilaian: kriteriaPenilaian,
+      kriteria_peserta: kriteriaPeserta || null,
+      bobot: Number(bobot) || 0,
       batas_atas: Number(batasAtas) || 0,
       batas_bawah: Number(batasBawah) || 0,
+      nilai_tengah: Number(nilaiTengah) || 0,
+      nilai_standart: Number(nilaiStandart) || 0,
     });
     if (error) return toast.error(error.message);
     toast.success("Kategori ditambahkan");
-    setKategori(""); setBatasAtas(""); setBatasBawah(""); load();
+    setKriteriaPenilaian(""); setKriteriaPeserta(""); setBobot("");
+    setBatasAtas(""); setBatasBawah(""); setNilaiTengah(""); setNilaiStandart("");
+    load();
   }
 
   async function hapus(id: string) {
@@ -556,23 +575,57 @@ function KategoriTab() {
   }
 
   return (
-    <SectionCard title="Daftar Kategori" description="Kelola kategori penilaian beserta batas atas dan batas bawah.">
-      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-[1fr_140px_140px_auto] gap-3 mb-6">
-        <div><Label>Kategori</Label><Input value={kategori} onChange={e=>setKategori(e.target.value)} placeholder="Contoh: Anak" /></div>
+    <SectionCard title="Daftar Kategori" description="Kelola kriteria penilaian beserta bobot, batas, dan nilai standar.">
+      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+        <div className="lg:col-span-2">
+          <Label>Kriteria Penilaian</Label>
+          <Select value={kriteriaPenilaian} onValueChange={setKriteriaPenilaian}>
+            <SelectTrigger><SelectValue placeholder="Pilih kriteria" /></SelectTrigger>
+            <SelectContent>
+              {KRITERIA_PENILAIAN_OPTIONS.map(o => (
+                <SelectItem key={o} value={o}>{o}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="lg:col-span-2">
+          <Label>Kriteria Peserta</Label>
+          <Input value={kriteriaPeserta} onChange={e=>setKriteriaPeserta(e.target.value)} placeholder="Contoh: Anak / Remaja / Dewasa" />
+        </div>
+        <div><Label>Bobot</Label><Input type="number" step="0.01" value={bobot} onChange={e=>setBobot(e.target.value)} placeholder="0" /></div>
         <div><Label>Batas Atas</Label><Input type="number" step="0.01" value={batasAtas} onChange={e=>setBatasAtas(e.target.value)} placeholder="100" /></div>
         <div><Label>Batas Bawah</Label><Input type="number" step="0.01" value={batasBawah} onChange={e=>setBatasBawah(e.target.value)} placeholder="0" /></div>
-        <div className="flex items-end"><Button type="submit" className="gap-1"><Plus className="size-4" />Tambah</Button></div>
+        <div><Label>Nilai Tengah</Label><Input type="number" step="0.01" value={nilaiTengah} onChange={e=>setNilaiTengah(e.target.value)} placeholder="50" /></div>
+        <div><Label>Nilai Standart</Label><Input type="number" step="0.01" value={nilaiStandart} onChange={e=>setNilaiStandart(e.target.value)} placeholder="75" /></div>
+        <div className="flex items-end sm:col-span-2 lg:col-span-4">
+          <Button type="submit" className="gap-1"><Plus className="size-4" />Tambah</Button>
+        </div>
       </form>
-      <div className="rounded-lg border bg-card">
+      <div className="rounded-lg border bg-card overflow-x-auto">
         <Table>
-          <TableHeader><TableRow><TableHead>Kategori</TableHead><TableHead className="w-40 text-center">Batas Atas</TableHead><TableHead className="w-40 text-center">Batas Bawah</TableHead><TableHead className="w-20 text-right">Aksi</TableHead></TableRow></TableHeader>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Kriteria Penilaian</TableHead>
+              <TableHead>Kriteria Peserta</TableHead>
+              <TableHead className="text-center">Bobot</TableHead>
+              <TableHead className="text-center">Batas Atas</TableHead>
+              <TableHead className="text-center">Batas Bawah</TableHead>
+              <TableHead className="text-center">Nilai Tengah</TableHead>
+              <TableHead className="text-center">Nilai Standart</TableHead>
+              <TableHead className="w-20 text-right">Aksi</TableHead>
+            </TableRow>
+          </TableHeader>
           <TableBody>
-            {items.length === 0 && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground py-8">Belum ada kategori.</TableCell></TableRow>}
+            {items.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Belum ada kategori.</TableCell></TableRow>}
             {items.map(k => (
               <TableRow key={k.id}>
-                <TableCell className="font-medium">{k.kategori}</TableCell>
+                <TableCell className="font-medium">{k.kriteria_penilaian || k.kategori || "—"}</TableCell>
+                <TableCell>{k.kriteria_peserta || <span className="text-muted-foreground">—</span>}</TableCell>
+                <TableCell className="text-center">{Number(k.bobot)}</TableCell>
                 <TableCell className="text-center">{Number(k.batas_atas)}</TableCell>
                 <TableCell className="text-center">{Number(k.batas_bawah)}</TableCell>
+                <TableCell className="text-center">{Number(k.nilai_tengah)}</TableCell>
+                <TableCell className="text-center">{Number(k.nilai_standart)}</TableCell>
                 <TableCell className="text-right"><Button size="icon" variant="ghost" onClick={()=>hapus(k.id)}><Trash2 className="size-4 text-destructive" /></Button></TableCell>
               </TableRow>
             ))}
@@ -582,6 +635,7 @@ function KategoriTab() {
     </SectionCard>
   );
 }
+
 
 
 function KriteriaTab() {
