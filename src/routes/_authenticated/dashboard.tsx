@@ -463,15 +463,28 @@ function MazmurTab() {
   async function tambah(e: React.FormEvent) {
     e.preventDefault();
     if (!bacaan || !jumlahAyat) return toast.error("Bacaan & jumlah ayat wajib diisi");
+    const kategoriTrim = kategori.trim();
     const { error } = await supabase.from("mazmur").insert({
       bacaan,
       jumlah_ayat: Number(jumlahAyat),
-      kategori: kategori.trim() || null,
+      kategori: kategoriTrim || null,
     });
     if (error) return toast.error(error.message);
+    if (kategoriTrim) {
+      const { data: existing } = await supabase
+        .from("kategori").select("id").ilike("kategori", kategoriTrim).maybeSingle();
+      if (!existing) {
+        const { error: kErr } = await supabase.from("kategori").insert({
+          kategori: kategoriTrim, batas_atas: 100, batas_bawah: 0,
+        });
+        if (kErr) toast.warning("Kategori tidak tersinkron: " + kErr.message);
+        else toast.success("Kategori baru ditambahkan otomatis");
+      }
+    }
     toast.success("Bacaan mazmur ditambahkan");
     setBacaan(""); setJumlahAyat(""); setKategori(""); load();
   }
+
   async function hapus(id: string) {
     const { error } = await supabase.from("mazmur").delete().eq("id", id);
     if (error) return toast.error(error.message);
