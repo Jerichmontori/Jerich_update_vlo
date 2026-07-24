@@ -900,6 +900,9 @@ function PenilaianTab() {
     if (error) return toast.error(error.message);
     toast.success(`Nilai ${openKriteria.nama} disimpan`);
     setOpenKriteria(null);
+    setCatatanValues(CATATAN_ASPEK.map(() => 3));
+    setPerhatianChecks([]);
+    setPesertaId("");
     loadAll();
   }
 
@@ -907,7 +910,6 @@ function PenilaianTab() {
     const avg = catatanValues.reduce((a, b) => a + b, 0) / catatanValues.length;
     const nilai = Math.round(avg * 20 * 100) / 100; // scale 1-5 → 20-100
     await saveNilai(nilai);
-    setCatatanValues(CATATAN_ASPEK.map(() => 3));
   }
 
   const perhatianTotal = perhatianChecks.reduce((s, row) => s + row.length, 0);
