@@ -1248,33 +1248,63 @@ function PenilaianTab() {
                 return (
                   <div key={aspek} className="rounded-lg border bg-card p-3">
                     <div className="text-sm font-medium mb-2">{i + 1}. {aspek}</div>
-                    <div className="flex flex-wrap gap-2">
-                      {row.map((checked, ayatIdx) => (
-                        <label
-                          key={ayatIdx}
-                          className={[
-                            "cursor-pointer select-none rounded-md border-2 px-3 py-1.5 text-xs font-semibold transition",
-                            checked
-                              ? "border-destructive bg-destructive text-destructive-foreground"
-                              : "border-primary/20 bg-background hover:border-accent/60",
-                          ].join(" ")}
-                        >
-                          <input
-                            type="checkbox"
-                            className="sr-only"
-                            checked={checked}
-                            onChange={() =>
-                              setPerhatianChecks(prev =>
-                                prev.map((r, idx) =>
-                                  idx === i ? r.map((c, ai) => (ai === ayatIdx ? !c : c)) : r
+                    {i === 0 ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { label: "Ya", val: true },
+                          { label: "Tidak", val: false },
+                        ].map(opt => {
+                          const active = (row[0] ?? false) === opt.val;
+                          return (
+                            <button
+                              key={opt.label}
+                              type="button"
+                              onClick={() =>
+                                setPerhatianChecks(prev => prev.map((r, idx) => idx === 0 ? [opt.val] : r))
+                              }
+                              className={[
+                                "rounded-md border-2 py-2 text-sm font-semibold transition",
+                                active
+                                  ? (opt.val
+                                      ? "border-destructive bg-destructive text-destructive-foreground"
+                                      : "border-accent bg-accent text-accent-foreground")
+                                  : "border-primary/20 bg-background hover:border-accent/60",
+                              ].join(" ")}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {row.map((checked, ayatIdx) => (
+                          <label
+                            key={ayatIdx}
+                            className={[
+                              "cursor-pointer select-none rounded-md border-2 px-3 py-1.5 text-xs font-semibold transition",
+                              checked
+                                ? "border-destructive bg-destructive text-destructive-foreground"
+                                : "border-primary/20 bg-background hover:border-accent/60",
+                            ].join(" ")}
+                          >
+                            <input
+                              type="checkbox"
+                              className="sr-only"
+                              checked={checked}
+                              onChange={() =>
+                                setPerhatianChecks(prev =>
+                                  prev.map((r, idx) =>
+                                    idx === i ? r.map((c, ai) => (ai === ayatIdx ? !c : c)) : r
+                                  )
                                 )
-                              )
-                            }
-                          />
-                          Ayat {ayatIdx + 1}
-                        </label>
-                      ))}
-                    </div>
+                              }
+                            />
+                            Ayat {ayatIdx + 1}
+                          </label>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}
