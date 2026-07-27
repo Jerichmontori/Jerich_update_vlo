@@ -1034,7 +1034,7 @@ function PenilaianTab() {
     setCatatanValues(CATATAN_ASPEK.map(() => 3));
     setCatatanClearText(false);
     setPerhatianChecks([]);
-    setPesertaId("");
+    
     loadAll();
   }
 
