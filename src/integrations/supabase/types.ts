@@ -213,13 +213,6 @@ export type Database = {
             referencedRelation: "peserta"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "penilaian_peserta_id_fkey"
-            columns: ["peserta_id"]
-            isOneToOne: false
-            referencedRelation: "ranking"
-            referencedColumns: ["peserta_id"]
-          },
         ]
       }
       peserta: {
@@ -347,18 +340,6 @@ export type Database = {
         }
         Relationships: []
       }
-      ranking: {
-        Row: {
-          asal: string | null
-          jumlah_juri: number | null
-          nama: string | null
-          nomor_urut: number | null
-          peserta_id: string | null
-          rata_rata: number | null
-          total_skor: number | null
-        }
-        Relationships: []
-      }
     }
     Functions: {
       admin_list_juri: {
@@ -381,6 +362,18 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      get_ranking: {
+        Args: never
+        Returns: {
+          asal: string
+          jumlah_juri: number
+          nama: string
+          nomor_urut: number
+          peserta_id: string
+          rata_rata: number
+          total_skor: number
+        }[]
       }
       has_role: {
         Args: {
