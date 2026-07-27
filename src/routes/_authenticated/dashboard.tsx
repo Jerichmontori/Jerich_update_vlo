@@ -1178,14 +1178,6 @@ function PenilaianTab() {
             const scored = kriteria
               .map(k => ({ k, v: currentNilai(k.id) }))
               .filter(x => x.v !== null) as { k: Kriteria; v: number }[];
-            const totalBobot = scored.reduce((s, x) => s + Number(x.k.bobot || 0), 0);
-            const weighted = totalBobot > 0
-              ? scored.reduce((s, x) => s + x.v * Number(x.k.bobot || 0), 0) / totalBobot
-              : scored.length > 0
-              ? scored.reduce((s, x) => s + x.v, 0) / scored.length
-              : 0;
-            const totalNilai = Math.round(weighted * 100) / 100;
-            const semuaTerisi = scored.length === kriteria.length && kriteria.length > 0;
 
             const currentPesertaLabel = (() => {
               const p = peserta.find(x => x.id === pesertaId);
@@ -1196,59 +1188,35 @@ function PenilaianTab() {
               if (!juriId || !pesertaId) return toast.error("Pilih juri dan peserta");
               if (scored.length === 0) return toast.error("Belum ada nilai yang diberikan");
               const ok = window.confirm(
-                `Apakah Anda yakin akan mengirim data penilaian untuk ${currentPesertaLabel}?\n\nNilai akhir: ${totalNilai}`
+                `Apakah Anda yakin akan mengirim data penilaian untuk ${currentPesertaLabel}?`
               );
               if (!ok) return;
               toast.success(`✦ Penilaian dikirim`, {
-                description: `Nilai akhir untuk ${currentPesertaLabel}: ${totalNilai}. Peserta ini otomatis dikeluarkan dari daftar juri terkait.`,
+                description: `Penilaian untuk ${currentPesertaLabel} tersimpan.`,
               });
-              // Reset juri, peserta, & kriteria — peserta yang sudah lengkap juga otomatis hilang dari dropdown.
+              // Reset juri & dialog kriteria saja — peserta dipertahankan agar tidak perlu memilih ulang.
               setJuriId("");
-              setPesertaId("");
               setOpenKriteria(null);
               await loadAll();
             }
 
-
-
-
             return (
               <div className="rounded-2xl border-2 border-accent/40 bg-gradient-to-br from-card to-secondary/40 p-5 sm:p-6 mb-4">
-                <div className="grid gap-3 sm:grid-cols-2 sm:items-center">
-                  <div>
-                    <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-semibold">Hasil Perhitungan</div>
-                    <div className="mt-1 font-serif text-3xl sm:text-4xl text-primary">
-                      Nilai: <b>{totalNilai}</b>
-                    </div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {scored.length} dari {kriteria.length} kriteria dinilai
-                      {!semuaTerisi && scored.length > 0 && " — lengkapi semua kriteria sebelum mengirim"}
-                    </div>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="text-sm text-muted-foreground">
+                    {scored.length} dari {kriteria.length} kriteria dinilai
                   </div>
-                  <div className="sm:justify-self-end">
-                    <Button
-                      size="lg"
-                      onClick={kirimPenilaian}
-                      disabled={saving || scored.length === 0}
-                      className="gap-2 min-w-[160px]"
-                    >
-                      <Check className="size-4" />
-                      Kirim
-                    </Button>
-
-                  </div>
+                  <Button
+                    size="lg"
+                    onClick={kirimPenilaian}
+                    disabled={saving || scored.length === 0}
+                    className="gap-2 min-w-[160px]"
+                  >
+                    <Check className="size-4" />
+                    Kirim
+                  </Button>
                 </div>
-                {scored.length > 0 && (
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    {scored.map(({ k, v }) => (
-                      <span key={k.id} className="rounded-full border bg-background px-3 py-1 text-xs">
-                        {k.nama}: <b className="text-primary">{v}</b>
-                      </span>
-                    ))}
-                  </div>
-                )}
               </div>
-
             );
           })()}
 
