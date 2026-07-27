@@ -577,7 +577,7 @@ function KategoriTab() {
     setItems((data ?? []) as Kategori[]);
   }
   async function loadMazmurKategori() {
-    const { data, error } = await supabase.from("mazmur").select("kategori");
+    const { data, error } = await supabase.from("peserta").select("kategori");
     if (error) return;
     const uniq = Array.from(new Set((data ?? []).map((m: any) => (m.kategori || "").trim()).filter(Boolean))) as string[];
     setMazmurKategoriList(uniq);
@@ -629,7 +629,7 @@ function KategoriTab() {
         <div className="lg:col-span-2">
           <Label>Kriteria Peserta</Label>
           <Select value={kriteriaPeserta} onValueChange={setKriteriaPeserta}>
-            <SelectTrigger><SelectValue placeholder={mazmurKategoriList.length ? "Pilih kategori peserta" : "Belum ada kategori di menu Mazmur"} /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={mazmurKategoriList.length ? "Pilih kategori peserta" : "Belum ada kategori di Daftar Peserta"} /></SelectTrigger>
             <SelectContent>
               {mazmurKategoriList.map(k => (
                 <SelectItem key={k} value={k}>{k}</SelectItem>
