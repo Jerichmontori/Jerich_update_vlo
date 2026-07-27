@@ -95,7 +95,7 @@ function PosisiPublic() {
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <Button asChild variant="outline" size="sm">
-              <Link to="/ranking">Papan Ranking</Link>
+              <Link to="/ranking">Daftar Nilai</Link>
             </Button>
             <Button asChild variant="outline" size="sm">
               <Link to="/"><ArrowLeft className="size-4" />Beranda</Link>
