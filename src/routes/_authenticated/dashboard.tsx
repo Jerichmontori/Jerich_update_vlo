@@ -88,28 +88,46 @@ function Header() {
 function PesertaTab() {
   const [items, setItems] = useState<Peserta[]>([]);
   const [scoredIds, setScoredIds] = useState<Set<string>>(new Set());
+  const [kategoriList, setKategoriList] = useState<string[]>([]);
   const [nomor, setNomor] = useState("");
   const [nama, setNama] = useState("");
   const [asal, setAsal] = useState("");
   const [kategori, setKategori] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const sesiDari = (n: number) => `Sesi ${Math.ceil(n / 10)}`;
 
   async function load() {
-    const [{ data, error }, { data: pen, error: pe }] = await Promise.all([
+    const [{ data, error }, { data: pen, error: pe }, { data: mz }] = await Promise.all([
       supabase.from("peserta").select("*").order("nomor_urut"),
       supabase.from("penilaian").select("peserta_id"),
+      supabase.from("mazmur").select("kategori"),
     ]);
     if (error) return toast.error(error.message);
     if (pe) return toast.error(pe.message);
     setItems((data ?? []) as Peserta[]);
     setScoredIds(new Set((pen ?? []).map((r: { peserta_id: string }) => r.peserta_id)));
+    const uniq = Array.from(new Set((mz ?? []).map((m: any) => (m.kategori || "").trim()).filter(Boolean))) as string[];
+    setKategoriList(uniq);
   }
   useEffect(() => { load(); }, []);
+
+  async function resetSemua() {
+    if (!confirm("Yakin ingin menghapus SEMUA daftar peserta beserta seluruh nilainya? Tindakan ini tidak dapat dibatalkan.")) return;
+    setResetting(true);
+    const { error: pe } = await supabase.from("penilaian").delete().not("id", "is", null);
+    if (pe) { setResetting(false); return toast.error("Gagal menghapus penilaian: " + pe.message); }
+    const { error } = await supabase.from("peserta").delete().not("id", "is", null);
+    setResetting(false);
+    if (error) return toast.error(error.message);
+    toast.success("Semua peserta dihapus");
+    setEditId(null); setNomor(""); setNama(""); setAsal(""); setKategori("");
+    load();
+  }
 
 
   function pilihUntukEdit(p: Peserta) {
