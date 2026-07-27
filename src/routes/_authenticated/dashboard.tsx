@@ -1372,27 +1372,62 @@ function PenilaianTab() {
 
 
 /* RANKING */
+const RANKING_ALL = "__all__";
 function RankingTab() {
   const [rows, setRows] = useState<Ranking[]>([]);
+  const [peserta, setPeserta] = useState<{ id: string; kategori: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
+  const [kategori, setKategori] = useState<string>(RANKING_ALL);
 
   async function load() {
     setLoading(true);
-    const { data, error } = await supabase.from("ranking").select("*");
+    const [{ data: rankData, error: rankErr }, { data: pesertaData, error: pesertaErr }] = await Promise.all([
+      supabase.from("ranking").select("*"),
+      supabase.from("peserta").select("id, kategori"),
+    ]);
     setLoading(false);
-    if (error) return toast.error(error.message);
-    const sorted = [...((data ?? []) as Ranking[])].sort((a, b) => Number(b.total_skor) - Number(a.total_skor));
-    setRows(sorted);
+    if (rankErr) return toast.error(rankErr.message);
+    if (pesertaErr) return toast.error(pesertaErr.message);
+    setRows((rankData ?? []) as Ranking[]);
+    setPeserta((pesertaData ?? []) as { id: string; kategori: string | null }[]);
   }
   useEffect(() => { load(); }, []);
+
+  const kategoriMap = useMemo(() => {
+    const m: Record<string, string | null> = {};
+    peserta.forEach((p) => { m[p.id] = p.kategori; });
+    return m;
+  }, [peserta]);
+
+  const kategoriList = useMemo(() => {
+    const set = new Set<string>();
+    peserta.forEach((p) => { if (p.kategori && p.kategori.trim()) set.add(p.kategori.trim()); });
+    return Array.from(set).sort();
+  }, [peserta]);
+
+  const filtered = useMemo(() => {
+    const list = kategori === RANKING_ALL ? rows : rows.filter((r) => (kategoriMap[r.peserta_id] ?? "") === kategori);
+    return [...list].sort((a, b) => Number(b.total_skor) - Number(a.total_skor));
+  }, [rows, kategori, kategoriMap]);
 
   const medals = ["🥇", "🥈", "🥉"];
 
   return (
     <SectionCard
-      title="Papan Ranking"
-      description="Peringkat dihitung otomatis dari total skor terbobot dari semua juri."
-      action={<Button variant="outline" onClick={load}>Muat Ulang</Button>}
+      title="Daftar Nilai Peserta"
+      description="Filter berdasarkan kategori peserta untuk melihat peringkat per kategori."
+      action={
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={kategori} onValueChange={setKategori}>
+            <SelectTrigger className="w-[220px]"><SelectValue placeholder="Semua Kategori" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={RANKING_ALL}>Semua Kategori</SelectItem>
+              {kategoriList.map((k) => (<SelectItem key={k} value={k}>{k}</SelectItem>))}
+            </SelectContent>
+          </Select>
+          <Button variant="outline" onClick={load}>Muat Ulang</Button>
+        </div>
+      }
     >
       <div className="rounded-lg border bg-card overflow-hidden">
         <Table>
@@ -1402,22 +1437,25 @@ function RankingTab() {
               <TableHead className="w-16">No.</TableHead>
               <TableHead>Peserta</TableHead>
               <TableHead>Asal</TableHead>
+              <TableHead>Kategori</TableHead>
               <TableHead className="text-center w-24">Juri</TableHead>
               <TableHead className="text-right w-32">Rata-rata</TableHead>
               <TableHead className="text-right w-32">Total Skor</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading && <TableRow><TableCell colSpan={7} className="text-center py-10 text-muted-foreground">Memuat…</TableCell></TableRow>}
-            {!loading && rows.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-10 text-muted-foreground">Belum ada penilaian.</TableCell></TableRow>}
-            {rows.map((r, i) => {
+            {loading && <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">Memuat…</TableCell></TableRow>}
+            {!loading && filtered.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">Belum ada penilaian.</TableCell></TableRow>}
+            {filtered.map((r, i) => {
               const belum = !(Number(r.total_skor) > 0);
+              const kat = kategoriMap[r.peserta_id];
               return (
               <TableRow key={r.peserta_id} className={!belum && i < 3 ? "bg-accent/10" : ""}>
                 <TableCell className="text-center text-2xl">{belum ? "—" : (medals[i] ?? i + 1)}</TableCell>
                 <TableCell className="font-mono">{r.nomor_urut}</TableCell>
                 <TableCell className="font-semibold">{r.nama}</TableCell>
                 <TableCell className="text-muted-foreground">{r.asal || "—"}</TableCell>
+                <TableCell className="text-muted-foreground">{kat || "—"}</TableCell>
                 <TableCell className="text-center">{belum ? <span className="text-muted-foreground italic">belum tampil</span> : r.jumlah_juri}</TableCell>
                 <TableCell className="text-right font-mono">{belum ? <span className="text-muted-foreground italic">belum tampil</span> : Number(r.rata_rata).toFixed(2)}</TableCell>
                 <TableCell className="text-right font-mono font-bold text-primary">{belum ? <span className="text-muted-foreground italic font-normal">belum tampil</span> : Number(r.total_skor).toFixed(2)}</TableCell>
