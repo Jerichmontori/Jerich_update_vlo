@@ -1209,7 +1209,7 @@ function PenilaianTab() {
                     <Button
                       size="lg"
                       onClick={kirimPenilaian}
-                      disabled={saving || scored.length === 0 || pesertaMismatch}
+                      disabled={saving || scored.length === 0}
                       className="gap-2 min-w-[160px]"
                     >
                       <Check className="size-4" />
