@@ -1848,6 +1848,7 @@ function LihatPenilaianTab() {
   const [penilaian, setPenilaian] = useState<Penilaian[]>([]);
   const [loading, setLoading] = useState(true);
   const [kategori, setKategori] = useState<string>(LIHAT_ALL);
+  const [pesertaPilih, setPesertaPilih] = useState<string>("");
 
   async function load() {
     setLoading(true);
@@ -1905,6 +1906,30 @@ function LihatPenilaianTab() {
     return m;
   }, [penilaian, kriteria, totalBobot]);
 
+  function buildPesertaDetail(doc: jsPDF, p: Peserta, startY: number) {
+    doc.setFontSize(14); doc.text(`${p.nomor_urut}. ${p.nama}`, 40, startY);
+    doc.setFontSize(10); doc.setTextColor(100);
+    doc.text(`Kategori: ${p.kategori || "—"}${p.asal ? " • Asal: " + p.asal : ""}`, 40, startY + 18);
+    doc.setTextColor(0);
+    const dHead = [["Juri", ...kriteria.map((k) => `${k.nama} (b:${k.bobot})`), "Total Berbobot"]];
+    const dBody = juri.map((j) => {
+      const rec = scoreMap[p.id]?.[j.id];
+      return [
+        j.nama,
+        ...kriteria.map((k) => {
+          const v = rec?.per[k.id];
+          return v === undefined ? "—" : Number(v).toFixed(2);
+        }),
+        rec ? rec.weighted.toFixed(2) : "—",
+      ];
+    });
+    autoTable(doc, {
+      head: dHead, body: dBody, startY: startY + 36,
+      styles: { fontSize: 9, cellPadding: 4 },
+      headStyles: { fillColor: [120, 30, 45], textColor: 255 },
+    });
+  }
+
   function downloadPDF() {
     const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
     const title = "Laporan Nilai Peserta";
@@ -1940,38 +1965,29 @@ function LihatPenilaianTab() {
       columnStyles: { 0: { halign: "center", cellWidth: 32 } },
     });
 
-    // Detail per peserta per juri per kriteria
     pesertaFiltered.forEach((p) => {
       const hasAny = juri.some((j) => scoreMap[p.id]?.[j.id]);
       if (!hasAny) return;
       doc.addPage();
-      doc.setFontSize(14); doc.text(`${p.nomor_urut}. ${p.nama}`, 40, 40);
-      doc.setFontSize(10); doc.setTextColor(100);
-      doc.text(`Kategori: ${p.kategori || "—"}${p.asal ? " • Asal: " + p.asal : ""}`, 40, 58);
-      doc.setTextColor(0);
-
-      const dHead = [["Juri", ...kriteria.map((k) => `${k.nama} (b:${k.bobot})`), "Total Berbobot"]];
-      const dBody = juri.map((j) => {
-        const rec = scoreMap[p.id]?.[j.id];
-        return [
-          j.nama,
-          ...kriteria.map((k) => {
-            const v = rec?.per[k.id];
-            return v === undefined ? "—" : Number(v).toFixed(2);
-          }),
-          rec ? rec.weighted.toFixed(2) : "—",
-        ];
-      });
-      autoTable(doc, {
-        head: dHead, body: dBody, startY: 76,
-        styles: { fontSize: 9, cellPadding: 4 },
-        headStyles: { fillColor: [120, 30, 45], textColor: 255 },
-      });
+      buildPesertaDetail(doc, p, 40);
     });
 
     const stamp = new Date().toISOString().slice(0, 10);
     const suffix = kategori === LIHAT_ALL ? "semua" : kategori.replace(/\s+/g, "_");
     doc.save(`laporan-nilai-${suffix}-${stamp}.pdf`);
+  }
+
+  function downloadPesertaPDF() {
+    const p = peserta.find((x) => x.id === pesertaPilih);
+    if (!p) return toast.error("Pilih peserta terlebih dahulu");
+    const hasAny = juri.some((j) => scoreMap[p.id]?.[j.id]);
+    if (!hasAny) return toast.error("Peserta ini belum memiliki penilaian");
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    doc.setFontSize(16); doc.text("Laporan Nilai Peserta", 40, 40);
+    buildPesertaDetail(doc, p, 76);
+    const stamp = new Date().toISOString().slice(0, 10);
+    const safe = p.nama.replace(/\s+/g, "_");
+    doc.save(`nilai-${p.nomor_urut}-${safe}-${stamp}.pdf`);
   }
 
   return (
@@ -1988,8 +2004,19 @@ function LihatPenilaianTab() {
             </SelectContent>
           </Select>
           <Button variant="outline" onClick={load}>Muat Ulang</Button>
-          <Button onClick={downloadPDF} disabled={loading || pesertaFiltered.length === 0} className="gap-2">
+          <Select value={pesertaPilih} onValueChange={setPesertaPilih}>
+            <SelectTrigger className="w-[220px]"><SelectValue placeholder="Pilih Peserta" /></SelectTrigger>
+            <SelectContent>
+              {pesertaFiltered.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.nomor_urut}. {p.nama}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant="secondary" onClick={downloadPesertaPDF} disabled={loading || !pesertaPilih} className="gap-2">
             <Download className="size-4" /> Unduh PDF
+          </Button>
+          <Button onClick={downloadPDF} disabled={loading || pesertaFiltered.length === 0} className="gap-2">
+            <Download className="size-4" /> Unduh Semua
           </Button>
         </div>
       }
