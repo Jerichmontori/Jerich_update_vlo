@@ -614,9 +614,7 @@ const KRITERIA_PENILAIAN_OPTIONS = [
 function KategoriTab() {
   const [items, setItems] = useState<Kategori[]>([]);
   const [mazmurKategoriList, setMazmurKategoriList] = useState<string[]>([]);
-  const [kriteriaPenilaian, setKriteriaPenilaian] = useState<string>("");
   const [kriteriaPeserta, setKriteriaPeserta] = useState("");
-  const [bobot, setBobot] = useState("");
   const [batasAtas, setBatasAtas] = useState("");
   const [batasBawah, setBatasBawah] = useState("");
   const [nilaiTengah, setNilaiTengah] = useState("");
@@ -638,11 +636,9 @@ function KategoriTab() {
 
   async function tambah(e: React.FormEvent) {
     e.preventDefault();
-    if (!kriteriaPenilaian) return toast.error("Kriteria Penilaian wajib dipilih");
+    if (!kriteriaPeserta) return toast.error("Kriteria Peserta wajib dipilih");
     const { error } = await supabase.from("kategori").insert({
-      kriteria_penilaian: kriteriaPenilaian,
-      kriteria_peserta: kriteriaPeserta || null,
-      bobot: Number(bobot) || 0,
+      kriteria_peserta: kriteriaPeserta,
       batas_atas: Number(batasAtas) || 0,
       batas_bawah: Number(batasBawah) || 0,
       nilai_tengah: Number(nilaiTengah) || 0,
@@ -650,7 +646,7 @@ function KategoriTab() {
     });
     if (error) return toast.error(error.message);
     toast.success("Kategori ditambahkan");
-    setKriteriaPenilaian(""); setKriteriaPeserta(""); setBobot("");
+    setKriteriaPeserta("");
     setBatasAtas(""); setBatasBawah(""); setNilaiTengah(""); setNilaiStandart("");
     load();
   }
@@ -662,6 +658,7 @@ function KategoriTab() {
     toast.success("Kategori dihapus");
     load();
   }
+
 
   return (
     <SectionCard title="Daftar Kategori" description="Kelola kriteria penilaian beserta bobot, batas, dan nilai standar.">
