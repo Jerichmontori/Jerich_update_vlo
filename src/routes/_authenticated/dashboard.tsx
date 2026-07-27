@@ -855,7 +855,7 @@ function PenilaianTab() {
     ]);
     if (p.error || j.error || k.error || m.error || n.error) return toast.error("Gagal memuat data");
     setPeserta(p.data ?? []);
-    setJuri(j.data ?? []);
+    setJuri((j.data ?? []) as unknown as Juri[]);
     setKriteria(k.data ?? []);
     setMazmur((m.data ?? []) as Mazmur[]);
     setPenilaian((n.data ?? []) as Penilaian[]);
