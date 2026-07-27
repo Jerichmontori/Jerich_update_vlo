@@ -1848,6 +1848,7 @@ function LihatPenilaianTab() {
   const [penilaian, setPenilaian] = useState<Penilaian[]>([]);
   const [loading, setLoading] = useState(true);
   const [kategori, setKategori] = useState<string>(LIHAT_ALL);
+  const [pesertaPilih, setPesertaPilih] = useState<string>("");
 
   async function load() {
     setLoading(true);
