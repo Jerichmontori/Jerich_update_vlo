@@ -981,7 +981,8 @@ function PenilaianTab() {
     ]);
     if (p.error || j.error || k.error || m.error || n.error) return toast.error("Gagal memuat data");
     setPeserta(p.data ?? []);
-    setJuri((j.data ?? []) as unknown as Juri[]);
+    // Admin tidak merangkap sebagai juri — hanya tampilkan yang role="juri" & sudah disetujui
+    setJuri(((j.data ?? []) as unknown as Juri[]).filter(x => x.approved && x.role === "juri"));
     setKriteria(k.data ?? []);
     setMazmur((m.data ?? []) as Mazmur[]);
     setPenilaian((n.data ?? []) as Penilaian[]);
