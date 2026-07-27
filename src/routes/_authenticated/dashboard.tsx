@@ -492,13 +492,16 @@ function JuriTab() {
                   )}
                 </TableCell>
                 <TableCell className="text-right">
-                  {j.approved ? (
-                    <span className="text-xs text-muted-foreground">—</span>
-                  ) : (
-                    <Button size="sm" variant="default" onClick={()=>approve(j.id)} className="gap-1">
-                      <Check className="size-4" />Approve
+                  <div className="flex items-center justify-end gap-2">
+                    {!j.approved && (
+                      <Button size="sm" variant="default" onClick={()=>approve(j.id)} className="gap-1">
+                        <Check className="size-4" />Approve
+                      </Button>
+                    )}
+                    <Button size="icon" variant="ghost" onClick={()=>hapus(j.id, j.nama)}>
+                      <Trash2 className="size-4 text-destructive" />
                     </Button>
-                  )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
