@@ -1229,7 +1229,6 @@ function PenilaianTab() {
                 )}
               </div>
 
-              </div>
             );
           })()}
 
