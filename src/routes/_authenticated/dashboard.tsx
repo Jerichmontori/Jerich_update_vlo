@@ -55,15 +55,15 @@ function App() {
       />
       <Header />
       <main className="mx-auto max-w-6xl px-4 pb-16">
+        <div className="flex justify-end pt-4"><ResetAllPenilaianButton /></div>
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-12 h-auto bg-secondary/60 p-1">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-11 h-auto bg-secondary/60 p-1">
             <TabsTrigger value="dashboard" className="gap-2"><LayoutDashboard className="size-4" />Dashboard</TabsTrigger>
             <TabsTrigger value="ranking" className="gap-2"><Trophy className="size-4" />Ranking</TabsTrigger>
             <TabsTrigger value="lihat" className="gap-2"><FileText className="size-4" />Lihat Nilai</TabsTrigger>
             <TabsTrigger value="rincian" className="gap-2"><FileText className="size-4" />Rincian Nilai</TabsTrigger>
             <TabsTrigger value="posisi" className="gap-2"><Trophy className="size-4" />Posisi</TabsTrigger>
             <TabsTrigger value="penilaian" className="gap-2"><ClipboardCheck className="size-4" />Penilaian</TabsTrigger>
-            <TabsTrigger value="kalkulator" className="gap-2"><Calculator className="size-4" />Kalkulator</TabsTrigger>
             <TabsTrigger value="peserta" className="gap-2"><Users className="size-4" />Peserta</TabsTrigger>
             <TabsTrigger value="juri" className="gap-2"><Gavel className="size-4" />Juri</TabsTrigger>
             <TabsTrigger value="kriteria" className="gap-2"><ListChecks className="size-4" />Kriteria</TabsTrigger>
@@ -77,7 +77,6 @@ function App() {
 
           <TabsContent value="posisi"><PosisiTab /></TabsContent>
           <TabsContent value="penilaian"><PenilaianTab /></TabsContent>
-          <TabsContent value="kalkulator"><KalkulatorTab /></TabsContent>
           <TabsContent value="peserta"><PesertaTab /></TabsContent>
           <TabsContent value="juri"><JuriTab /></TabsContent>
           <TabsContent value="kriteria"><KriteriaTab /></TabsContent>
