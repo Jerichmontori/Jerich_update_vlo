@@ -981,7 +981,8 @@ function PenilaianTab() {
     ]);
     if (p.error || j.error || k.error || m.error || n.error) return toast.error("Gagal memuat data");
     setPeserta(p.data ?? []);
-    setJuri((j.data ?? []) as unknown as Juri[]);
+    // Admin tidak merangkap sebagai juri — hanya tampilkan yang role="juri" & sudah disetujui
+    setJuri(((j.data ?? []) as unknown as Juri[]).filter(x => x.approved && x.role === "juri"));
     setKriteria(k.data ?? []);
     setMazmur((m.data ?? []) as Mazmur[]);
     setPenilaian((n.data ?? []) as Penilaian[]);
@@ -1167,22 +1168,6 @@ function PenilaianTab() {
             const totalNilai = Math.round(weighted * 100) / 100;
             const semuaTerisi = scored.length === kriteria.length && kriteria.length > 0;
 
-            // Cek apakah juri lain yang aktif sedang menilai peserta yang sama.
-            // Ambil peserta terakhir yang dinilai tiap juri lain — jika ada yang beda dari pilihan saat ini, blokir.
-            const otherJuri = juri.filter(j => j.id !== juriId);
-            const mismatched: { nama: string; peserta: string }[] = [];
-            for (const oj of otherJuri) {
-              const theirs = penilaian
-                .filter(p => p.juri_id === oj.id)
-                .sort((a, b) => (b as any).created_at?.localeCompare?.((a as any).created_at) || 0);
-              if (theirs.length === 0) continue;
-              const lastPesertaId = theirs[0].peserta_id;
-              if (lastPesertaId && lastPesertaId !== pesertaId) {
-                const pes = peserta.find(p => p.id === lastPesertaId);
-                mismatched.push({ nama: oj.nama, peserta: pes ? `#${pes.nomor_urut} ${pes.nama}` : "—" });
-              }
-            }
-            const pesertaMismatch = mismatched.length > 0;
             const currentPesertaLabel = (() => {
               const p = peserta.find(x => x.id === pesertaId);
               return p ? `#${p.nomor_urut} ${p.nama}` : "";
@@ -1191,24 +1176,20 @@ function PenilaianTab() {
             async function kirimPenilaian() {
               if (!juriId || !pesertaId) return toast.error("Pilih juri dan peserta");
               if (scored.length === 0) return toast.error("Belum ada nilai yang diberikan");
-              if (pesertaMismatch) {
-                return toast.error(
-                  `Nama peserta tidak sama dengan juri lain (${mismatched.map(m => `${m.nama}: ${m.peserta}`).join(", ")}). Form tidak dapat dikirim.`
-                );
-              }
               const ok = window.confirm(
                 `Apakah Anda yakin akan mengirim data penilaian untuk ${currentPesertaLabel}?\n\nNilai akhir: ${totalNilai}`
               );
               if (!ok) return;
               toast.success(`✦ Penilaian dikirim`, {
-                description: `Nilai akhir untuk ${currentPesertaLabel}: ${totalNilai}. Form direset untuk penilaian berikutnya.`,
+                description: `Nilai akhir untuk ${currentPesertaLabel}: ${totalNilai}. Form kriteria direset — peserta tetap dipilih.`,
               });
+              // Reset juri & kriteria supaya juri berikutnya bisa langsung menilai peserta yang sama;
+              // pesertaId sengaja TIDAK di-reset agar tidak perlu memilih peserta ulang.
               setJuriId("");
-              setPesertaId("");
-              setMazmurId("");
               setOpenKriteria(null);
               await loadAll();
             }
+
 
 
             return (
@@ -1228,7 +1209,7 @@ function PenilaianTab() {
                     <Button
                       size="lg"
                       onClick={kirimPenilaian}
-                      disabled={saving || scored.length === 0 || pesertaMismatch}
+                      disabled={saving || scored.length === 0}
                       className="gap-2 min-w-[160px]"
                     >
                       <Check className="size-4" />
@@ -1246,20 +1227,8 @@ function PenilaianTab() {
                     ))}
                   </div>
                 )}
-                {pesertaMismatch && (
-                  <div className="mt-4 rounded-lg border-2 border-destructive/60 bg-destructive/10 p-3 text-sm text-destructive">
-                    <div className="font-semibold">⚠ Nama peserta tidak sama</div>
-                    <div className="mt-1 text-xs">
-                      Juri lain sedang menilai peserta yang berbeda. Form penilaian tidak dapat dikirim sampai semua juri memilih peserta yang sama.
-                    </div>
-                    <ul className="mt-2 text-xs list-disc pl-5">
-                      {mismatched.map((m, i) => (
-                        <li key={i}><b>{m.nama}</b> menilai {m.peserta}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
               </div>
+
             );
           })()}
 
