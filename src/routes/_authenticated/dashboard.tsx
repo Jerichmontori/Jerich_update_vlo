@@ -389,6 +389,29 @@ function JuriTab() {
       toast.error(err instanceof Error ? err.message : "Gagal menyetujui");
     }
   }
+
+  async function hapus(id: string, nama: string) {
+    if (!confirm(`Hapus juri "${nama}"? Akun login juga akan dihapus.`)) return;
+    try {
+      const { deleteJuriUser } = await import("@/lib/juri-users.functions");
+      await deleteJuriUser({ data: { juriId: id } });
+      toast.success("Juri dihapus");
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menghapus");
+    }
+  }
+
+  async function ubahRole(id: string, role: "admin" | "juri") {
+    try {
+      const { setJuriRole } = await import("@/lib/juri-users.functions");
+      await setJuriRole({ data: { juriId: id, role } });
+      toast.success(`Role diubah menjadi ${role}`);
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal mengubah role");
+    }
+  }
   return (
     <SectionCard title="Dewan Juri" description="Daftar pendaftar juri dari halaman beranda. Setujui akun agar dapat login.">
       {/* Mobile: card list */}
