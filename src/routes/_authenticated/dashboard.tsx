@@ -982,7 +982,7 @@ function PenilaianTab() {
   }
 
 
-  async function saveNilai(nilai: number) {
+  async function saveNilai(nilai: number, detail: PenilaianDetail = null) {
     if (!openKriteria) return;
     setSaving(true);
     const { error } = await supabase.from("penilaian").upsert(
@@ -992,7 +992,8 @@ function PenilaianTab() {
         kriteria_id: openKriteria.id,
         nilai,
         mazmur_id: mazmurId || null,
-      },
+        detail: detail as any,
+      } as any,
       { onConflict: "peserta_id,juri_id,kriteria_id" }
     );
     setSaving(false);
@@ -1010,17 +1011,41 @@ function PenilaianTab() {
     const effective = catatanValues.map((v, i) => i === 0 && !catatanClearText ? 1 : v);
     const avg = effective.reduce((a, b) => a + b, 0) / effective.length;
     const nilai = Math.round(avg * 20 * 100) / 100; // scale 1-5 → 20-100
-    await saveNilai(nilai);
+    const detail: PenilaianDetail = {
+      type: "catatan",
+      clearText: catatanClearText,
+      aspek: CATATAN_ASPEK.map((nama, i) => ({
+        nama,
+        nilai: effective[i],
+        skipped: i === 0 && !catatanClearText,
+      })),
+    };
+    await saveNilai(nilai, detail);
   }
 
-  const perhatianTotal = perhatianChecks.reduce((s, row) => s + row.length, 0);
-  const perhatianChecked = perhatianChecks.reduce((s, row) => s + row.filter(Boolean).length, 0);
-  const perhatianNilai = perhatianTotal === 0
+  const perhatianTotal = perhatianChecks.reduce((s, row, i) => s + (i === 0 ? 0 : row.length), 0);
+  const perhatianChecked = perhatianChecks.reduce(
+    (s, row, i) => s + (i === 0 ? ((row[0] as unknown as boolean) === true ? row.length || 1 : 0) : row.filter(Boolean).length),
+    0
+  );
+  const perhatianDenom = perhatianTotal + 1; // +1 for "Tidak Membaca Perikop" ya/tidak
+  const perhatianDeduct = perhatianChecked + ((perhatianChecks[0]?.[0] as unknown as boolean) === true ? 1 : 0);
+  const perhatianNilai = perhatianDenom === 0
     ? 0
-    : Math.round(((perhatianTotal - perhatianChecked) / perhatianTotal) * 100 * 100) / 100;
+    : Math.round(((perhatianDenom - perhatianDeduct) / perhatianDenom) * 100 * 100) / 100;
 
   async function savePerhatian() {
-    await saveNilai(perhatianNilai);
+    const detail: PenilaianDetail = {
+      type: "perhatian",
+      membacaPerikop: (perhatianChecks[0]?.[0] as unknown as boolean) ?? null,
+      aspek: PERHATIAN_ASPEK.slice(1).map((nama, idx) => {
+        const row = perhatianChecks[idx + 1] ?? [];
+        const ditandai: number[] = [];
+        row.forEach((c, ai) => { if (c) ditandai.push(ai + 1); });
+        return { nama, ayat: row, ditandai };
+      }),
+    };
+    await saveNilai(perhatianNilai, detail);
   }
 
 
