@@ -12,7 +12,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
-import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight, LayoutDashboard, CheckCircle2, XCircle } from "lucide-react";
+import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight, LayoutDashboard, CheckCircle2, XCircle, FileText } from "lucide-react";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: App,
@@ -33,9 +35,10 @@ function App() {
       <Header />
       <main className="mx-auto max-w-6xl px-4 pb-16">
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-9 h-auto bg-secondary/60 p-1">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-10 h-auto bg-secondary/60 p-1">
             <TabsTrigger value="dashboard" className="gap-2"><LayoutDashboard className="size-4" />Dashboard</TabsTrigger>
             <TabsTrigger value="ranking" className="gap-2"><Trophy className="size-4" />Ranking</TabsTrigger>
+            <TabsTrigger value="lihat" className="gap-2"><FileText className="size-4" />Lihat Nilai</TabsTrigger>
             <TabsTrigger value="posisi" className="gap-2"><Trophy className="size-4" />Posisi</TabsTrigger>
             <TabsTrigger value="penilaian" className="gap-2"><ClipboardCheck className="size-4" />Penilaian</TabsTrigger>
             <TabsTrigger value="peserta" className="gap-2"><Users className="size-4" />Peserta</TabsTrigger>
@@ -46,6 +49,7 @@ function App() {
           </TabsList>
           <TabsContent value="dashboard"><DashboardTab /></TabsContent>
           <TabsContent value="ranking"><RankingTab /></TabsContent>
+          <TabsContent value="lihat"><LihatPenilaianTab /></TabsContent>
           <TabsContent value="posisi"><PosisiTab /></TabsContent>
           <TabsContent value="penilaian"><PenilaianTab /></TabsContent>
           <TabsContent value="peserta"><PesertaTab /></TabsContent>
@@ -54,6 +58,7 @@ function App() {
           <TabsContent value="kategori"><KategoriTab /></TabsContent>
           <TabsContent value="mazmur"><MazmurTab /></TabsContent>
         </Tabs>
+
       </main>
     </div>
   );
@@ -1811,3 +1816,203 @@ function StatCard({ label, value, tone }: { label: string; value: number; tone?:
     </div>
   );
 }
+
+/* LIHAT PENILAIAN */
+const LIHAT_ALL = "__all__";
+function LihatPenilaianTab() {
+  const [peserta, setPeserta] = useState<Peserta[]>([]);
+  const [juri, setJuri] = useState<Juri[]>([]);
+  const [kriteria, setKriteria] = useState<Kriteria[]>([]);
+  const [penilaian, setPenilaian] = useState<Penilaian[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [kategori, setKategori] = useState<string>(LIHAT_ALL);
+
+  async function load() {
+    setLoading(true);
+    const [p, j, k, n] = await Promise.all([
+      supabase.from("peserta").select("*").order("nomor_urut"),
+      supabase.rpc("admin_list_juri" as any),
+      supabase.from("kriteria").select("*").order("created_at"),
+      supabase.from("penilaian").select("*"),
+    ]);
+    setLoading(false);
+    if (p.error) return toast.error(p.error.message);
+    if (j.error) return toast.error(j.error.message);
+    if (k.error) return toast.error(k.error.message);
+    if (n.error) return toast.error(n.error.message);
+    setPeserta((p.data ?? []) as Peserta[]);
+    setJuri(((j.data ?? []) as Juri[]).filter((x) => x.approved && x.role !== "viewer"));
+    setKriteria((k.data ?? []) as Kriteria[]);
+    setPenilaian((n.data ?? []) as Penilaian[]);
+  }
+  useEffect(() => { load(); }, []);
+
+  const kategoriList = useMemo(() => {
+    const s = new Set<string>();
+    peserta.forEach((p) => { if (p.kategori && p.kategori.trim()) s.add(p.kategori.trim()); });
+    return Array.from(s).sort();
+  }, [peserta]);
+
+  const pesertaFiltered = useMemo(
+    () => (kategori === LIHAT_ALL ? peserta : peserta.filter((p) => (p.kategori ?? "") === kategori)),
+    [peserta, kategori]
+  );
+
+  const totalBobot = useMemo(() => kriteria.reduce((s, k) => s + Number(k.bobot || 0), 0), [kriteria]);
+
+  // score[pesertaId][juriId] = { weighted, perKriteria: {kriteriaId: nilai} }
+  const scoreMap = useMemo(() => {
+    const m: Record<string, Record<string, { weighted: number; per: Record<string, number> }>> = {};
+    penilaian.forEach((n) => {
+      const kr = kriteria.find((k) => k.id === n.kriteria_id);
+      if (!kr) return;
+      m[n.peserta_id] ??= {};
+      m[n.peserta_id][n.juri_id] ??= { weighted: 0, per: {} };
+      m[n.peserta_id][n.juri_id].per[n.kriteria_id] = Number(n.nilai);
+    });
+    Object.values(m).forEach((byJuri) => {
+      Object.values(byJuri).forEach((rec) => {
+        let sum = 0;
+        kriteria.forEach((k) => {
+          const v = rec.per[k.id];
+          if (v !== undefined) sum += v * Number(k.bobot || 0);
+        });
+        rec.weighted = totalBobot > 0 ? sum / totalBobot : 0;
+      });
+    });
+    return m;
+  }, [penilaian, kriteria, totalBobot]);
+
+  function downloadPDF() {
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    const title = "Laporan Nilai Peserta";
+    const subtitle = kategori === LIHAT_ALL ? "Semua Kategori" : `Kategori: ${kategori}`;
+    doc.setFontSize(16); doc.text(title, 40, 40);
+    doc.setFontSize(11); doc.setTextColor(100); doc.text(subtitle, 40, 58);
+    doc.setTextColor(0);
+
+    const head = [[
+      "No.", "Peserta", "Kategori",
+      ...juri.map((j) => j.nama),
+      "Rata-rata", "Total"
+    ]];
+    const body = pesertaFiltered.map((p) => {
+      const scores = juri.map((j) => scoreMap[p.id]?.[j.id]?.weighted);
+      const valid = scores.filter((s): s is number => typeof s === "number" && s > 0);
+      const rata = valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0;
+      const total = valid.reduce((a, b) => a + b, 0);
+      return [
+        String(p.nomor_urut),
+        p.nama,
+        p.kategori || "—",
+        ...scores.map((s) => (s === undefined ? "—" : s.toFixed(2))),
+        valid.length ? rata.toFixed(2) : "—",
+        valid.length ? total.toFixed(2) : "—",
+      ];
+    });
+
+    autoTable(doc, {
+      head, body, startY: 76, styles: { fontSize: 9, cellPadding: 4 },
+      headStyles: { fillColor: [120, 30, 45], textColor: 255 },
+      alternateRowStyles: { fillColor: [248, 244, 240] },
+      columnStyles: { 0: { halign: "center", cellWidth: 32 } },
+    });
+
+    // Detail per peserta per juri per kriteria
+    pesertaFiltered.forEach((p) => {
+      const hasAny = juri.some((j) => scoreMap[p.id]?.[j.id]);
+      if (!hasAny) return;
+      doc.addPage();
+      doc.setFontSize(14); doc.text(`${p.nomor_urut}. ${p.nama}`, 40, 40);
+      doc.setFontSize(10); doc.setTextColor(100);
+      doc.text(`Kategori: ${p.kategori || "—"}${p.asal ? " • Asal: " + p.asal : ""}`, 40, 58);
+      doc.setTextColor(0);
+
+      const dHead = [["Juri", ...kriteria.map((k) => `${k.nama} (b:${k.bobot})`), "Total Berbobot"]];
+      const dBody = juri.map((j) => {
+        const rec = scoreMap[p.id]?.[j.id];
+        return [
+          j.nama,
+          ...kriteria.map((k) => {
+            const v = rec?.per[k.id];
+            return v === undefined ? "—" : Number(v).toFixed(2);
+          }),
+          rec ? rec.weighted.toFixed(2) : "—",
+        ];
+      });
+      autoTable(doc, {
+        head: dHead, body: dBody, startY: 76,
+        styles: { fontSize: 9, cellPadding: 4 },
+        headStyles: { fillColor: [120, 30, 45], textColor: 255 },
+      });
+    });
+
+    const stamp = new Date().toISOString().slice(0, 10);
+    const suffix = kategori === LIHAT_ALL ? "semua" : kategori.replace(/\s+/g, "_");
+    doc.save(`laporan-nilai-${suffix}-${stamp}.pdf`);
+  }
+
+  return (
+    <SectionCard
+      title="Lihat Penilaian"
+      description="Rekap nilai setiap juri untuk setiap peserta dan kategori. Unduh sebagai laporan PDF."
+      action={
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={kategori} onValueChange={setKategori}>
+            <SelectTrigger className="w-[220px]"><SelectValue placeholder="Semua Kategori" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={LIHAT_ALL}>Semua Kategori</SelectItem>
+              {kategoriList.map((k) => (<SelectItem key={k} value={k}>{k}</SelectItem>))}
+            </SelectContent>
+          </Select>
+          <Button variant="outline" onClick={load}>Muat Ulang</Button>
+          <Button onClick={downloadPDF} disabled={loading || pesertaFiltered.length === 0} className="gap-2">
+            <Download className="size-4" /> Unduh PDF
+          </Button>
+        </div>
+      }
+    >
+      <div className="rounded-lg border bg-card overflow-auto">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-16">No.</TableHead>
+              <TableHead>Peserta</TableHead>
+              <TableHead>Kategori</TableHead>
+              {juri.map((j) => (
+                <TableHead key={j.id} className="text-right whitespace-nowrap">{j.nama}</TableHead>
+              ))}
+              <TableHead className="text-right w-28">Rata-rata</TableHead>
+              <TableHead className="text-right w-28">Total</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {loading && <TableRow><TableCell colSpan={5 + juri.length} className="text-center py-10 text-muted-foreground">Memuat…</TableCell></TableRow>}
+            {!loading && pesertaFiltered.length === 0 && <TableRow><TableCell colSpan={5 + juri.length} className="text-center py-10 text-muted-foreground">Belum ada peserta.</TableCell></TableRow>}
+            {pesertaFiltered.map((p) => {
+              const scores = juri.map((j) => scoreMap[p.id]?.[j.id]?.weighted);
+              const valid = scores.filter((s): s is number => typeof s === "number" && s > 0);
+              const rata = valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0;
+              const total = valid.reduce((a, b) => a + b, 0);
+              return (
+                <TableRow key={p.id}>
+                  <TableCell className="font-mono">{p.nomor_urut}</TableCell>
+                  <TableCell className="font-medium">{p.nama}</TableCell>
+                  <TableCell className="text-muted-foreground">{p.kategori || "—"}</TableCell>
+                  {scores.map((s, i) => (
+                    <TableCell key={juri[i].id} className="text-right font-mono">
+                      {s === undefined ? <span className="text-muted-foreground italic">—</span> : s.toFixed(2)}
+                    </TableCell>
+                  ))}
+                  <TableCell className="text-right font-mono">{valid.length ? rata.toFixed(2) : "—"}</TableCell>
+                  <TableCell className="text-right font-mono font-bold text-primary">{valid.length ? total.toFixed(2) : "—"}</TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      </div>
+    </SectionCard>
+  );
+}
+
