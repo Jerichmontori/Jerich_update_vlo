@@ -1277,7 +1277,7 @@ function PenilaianTab() {
                     key={grade}
                     type="button"
                     disabled={saving}
-                    onClick={() => saveNilai(grade * 20)}
+                    onClick={() => saveNilai(grade * 20, { type: "grade", grade, label, desc })}
                     className="flex items-start gap-4 text-left rounded-xl border-2 border-primary/20 bg-card p-4 hover:border-accent hover:bg-accent/5 transition disabled:opacity-60"
                   >
                     <div className="grid place-items-center size-12 shrink-0 rounded-full bg-primary text-primary-foreground font-serif text-lg font-bold shadow">
