@@ -350,10 +350,11 @@ function JuriTab() {
   const [items, setItems] = useState<Juri[]>([]);
 
   async function load() {
-    const { data, error } = await supabase.from("juri").select("*").order("created_at");
+    const { data, error } = await supabase.rpc("admin_list_juri" as any);
     if (error) return toast.error(error.message);
     setItems((data ?? []) as Juri[]);
   }
+
   useEffect(() => { load(); }, []);
 
   async function approve(id: string) {
@@ -847,14 +848,14 @@ function PenilaianTab() {
   async function loadAll() {
     const [p, j, k, m, n] = await Promise.all([
       supabase.from("peserta").select("*").order("nomor_urut"),
-      supabase.from("juri").select("*").order("created_at"),
+      supabase.from("juri_public" as any).select("*").order("created_at"),
       supabase.from("kriteria").select("*").order("created_at"),
       supabase.from("mazmur").select("*").order("created_at"),
       supabase.from("penilaian").select("*"),
     ]);
     if (p.error || j.error || k.error || m.error || n.error) return toast.error("Gagal memuat data");
     setPeserta(p.data ?? []);
-    setJuri(j.data ?? []);
+    setJuri((j.data ?? []) as unknown as Juri[]);
     setKriteria(k.data ?? []);
     setMazmur((m.data ?? []) as Mazmur[]);
     setPenilaian((n.data ?? []) as Penilaian[]);
@@ -1429,11 +1430,11 @@ function DashboardTab() {
   async function load() {
     setLoading(true);
     const [j, p, n] = await Promise.all([
-      supabase.from("juri").select("*").eq("approved", true).eq("role", "juri").order("nama"),
+      supabase.from("juri_public" as any).select("*").eq("approved", true).eq("role", "juri").order("nama"),
       supabase.from("peserta").select("*"),
       supabase.from("penilaian").select("*"),
     ]);
-    setJuri((j.data as Juri[]) || []);
+    setJuri((j.data as unknown as Juri[]) || []);
     setPeserta((p.data as Peserta[]) || []);
     setPenilaian((n.data as Penilaian[]) || []);
     setLoading(false);
