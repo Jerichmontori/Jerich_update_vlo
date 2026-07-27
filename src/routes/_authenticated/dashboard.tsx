@@ -1200,7 +1200,13 @@ function PenilaianTab() {
                 `Apakah Anda yakin akan mengirim data penilaian untuk ${currentPesertaLabel}?\n\nNilai akhir: ${totalNilai}`
               );
               if (!ok) return;
-              toast.success(`Penilaian dikirim. Nilai akhir: ${totalNilai}`);
+              toast.success(`✦ Penilaian dikirim`, {
+                description: `Nilai akhir untuk ${currentPesertaLabel}: ${totalNilai}. Form direset untuk penilaian berikutnya.`,
+              });
+              setJuriId("");
+              setPesertaId("");
+              setMazmurId("");
+              setOpenKriteria(null);
               await loadAll();
             }
 
