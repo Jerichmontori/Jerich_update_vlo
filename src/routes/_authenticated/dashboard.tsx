@@ -36,7 +36,23 @@ type Kategori = { id: string; kategori: string | null; batas_atas: number; batas
 function App() {
   return (
     <div className="min-h-screen">
-      <Toaster richColors position="top-center" />
+      <Toaster
+        richColors
+        position="top-center"
+        expand
+        toastOptions={{
+          classNames: {
+            toast:
+              "!font-serif !border-2 !border-accent/40 !bg-gradient-to-br !from-card !to-secondary/60 !text-foreground !shadow-[0_8px_24px_-6px_hsl(var(--primary)/0.35)] !rounded-2xl",
+            title: "!text-base !tracking-wide",
+            description: "!text-muted-foreground",
+            success: "!border-accent !bg-gradient-to-br !from-accent/25 !to-card",
+            error: "!border-destructive/60 !bg-gradient-to-br !from-destructive/15 !to-card !text-destructive",
+            warning: "!border-gold !bg-gradient-to-br !from-gold/20 !to-card",
+            info: "!border-primary/50 !bg-gradient-to-br !from-primary/10 !to-card",
+          },
+        }}
+      />
       <Header />
       <main className="mx-auto max-w-6xl px-4 pb-16">
         <Tabs defaultValue="dashboard" className="w-full">
