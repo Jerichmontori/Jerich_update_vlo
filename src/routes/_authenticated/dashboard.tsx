@@ -848,7 +848,7 @@ function PenilaianTab() {
   async function loadAll() {
     const [p, j, k, m, n] = await Promise.all([
       supabase.from("peserta").select("*").order("nomor_urut"),
-      supabase.from("juri").select("*").order("created_at"),
+      supabase.from("juri_public" as any).select("*").order("created_at"),
       supabase.from("kriteria").select("*").order("created_at"),
       supabase.from("mazmur").select("*").order("created_at"),
       supabase.from("penilaian").select("*"),
