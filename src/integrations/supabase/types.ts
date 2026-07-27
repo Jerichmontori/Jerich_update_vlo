@@ -183,6 +183,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "penilaian_juri_id_fkey"
+            columns: ["juri_id"]
+            isOneToOne: false
+            referencedRelation: "juri_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "penilaian_kriteria_id_fkey"
             columns: ["kriteria_id"]
             isOneToOne: false
@@ -272,6 +279,13 @@ export type Database = {
             referencedRelation: "juri"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "profiles_juri_id_fkey"
+            columns: ["juri_id"]
+            isOneToOne: false
+            referencedRelation: "juri_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_roles: {
@@ -297,6 +311,39 @@ export type Database = {
       }
     }
     Views: {
+      juri_public: {
+        Row: {
+          approved: boolean | null
+          bacaan_mazmur: string | null
+          created_at: string | null
+          id: string | null
+          jabatan: string | null
+          jumlah_ayat: number | null
+          nama: string | null
+          role: Database["public"]["Enums"]["app_role"] | null
+        }
+        Insert: {
+          approved?: boolean | null
+          bacaan_mazmur?: string | null
+          created_at?: string | null
+          id?: string | null
+          jabatan?: string | null
+          jumlah_ayat?: number | null
+          nama?: string | null
+          role?: Database["public"]["Enums"]["app_role"] | null
+        }
+        Update: {
+          approved?: boolean | null
+          bacaan_mazmur?: string | null
+          created_at?: string | null
+          id?: string | null
+          jabatan?: string | null
+          jumlah_ayat?: number | null
+          nama?: string | null
+          role?: Database["public"]["Enums"]["app_role"] | null
+        }
+        Relationships: []
+      }
       ranking: {
         Row: {
           asal: string | null
