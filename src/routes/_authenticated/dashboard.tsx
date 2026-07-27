@@ -2331,8 +2331,14 @@ function RincianNilaiTab() {
                         <div className="px-3 py-3 space-y-3 border-t bg-muted/20">
                           {kriteria.map((k) => {
                             const rec = penilaian.find((n) => n.peserta_id === p.id && n.juri_id === j.id && n.kriteria_id === k.id);
+                            if (!rec) return null;
                             const d = (rec as any)?.detail as PenilaianDetail | undefined;
-                            if (!d) return null;
+                            if (!d) return (
+                              <div key={k.id} className="rounded border bg-background p-3">
+                                <div className="text-xs font-semibold text-primary mb-1">Rincian: {k.nama}</div>
+                                <div className="text-xs italic text-muted-foreground">Rincian pilihan belum tersedia (penilaian dibuat sebelum fitur rincian aktif). Hapus lalu input ulang penilaian ini agar rincian tersimpan.</div>
+                              </div>
+                            );
                             return (
                               <div key={k.id} className="rounded border bg-background p-3">
                                 <div className="text-xs font-semibold text-primary mb-2">Rincian: {k.nama}</div>
