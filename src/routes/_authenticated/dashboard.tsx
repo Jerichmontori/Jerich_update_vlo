@@ -2162,7 +2162,53 @@ function RincianNilaiTab() {
         alternateRowStyles: { fillColor: [250, 247, 243] },
       });
       // @ts-ignore
-      y = (doc as any).lastAutoTable.finalY + 20;
+      y = (doc as any).lastAutoTable.finalY + 10;
+
+      // Rincian pilihan per kriteria (detail sub-tables)
+      kriteria.forEach((k) => {
+        const rec = penilaian.find((n) => n.peserta_id === p.id && n.juri_id === j.id && n.kriteria_id === k.id);
+        const d = (rec as any)?.detail as PenilaianDetail | undefined;
+        if (!d) return;
+        let head: string[][] = [];
+        let body: (string | number)[][] = [];
+        let title = `Rincian: ${k.nama}`;
+        if (d.type === "grade") {
+          head = [["Pilihan", "Deskripsi"]];
+          body = [[d.label, d.desc]];
+        } else if (d.type === "catatan") {
+          head = [["#", "Aspek", "Clear Text", "Nilai (1–5)"]];
+          body = d.aspek.map((a, i) => [
+            i + 1, a.nama,
+            i === 0 ? (d.clearText ? "Ya" : "Tidak") : "—",
+            a.skipped ? "— (dilewati)" : String(a.nilai),
+          ]);
+        } else if (d.type === "perhatian") {
+          head = [["#", "Aspek", "Penanda"]];
+          body = [
+            ["1", "Tidak Membaca Perikop", d.membacaPerikop === null ? "—" : d.membacaPerikop ? "Ya" : "Tidak"],
+            ...d.aspek.map((a, i) => [
+              String(i + 2),
+              a.nama,
+              a.ditandai.length ? `Ayat: ${a.ditandai.join(", ")}` : "—",
+            ]),
+          ];
+        }
+        if (body.length === 0) return;
+        doc.setFontSize(9); doc.setTextColor(90);
+        doc.text(title, 40, y);
+        autoTable(doc, {
+          startY: y + 4,
+          head, body,
+          styles: { fontSize: 7.5, cellPadding: 2.5 },
+          headStyles: { fillColor: [180, 140, 60], textColor: 255 },
+          alternateRowStyles: { fillColor: [252, 249, 244] },
+        });
+        // @ts-ignore
+        y = (doc as any).lastAutoTable.finalY + 10;
+        if (y > 520) { doc.addPage(); y = 40; }
+      });
+
+      y += 10;
       if (y > 520) { doc.addPage(); y = 40; }
     });
   }
