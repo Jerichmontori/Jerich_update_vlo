@@ -577,7 +577,7 @@ function KategoriTab() {
     setItems((data ?? []) as Kategori[]);
   }
   async function loadMazmurKategori() {
-    const { data, error } = await supabase.from("mazmur").select("kategori");
+    const { data, error } = await supabase.from("peserta").select("kategori");
     if (error) return;
     const uniq = Array.from(new Set((data ?? []).map((m: any) => (m.kategori || "").trim()).filter(Boolean))) as string[];
     setMazmurKategoriList(uniq);
