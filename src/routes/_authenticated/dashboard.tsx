@@ -35,9 +35,10 @@ function App() {
       <Header />
       <main className="mx-auto max-w-6xl px-4 pb-16">
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-9 h-auto bg-secondary/60 p-1">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-10 h-auto bg-secondary/60 p-1">
             <TabsTrigger value="dashboard" className="gap-2"><LayoutDashboard className="size-4" />Dashboard</TabsTrigger>
             <TabsTrigger value="ranking" className="gap-2"><Trophy className="size-4" />Ranking</TabsTrigger>
+            <TabsTrigger value="lihat" className="gap-2"><FileText className="size-4" />Lihat Nilai</TabsTrigger>
             <TabsTrigger value="posisi" className="gap-2"><Trophy className="size-4" />Posisi</TabsTrigger>
             <TabsTrigger value="penilaian" className="gap-2"><ClipboardCheck className="size-4" />Penilaian</TabsTrigger>
             <TabsTrigger value="peserta" className="gap-2"><Users className="size-4" />Peserta</TabsTrigger>
@@ -48,6 +49,7 @@ function App() {
           </TabsList>
           <TabsContent value="dashboard"><DashboardTab /></TabsContent>
           <TabsContent value="ranking"><RankingTab /></TabsContent>
+          <TabsContent value="lihat"><LihatPenilaianTab /></TabsContent>
           <TabsContent value="posisi"><PosisiTab /></TabsContent>
           <TabsContent value="penilaian"><PenilaianTab /></TabsContent>
           <TabsContent value="peserta"><PesertaTab /></TabsContent>
@@ -56,6 +58,7 @@ function App() {
           <TabsContent value="kategori"><KategoriTab /></TabsContent>
           <TabsContent value="mazmur"><MazmurTab /></TabsContent>
         </Tabs>
+
       </main>
     </div>
   );
