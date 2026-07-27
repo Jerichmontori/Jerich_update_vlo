@@ -88,28 +88,46 @@ function Header() {
 function PesertaTab() {
   const [items, setItems] = useState<Peserta[]>([]);
   const [scoredIds, setScoredIds] = useState<Set<string>>(new Set());
+  const [kategoriList, setKategoriList] = useState<string[]>([]);
   const [nomor, setNomor] = useState("");
   const [nama, setNama] = useState("");
   const [asal, setAsal] = useState("");
   const [kategori, setKategori] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resetting, setResetting] = useState(false);
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   const sesiDari = (n: number) => `Sesi ${Math.ceil(n / 10)}`;
 
   async function load() {
-    const [{ data, error }, { data: pen, error: pe }] = await Promise.all([
+    const [{ data, error }, { data: pen, error: pe }, { data: mz }] = await Promise.all([
       supabase.from("peserta").select("*").order("nomor_urut"),
       supabase.from("penilaian").select("peserta_id"),
+      supabase.from("mazmur").select("kategori"),
     ]);
     if (error) return toast.error(error.message);
     if (pe) return toast.error(pe.message);
     setItems((data ?? []) as Peserta[]);
     setScoredIds(new Set((pen ?? []).map((r: { peserta_id: string }) => r.peserta_id)));
+    const uniq = Array.from(new Set((mz ?? []).map((m: any) => (m.kategori || "").trim()).filter(Boolean))) as string[];
+    setKategoriList(uniq);
   }
   useEffect(() => { load(); }, []);
+
+  async function resetSemua() {
+    if (!confirm("Yakin ingin menghapus SEMUA daftar peserta beserta seluruh nilainya? Tindakan ini tidak dapat dibatalkan.")) return;
+    setResetting(true);
+    const { error: pe } = await supabase.from("penilaian").delete().not("id", "is", null);
+    if (pe) { setResetting(false); return toast.error("Gagal menghapus penilaian: " + pe.message); }
+    const { error } = await supabase.from("peserta").delete().not("id", "is", null);
+    setResetting(false);
+    if (error) return toast.error(error.message);
+    toast.success("Semua peserta dihapus");
+    setEditId(null); setNomor(""); setNama(""); setAsal(""); setKategori("");
+    load();
+  }
 
 
   function pilihUntukEdit(p: Peserta) {
@@ -295,9 +313,10 @@ function PesertaTab() {
       title="Daftar Peserta"
       description="Tambahkan peserta satu per satu atau impor banyak sekaligus dari file Excel."
       action={
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={unduhTemplate} className="gap-1"><Download className="size-4" />Template</Button>
           <Button variant="secondary" size="sm" onClick={pickFile} disabled={importing} className="gap-1"><Upload className="size-4" />{importing ? "Mengimpor..." : "Impor Excel"}</Button>
+          <Button variant="destructive" size="sm" onClick={resetSemua} disabled={resetting || items.length === 0} className="gap-1"><Trash2 className="size-4" />{resetting ? "Menghapus..." : "Reset"}</Button>
           <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFile} />
         </div>
       }
@@ -306,7 +325,15 @@ function PesertaTab() {
         <div><Label>Nomor</Label><Input type="number" value={nomor} onChange={e=>setNomor(e.target.value)} placeholder="1" /></div>
         <div><Label>Nama</Label><Input value={nama} onChange={e=>setNama(e.target.value)} placeholder="Nama peserta" /></div>
         <div><Label>Asal / Jemaat</Label><Input value={asal} onChange={e=>setAsal(e.target.value)} placeholder="Jemaat / kelompok" /></div>
-        <div><Label>Kategori</Label><Input value={kategori} onChange={e=>setKategori(e.target.value)} placeholder="Dewasa / Remaja / dll" /></div>
+        <div>
+          <Label>Kategori</Label>
+          <Select value={kategori} onValueChange={setKategori}>
+            <SelectTrigger><SelectValue placeholder={kategoriList.length ? "Pilih kategori" : "Belum ada kategori di Mazmur"} /></SelectTrigger>
+            <SelectContent>
+              {kategoriList.map(k => <SelectItem key={k} value={k}>{k}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
         <div className="flex items-end gap-2">
           <Button type="submit" disabled={loading} className="gap-1"><Plus className="size-4" />{editId ? "Ubah" : "Tambah"}</Button>
           {editId && <Button type="button" variant="ghost" onClick={batalEdit}>Batal</Button>}
@@ -857,6 +884,7 @@ function PenilaianTab() {
   const [mazmurId, setMazmurId] = useState<string>("");
   const [openKriteria, setOpenKriteria] = useState<Kriteria | null>(null);
   const [catatanValues, setCatatanValues] = useState<number[]>(() => CATATAN_ASPEK.map(() => 3));
+  const [catatanClearText, setCatatanClearText] = useState<boolean>(false);
   const [perhatianChecks, setPerhatianChecks] = useState<boolean[][]>(() => PERHATIAN_ASPEK.map(() => []));
   const [saving, setSaving] = useState(false);
 
@@ -893,10 +921,11 @@ function PenilaianTab() {
     const key = kriteriaKey(k.nama);
     if (key === "catatan") {
       setCatatanValues(CATATAN_ASPEK.map(() => 3));
+      setCatatanClearText(false);
     }
     if (key === "perhatian") {
       if (!selectedMazmur) return toast.error("Pilih bacaan mazmur terlebih dahulu");
-      setPerhatianChecks(PERHATIAN_ASPEK.map(() => Array(selectedMazmur.jumlah_ayat).fill(false)));
+      setPerhatianChecks(PERHATIAN_ASPEK.map((_, i) => i === 0 ? [false] : Array(selectedMazmur.jumlah_ayat).fill(false)));
     }
     setOpenKriteria(k);
   }
@@ -920,13 +949,15 @@ function PenilaianTab() {
     toast.success(`Nilai ${openKriteria.nama} disimpan`);
     setOpenKriteria(null);
     setCatatanValues(CATATAN_ASPEK.map(() => 3));
+    setCatatanClearText(false);
     setPerhatianChecks([]);
     setPesertaId("");
     loadAll();
   }
 
   async function saveCatatan() {
-    const avg = catatanValues.reduce((a, b) => a + b, 0) / catatanValues.length;
+    const effective = catatanValues.map((v, i) => i === 0 && !catatanClearText ? 1 : v);
+    const avg = effective.reduce((a, b) => a + b, 0) / effective.length;
     const nilai = Math.round(avg * 20 * 100) / 100; // scale 1-5 → 20-100
     await saveNilai(nilai);
   }
@@ -978,7 +1009,7 @@ function PenilaianTab() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_180px] gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_180px] gap-4 mb-8">
             <div>
               <Label>Bacaan Mazmur</Label>
               <Select value={mazmurId} onValueChange={setMazmurId}>
@@ -991,6 +1022,10 @@ function PenilaianTab() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label>Kriteria Peserta</Label>
+              <Input readOnly value={peserta.find(p => p.id === pesertaId)?.kategori || ""} placeholder="Otomatis dari kategori peserta" className="bg-muted/50" />
             </div>
             <div>
               <Label>Jumlah Ayat</Label>
@@ -1149,23 +1184,51 @@ function PenilaianTab() {
                     <span className="text-sm font-medium">{i + 1}. {aspek}</span>
                   </div>
 
-                  <div className="grid grid-cols-5 gap-2">
-                    {[1, 2, 3, 4, 5].map(v => (
-                      <button
-                        key={v}
-                        type="button"
-                        onClick={() => setCatatanValues(prev => prev.map((x, idx) => idx === i ? v : x))}
-                        className={[
-                          "rounded-md border-2 py-2 text-sm font-semibold transition",
-                          catatanValues[i] === v
-                            ? "border-accent bg-accent text-accent-foreground"
-                            : "border-primary/20 bg-background hover:border-accent/60",
-                        ].join(" ")}
-                      >
-                        {v}
-                      </button>
-                    ))}
-                  </div>
+                  {i === 0 && (
+                    <div className="mb-3">
+                      <div className="text-xs text-muted-foreground mb-1">Clear text?</div>
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { label: "Ya", val: true },
+                          { label: "Tidak", val: false },
+                        ].map(opt => (
+                          <button
+                            key={opt.label}
+                            type="button"
+                            onClick={() => setCatatanClearText(opt.val)}
+                            className={[
+                              "rounded-md border-2 py-2 text-sm font-semibold transition",
+                              catatanClearText === opt.val
+                                ? "border-accent bg-accent text-accent-foreground"
+                                : "border-primary/20 bg-background hover:border-accent/60",
+                            ].join(" ")}
+                          >
+                            {opt.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {(i !== 0 || catatanClearText) && (
+                    <div className="grid grid-cols-5 gap-2">
+                      {[1, 2, 3, 4, 5].map(v => (
+                        <button
+                          key={v}
+                          type="button"
+                          onClick={() => setCatatanValues(prev => prev.map((x, idx) => idx === i ? v : x))}
+                          className={[
+                            "rounded-md border-2 py-2 text-sm font-semibold transition",
+                            catatanValues[i] === v
+                              ? "border-accent bg-accent text-accent-foreground"
+                              : "border-primary/20 bg-background hover:border-accent/60",
+                          ].join(" ")}
+                        >
+                          {v}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               ))}
               <DialogFooter className="pt-2">
@@ -1185,33 +1248,63 @@ function PenilaianTab() {
                 return (
                   <div key={aspek} className="rounded-lg border bg-card p-3">
                     <div className="text-sm font-medium mb-2">{i + 1}. {aspek}</div>
-                    <div className="flex flex-wrap gap-2">
-                      {row.map((checked, ayatIdx) => (
-                        <label
-                          key={ayatIdx}
-                          className={[
-                            "cursor-pointer select-none rounded-md border-2 px-3 py-1.5 text-xs font-semibold transition",
-                            checked
-                              ? "border-destructive bg-destructive text-destructive-foreground"
-                              : "border-primary/20 bg-background hover:border-accent/60",
-                          ].join(" ")}
-                        >
-                          <input
-                            type="checkbox"
-                            className="sr-only"
-                            checked={checked}
-                            onChange={() =>
-                              setPerhatianChecks(prev =>
-                                prev.map((r, idx) =>
-                                  idx === i ? r.map((c, ai) => (ai === ayatIdx ? !c : c)) : r
+                    {i === 0 ? (
+                      <div className="grid grid-cols-2 gap-2">
+                        {[
+                          { label: "Ya", val: true },
+                          { label: "Tidak", val: false },
+                        ].map(opt => {
+                          const active = (row[0] ?? false) === opt.val;
+                          return (
+                            <button
+                              key={opt.label}
+                              type="button"
+                              onClick={() =>
+                                setPerhatianChecks(prev => prev.map((r, idx) => idx === 0 ? [opt.val] : r))
+                              }
+                              className={[
+                                "rounded-md border-2 py-2 text-sm font-semibold transition",
+                                active
+                                  ? (opt.val
+                                      ? "border-destructive bg-destructive text-destructive-foreground"
+                                      : "border-accent bg-accent text-accent-foreground")
+                                  : "border-primary/20 bg-background hover:border-accent/60",
+                              ].join(" ")}
+                            >
+                              {opt.label}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="flex flex-wrap gap-2">
+                        {row.map((checked, ayatIdx) => (
+                          <label
+                            key={ayatIdx}
+                            className={[
+                              "cursor-pointer select-none rounded-md border-2 px-3 py-1.5 text-xs font-semibold transition",
+                              checked
+                                ? "border-destructive bg-destructive text-destructive-foreground"
+                                : "border-primary/20 bg-background hover:border-accent/60",
+                            ].join(" ")}
+                          >
+                            <input
+                              type="checkbox"
+                              className="sr-only"
+                              checked={checked}
+                              onChange={() =>
+                                setPerhatianChecks(prev =>
+                                  prev.map((r, idx) =>
+                                    idx === i ? r.map((c, ai) => (ai === ayatIdx ? !c : c)) : r
+                                  )
                                 )
-                              )
-                            }
-                          />
-                          Ayat {ayatIdx + 1}
-                        </label>
-                      ))}
-                    </div>
+                              }
+                            />
+                            Ayat {ayatIdx + 1}
+                          </label>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 );
               })}
