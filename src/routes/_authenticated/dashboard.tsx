@@ -426,7 +426,13 @@ function JuriTab() {
                 <div className="font-semibold truncate">{j.nama}</div>
                 <div className="text-xs text-muted-foreground truncate">{j.jabatan || "—"}</div>
               </div>
-              <Badge variant="outline" className="capitalize shrink-0">{j.role || "—"}</Badge>
+              <Select value={j.role ?? undefined} onValueChange={(v)=>ubahRole(j.id, v as "admin"|"juri")}>
+                <SelectTrigger className="h-8 w-[110px] shrink-0"><SelectValue placeholder="Role" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="juri">Juri</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="text-xs text-muted-foreground break-all">{j.email || "—"}</div>
             <div className="flex items-center justify-between gap-2 pt-1">
@@ -435,11 +441,16 @@ function JuriTab() {
               ) : (
                 <Badge variant="outline" className="text-muted-foreground">Menunggu</Badge>
               )}
-              {!j.approved && (
-                <Button size="sm" variant="default" onClick={()=>approve(j.id)} className="gap-1">
-                  <Check className="size-4" />Approve
+              <div className="flex items-center gap-2">
+                {!j.approved && (
+                  <Button size="sm" variant="default" onClick={()=>approve(j.id)} className="gap-1">
+                    <Check className="size-4" />Approve
+                  </Button>
+                )}
+                <Button size="icon" variant="ghost" onClick={()=>hapus(j.id, j.nama)}>
+                  <Trash2 className="size-4 text-destructive" />
                 </Button>
-              )}
+              </div>
             </div>
           </div>
         ))}
@@ -465,7 +476,13 @@ function JuriTab() {
                 <TableCell className="text-muted-foreground">{j.jabatan || "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{j.email || "—"}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="capitalize">{j.role || "—"}</Badge>
+                  <Select value={j.role ?? undefined} onValueChange={(v)=>ubahRole(j.id, v as "admin"|"juri")}>
+                    <SelectTrigger className="h-8 w-[120px]"><SelectValue placeholder="Role" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="juri">Juri</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </TableCell>
                 <TableCell>
                   {j.approved ? (
