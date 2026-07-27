@@ -1610,24 +1610,41 @@ function DashboardTab() {
   const [juri, setJuri] = useState<Juri[]>([]);
   const [peserta, setPeserta] = useState<Peserta[]>([]);
   const [penilaian, setPenilaian] = useState<Penilaian[]>([]);
+  const [kriteria, setKriteria] = useState<Kriteria[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function load() {
     setLoading(true);
-    const [j, p, n] = await Promise.all([
+    const [j, p, n, k] = await Promise.all([
       supabase.from("juri_public" as any).select("*").eq("approved", true).eq("role", "juri").order("nama"),
       supabase.from("peserta").select("*"),
       supabase.from("penilaian").select("*"),
+      supabase.from("kriteria").select("*"),
     ]);
     setJuri((j.data as unknown as Juri[]) || []);
     setPeserta((p.data as Peserta[]) || []);
     setPenilaian((n.data as Penilaian[]) || []);
+    setKriteria((k.data as Kriteria[]) || []);
     setLoading(false);
   }
 
   useEffect(() => { load(); }, []);
 
   const totalPeserta = peserta.length;
+
+  function computeNilai(juriId: string, pesertaId: string): number {
+    const rows = penilaian.filter(x => x.juri_id === juriId && x.peserta_id === pesertaId);
+    if (rows.length === 0) return 0;
+    const scored = rows.map(r => {
+      const k = kriteria.find(kk => kk.id === r.kriteria_id);
+      return { bobot: Number(k?.bobot || 0), nilai: Number(r.nilai) };
+    });
+    const totalBobot = scored.reduce((s, x) => s + x.bobot, 0);
+    const weighted = totalBobot > 0
+      ? scored.reduce((s, x) => s + x.nilai * x.bobot, 0) / totalBobot
+      : scored.reduce((s, x) => s + x.nilai, 0) / scored.length;
+    return Math.round(weighted * 100) / 100;
+  }
 
   const rows = useMemo(() => {
     return juri.map((j) => {
@@ -1706,12 +1723,27 @@ function DashboardTab() {
                   <div className="text-sm text-muted-foreground mb-2">
                     {r.sudahList.length} peserta sudah dinilai
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {r.sudahList.map((p) => (
-                      <Badge key={p.id} variant="outline" className="text-xs bg-green-50 border-green-300 text-green-800">
-                        #{p.nomor_urut} {p.nama}
-                      </Badge>
-                    ))}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-xs text-muted-foreground border-b">
+                          <th className="py-1.5 pr-3">No</th>
+                          <th className="py-1.5 pr-3">Nama Peserta</th>
+                          <th className="py-1.5 pr-3 text-right">Nilai</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {r.sudahList.map((p) => (
+                          <tr key={p.id} className="border-b last:border-b-0">
+                            <td className="py-1.5 pr-3">{p.nomor_urut}</td>
+                            <td className="py-1.5 pr-3">{p.nama}{p.asal ? ` — ${p.asal}` : ""}</td>
+                            <td className="py-1.5 pr-3 text-right font-semibold text-primary">
+                              {computeNilai(r.juri.id, p.id)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
@@ -1722,6 +1754,7 @@ function DashboardTab() {
     </SectionCard>
   );
 }
+
 
 function StatCard({ label, value, tone }: { label: string; value: number; tone?: "ok" | "warn" }) {
   const color = tone === "ok" ? "text-green-600" : tone === "warn" ? "text-amber-600" : "text-foreground";
