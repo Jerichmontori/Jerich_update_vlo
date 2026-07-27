@@ -34,6 +34,45 @@ type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: str
 type Kategori = { id: string; kategori: string | null; batas_atas: number; batas_bawah: number; kriteria_penilaian: string | null; kriteria_peserta: string | null; bobot: number; nilai_tengah: number; nilai_standart: number };
 
 function App() {
+  // Aturan #4 — juri hanya boleh login di satu device.
+  // Setiap login menulis device_session_id baru ke profiles.active_session_id.
+  // Device lama yang menyimpan id berbeda akan otomatis di-signout.
+  useEffect(() => {
+    let stopped = false;
+    async function check() {
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        const uid = userData.user?.id;
+        if (!uid) return;
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("active_session_id")
+          .eq("id", uid)
+          .maybeSingle();
+        const local = localStorage.getItem("device_session_id");
+        // Jika kolom belum pernah ditulis, catat sesi ini agar login berikutnya bisa membandingkan.
+        if (prof && !prof.active_session_id && local) {
+          await supabase.from("profiles").update({ active_session_id: local }).eq("id", uid);
+          return;
+        }
+        if (prof?.active_session_id && local && prof.active_session_id !== local) {
+          if (stopped) return;
+          toast.error("Akun Anda login di perangkat lain. Sesi ini akan dikeluarkan.");
+          await supabase.auth.signOut();
+          window.location.href = "/auth";
+        }
+      } catch {
+        // abaikan — cek berikutnya akan mencoba lagi
+      }
+    }
+    check();
+    const id = setInterval(check, 15000);
+    const onFocus = () => check();
+    window.addEventListener("focus", onFocus);
+    return () => { stopped = true; clearInterval(id); window.removeEventListener("focus", onFocus); };
+  }, []);
+
+
   return (
     <div className="min-h-screen">
       <Toaster
@@ -968,9 +1007,36 @@ function PenilaianTab() {
   const [catatanClearText, setCatatanClearText] = useState<boolean>(false);
   const [perhatianChecks, setPerhatianChecks] = useState<boolean[][]>(() => PERHATIAN_ASPEK.map(() => []));
   const [saving, setSaving] = useState(false);
+  // Aturan #3 — nama juri otomatis dari user yang login (juri tidak bisa memilih juri lain)
+  const [myJuriId, setMyJuriId] = useState<string>("");
+  const [myJuriNama, setMyJuriNama] = useState<string>("");
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  // Aturan #7 — kunci form setelah kirim, buka lagi setelah semua juri selesai
+  const [submittedFor, setSubmittedFor] = useState<string | null>(null);
+  const [judgesDoneForPeserta, setJudgesDoneForPeserta] = useState<number>(0);
+  // Aturan #6 — konfirmasi kirim
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
 
   async function loadAll() {
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id ?? null;
+    let admin = false;
+    if (uid) {
+      const { data: adminCheck } = await supabase.rpc("has_role", { _user_id: uid, _role: "admin" as any });
+      admin = !!adminCheck;
+      setIsAdmin(admin);
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("juri_id, nama")
+        .eq("id", uid)
+        .maybeSingle();
+      if (prof?.juri_id) {
+        setMyJuriId(prof.juri_id);
+        setMyJuriNama(prof.nama ?? "");
+        if (!admin) setJuriId(prof.juri_id);
+      }
+    }
     const [p, j, k, m, n] = await Promise.all([
       supabase.from("peserta").select("*").order("nomor_urut"),
       supabase.from("juri_public" as any).select("*").order("created_at"),
@@ -987,6 +1053,39 @@ function PenilaianTab() {
     setPenilaian((n.data ?? []) as Penilaian[]);
   }
   useEffect(() => { loadAll(); }, []);
+
+  const totalJuriApproved = juri.length;
+
+  // Aturan #7 — polling jumlah juri yang sudah menilai peserta terkunci
+  useEffect(() => {
+    if (!submittedFor) return;
+    let stopped = false;
+    async function tick() {
+      const { data } = await supabase.rpc("get_ranking" as any);
+      if (stopped) return;
+      const rows = (data ?? []) as unknown as Ranking[];
+      const row = rows.find(r => r.peserta_id === submittedFor);
+      const done = row ? Number(row.jumlah_juri) : 0;
+      setJudgesDoneForPeserta(done);
+      if (totalJuriApproved > 0 && done >= totalJuriApproved) {
+        toast.success("✦ Semua juri sudah menilai", {
+          description: "Silahkan melakukan penilaian peserta selanjutnya.",
+        });
+        setSubmittedFor(null);
+        setPesertaId("");
+        setMazmurId("");
+        setOpenKriteria(null);
+        setJudgesDoneForPeserta(0);
+        stopped = true;
+        loadAll();
+      }
+    }
+    tick();
+    const id = setInterval(tick, 4000);
+    return () => { stopped = true; clearInterval(id); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [submittedFor, totalJuriApproved]);
+
 
   const canJudge = peserta.length > 0 && juri.length > 0 && kriteria.length > 0;
   const selectedMazmur = mazmur.find(m => m.id === mazmurId);
@@ -1078,32 +1177,88 @@ function PenilaianTab() {
   const activeKey = openKriteria ? kriteriaKey(openKriteria.nama) : null;
 
   return (
-    <SectionCard title="Input Penilaian" description="Pilih juri, peserta, bacaan mazmur, lalu klik kriteria untuk memberi nilai.">
+    <SectionCard title="Input Penilaian" description="Pilih peserta & bacaan mazmur, lalu klik kriteria untuk memberi nilai.">
       {!canJudge && (
         <div className="rounded-lg border-2 border-dashed border-accent/50 bg-accent/5 p-6 text-center text-sm text-muted-foreground">
           Lengkapi dulu data <b>peserta</b>, <b>juri</b>, dan <b>kriteria</b> sebelum memulai penilaian.
         </div>
       )}
       {canJudge && (
-        <>
+        <div className="relative">
+          {/* Aturan #7 — overlay penguncian menunggu juri lain */}
+          {submittedFor && (() => {
+            const p = peserta.find(x => x.id === submittedFor);
+            const label = p ? `#${p.nomor_urut} ${p.nama}` : "peserta ini";
+            return (
+              <div className="absolute inset-0 z-20 -m-2 rounded-2xl bg-background/85 backdrop-blur-sm grid place-items-center px-6 py-10">
+                <div className="max-w-md text-center rounded-2xl border-2 border-accent/50 bg-gradient-to-br from-card to-secondary/60 p-6 shadow-lg">
+                  <div className="mx-auto grid place-items-center size-14 rounded-full bg-primary text-primary-foreground shadow ring-4 ring-accent/30 mb-3">
+                    <ClipboardCheck className="size-7" />
+                  </div>
+                  <h3 className="font-serif text-xl">Menunggu penilaian juri lain</h3>
+                  <p className="mt-2 text-sm text-muted-foreground">
+                    Penilaian Anda untuk <b>{label}</b> telah terkirim. Form dikunci sampai seluruh juri selesai menilai peserta ini.
+                  </p>
+                  <p className="mt-3 text-sm">
+                    <span className="font-semibold text-foreground">{judgesDoneForPeserta}</span>
+                    <span className="text-muted-foreground"> dari </span>
+                    <span className="font-semibold text-foreground">{totalJuriApproved}</span>
+                    <span className="text-muted-foreground"> juri telah mengirim.</span>
+                  </p>
+                </div>
+              </div>
+            );
+          })()}
+
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             <div>
               <Label>Juri</Label>
-              <Select value={juriId} onValueChange={setJuriId}>
-                <SelectTrigger><SelectValue placeholder="Pilih juri" /></SelectTrigger>
-                <SelectContent>
-                  {juri.map(j => <SelectItem key={j.id} value={j.id}>{j.nama}</SelectItem>)}
-                </SelectContent>
-              </Select>
+              {isAdmin && !myJuriId ? (
+                <Select value={juriId} onValueChange={setJuriId}>
+                  <SelectTrigger><SelectValue placeholder="Pilih juri" /></SelectTrigger>
+                  <SelectContent>
+                    {juri.map(j => <SelectItem key={j.id} value={j.id}>{j.nama}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input
+                  readOnly
+                  value={
+                    myJuriNama ||
+                    juri.find(j => j.id === juriId)?.nama ||
+                    "—"
+                  }
+                  className="bg-muted/50"
+                />
+              )}
             </div>
             <div>
               <Label>Peserta</Label>
-              <Select value={pesertaId} onValueChange={setPesertaId}>
-                <SelectTrigger><SelectValue placeholder={juriId ? "Pilih peserta" : "Pilih juri dulu"} /></SelectTrigger>
+              <Select
+                value={pesertaId}
+                onValueChange={(val) => {
+                  const kriteriaIds = new Set(kriteria.map(k => k.id));
+                  const scoredKrit = new Set(
+                    penilaian
+                      .filter(pn => pn.juri_id === juriId && pn.peserta_id === val && kriteriaIds.has(pn.kriteria_id))
+                      .map(pn => pn.kriteria_id)
+                  );
+                  const done = kriteriaIds.size > 0 && scoredKrit.size >= kriteriaIds.size;
+                  if (done) {
+                    const p = peserta.find(x => x.id === val);
+                    toast.warning("✦ Peserta sudah dinilai", {
+                      description: `Anda telah selesai menilai ${p ? `#${p.nomor_urut} ${p.nama}` : "peserta ini"}.`,
+                    });
+                    return;
+                  }
+                  setPesertaId(val);
+                }}
+              >
+                <SelectTrigger><SelectValue placeholder={juriId ? "Pilih peserta" : "—"} /></SelectTrigger>
                 <SelectContent>
                   {(() => {
                     const kriteriaIds = new Set(kriteria.map(k => k.id));
-                    const pesertaSelesai = new Set<string>();
+                    const doneSet = new Set<string>();
                     if (juriId && kriteriaIds.size > 0) {
                       const byPeserta: Record<string, Set<string>> = {};
                       penilaian.forEach(pn => {
@@ -1112,16 +1267,16 @@ function PenilaianTab() {
                         (byPeserta[pn.peserta_id] ??= new Set()).add(pn.kriteria_id);
                       });
                       Object.entries(byPeserta).forEach(([pid, set]) => {
-                        if (set.size >= kriteriaIds.size) pesertaSelesai.add(pid);
+                        if (set.size >= kriteriaIds.size) doneSet.add(pid);
                       });
                     }
-                    const list = peserta.filter(p => !pesertaSelesai.has(p.id));
-                    if (list.length === 0) {
-                      return <div className="px-3 py-2 text-sm text-muted-foreground">Semua peserta sudah dinilai oleh juri ini.</div>;
+                    if (peserta.length === 0) {
+                      return <div className="px-3 py-2 text-sm text-muted-foreground">Belum ada peserta.</div>;
                     }
-                    return list.map(p => (
+                    return peserta.map(p => (
                       <SelectItem key={p.id} value={p.id}>
                         {p.nomor_urut}. {p.nama}{p.asal ? ` — ${p.asal}` : ""}
+                        {doneSet.has(p.id) ? "  ✓ sudah dinilai" : ""}
                       </SelectItem>
                     ));
                   })()}
@@ -1184,44 +1339,90 @@ function PenilaianTab() {
               return p ? `#${p.nomor_urut} ${p.nama}` : "";
             })();
 
-            async function kirimPenilaian() {
+            // Aturan #5 — Nilai Akhir hanya muncul kalau seluruh kriteria selesai
+            const allDone = kriteria.length > 0 && scored.length === kriteria.length;
+            const nilaiAkhir = allDone
+              ? (() => {
+                  const totalBobot = scored.reduce((a, s) => a + Number(s.k.bobot || 0), 0);
+                  if (totalBobot <= 0) {
+                    return scored.reduce((a, s) => a + Number(s.v), 0) / scored.length;
+                  }
+                  return scored.reduce((a, s) => a + Number(s.v) * Number(s.k.bobot || 0), 0) / totalBobot;
+                })()
+              : null;
+
+            function requestKirim() {
               if (!juriId || !pesertaId) return toast.error("Pilih juri dan peserta");
               if (scored.length === 0) return toast.error("Belum ada nilai yang diberikan");
-              const ok = window.confirm(
-                `Apakah Anda yakin akan mengirim data penilaian untuk ${currentPesertaLabel}?`
-              );
-              if (!ok) return;
-              toast.success(`✦ Penilaian dikirim`, {
+              setConfirmOpen(true);
+            }
+
+            async function doKirim() {
+              setConfirmOpen(false);
+              toast.success("✦ Penilaian dikirim", {
                 description: `Penilaian untuk ${currentPesertaLabel} tersimpan.`,
               });
-              // Reset juri & dialog kriteria saja — peserta dipertahankan agar tidak perlu memilih ulang.
-              setJuriId("");
+              setSubmittedFor(pesertaId);
               setOpenKriteria(null);
               await loadAll();
             }
 
             return (
-              <div className="rounded-2xl border-2 border-accent/40 bg-gradient-to-br from-card to-secondary/40 p-5 sm:p-6 mb-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div className="text-sm text-muted-foreground">
-                    {scored.length} dari {kriteria.length} kriteria dinilai
+              <>
+                <div className="rounded-2xl border-2 border-accent/40 bg-gradient-to-br from-card to-secondary/40 p-5 sm:p-6 mb-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="text-sm text-muted-foreground">
+                      {scored.length} dari {kriteria.length} kriteria dinilai
+                    </div>
+                    {allDone && nilaiAkhir !== null && (
+                      <div className="text-right">
+                        <div className="text-xs uppercase tracking-widest text-accent font-semibold">Nilai Akhir</div>
+                        <div className="font-serif text-3xl font-bold text-foreground">
+                          {nilaiAkhir.toFixed(2)}
+                        </div>
+                      </div>
+                    )}
+                    <Button
+                      size="lg"
+                      onClick={requestKirim}
+                      disabled={saving || scored.length === 0}
+                      className="gap-2 min-w-[160px]"
+                    >
+                      <Check className="size-4" />
+                      Kirim
+                    </Button>
                   </div>
-                  <Button
-                    size="lg"
-                    onClick={kirimPenilaian}
-                    disabled={saving || scored.length === 0}
-                    className="gap-2 min-w-[160px]"
-                  >
-                    <Check className="size-4" />
-                    Kirim
-                  </Button>
                 </div>
-              </div>
+
+                {/* Aturan #6 — konfirmasi kirim */}
+                <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle className="font-serif text-xl">Konfirmasi Pengiriman</DialogTitle>
+                      <DialogDescription>
+                        Apakah Anda yakin akan mengirim penilaian untuk <b>{currentPesertaLabel}</b>?
+                        {allDone && nilaiAkhir !== null && (
+                          <span className="block mt-2">
+                            Nilai akhir yang akan dikirim: <b>{nilaiAkhir.toFixed(2)}</b>.
+                          </span>
+                        )}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                      <Button variant="outline" onClick={() => setConfirmOpen(false)}>Batal</Button>
+                      <Button onClick={doKirim} className="gap-1">
+                        <Check className="size-4" /> Ya, kirim
+                      </Button>
+                    </DialogFooter>
+                  </DialogContent>
+                </Dialog>
+              </>
             );
           })()}
 
-        </>
+        </div>
       )}
+
 
       <Dialog
         open={!!openKriteria}

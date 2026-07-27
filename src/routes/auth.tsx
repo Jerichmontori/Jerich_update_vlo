@@ -66,6 +66,21 @@ function AuthPage() {
         toast.error("Akun Anda belum disetujui admin. Silakan hubungi panitia.");
         return;
       }
+      // Single-device enforcement: mint a device session id and mark it as the
+      // currently-active session on this user's profile. Any older device will
+      // detect the mismatch on its next poll and be signed out automatically.
+      try {
+        const deviceSessionId =
+          (globalThis.crypto?.randomUUID?.() as string | undefined) ??
+          `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+        localStorage.setItem("device_session_id", deviceSessionId);
+        await supabase
+          .from("profiles")
+          .update({ active_session_id: deviceSessionId })
+          .eq("id", setData.user.id);
+      } catch {
+        // non-fatal — enforcement will still work on the next successful login
+      }
       setLoading(false);
       toast.success("Selamat datang kembali");
       navigate({ to: "/dashboard" });
@@ -74,6 +89,7 @@ function AuthPage() {
       toast.error(err instanceof Error ? err.message : "Gagal masuk");
     }
   }
+
 
 
   return (
