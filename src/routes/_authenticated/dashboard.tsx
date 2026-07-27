@@ -1434,7 +1434,7 @@ function DashboardTab() {
       supabase.from("peserta").select("*"),
       supabase.from("penilaian").select("*"),
     ]);
-    setJuri((j.data as Juri[]) || []);
+    setJuri((j.data as unknown as Juri[]) || []);
     setPeserta((p.data as Peserta[]) || []);
     setPenilaian((n.data as Penilaian[]) || []);
     setLoading(false);
