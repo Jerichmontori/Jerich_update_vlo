@@ -1100,16 +1100,36 @@ function PenilaianTab() {
             <div>
               <Label>Peserta</Label>
               <Select value={pesertaId} onValueChange={setPesertaId}>
-                <SelectTrigger><SelectValue placeholder="Pilih peserta" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={juriId ? "Pilih peserta" : "Pilih juri dulu"} /></SelectTrigger>
                 <SelectContent>
-                  {peserta.map(p => (
-                    <SelectItem key={p.id} value={p.id}>
-                      {p.nomor_urut}. {p.nama}{p.asal ? ` — ${p.asal}` : ""}
-                    </SelectItem>
-                  ))}
+                  {(() => {
+                    const kriteriaIds = new Set(kriteria.map(k => k.id));
+                    const pesertaSelesai = new Set<string>();
+                    if (juriId && kriteriaIds.size > 0) {
+                      const byPeserta: Record<string, Set<string>> = {};
+                      penilaian.forEach(pn => {
+                        if (pn.juri_id !== juriId) return;
+                        if (!kriteriaIds.has(pn.kriteria_id)) return;
+                        (byPeserta[pn.peserta_id] ??= new Set()).add(pn.kriteria_id);
+                      });
+                      Object.entries(byPeserta).forEach(([pid, set]) => {
+                        if (set.size >= kriteriaIds.size) pesertaSelesai.add(pid);
+                      });
+                    }
+                    const list = peserta.filter(p => !pesertaSelesai.has(p.id));
+                    if (list.length === 0) {
+                      return <div className="px-3 py-2 text-sm text-muted-foreground">Semua peserta sudah dinilai oleh juri ini.</div>;
+                    }
+                    return list.map(p => (
+                      <SelectItem key={p.id} value={p.id}>
+                        {p.nomor_urut}. {p.nama}{p.asal ? ` — ${p.asal}` : ""}
+                      </SelectItem>
+                    ));
+                  })()}
                 </SelectContent>
               </Select>
             </div>
+
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_180px] gap-4 mb-8">
