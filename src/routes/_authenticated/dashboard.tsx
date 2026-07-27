@@ -24,7 +24,12 @@ type Peserta = { id: string; nomor_urut: number; nama: string; asal: string | nu
 type Juri = { id: string; nama: string; jabatan: string | null; email: string | null; role: "admin" | "juri" | "viewer" | null; approved: boolean; user_id: string | null };
 type Kriteria = { id: string; nama: string; bobot: number; batas_atas: number; batas_bawah: number };
 type Mazmur = { id: string; bacaan: string; jumlah_ayat: number; kategori: string | null };
-type Penilaian = { id: string; peserta_id: string; juri_id: string; kriteria_id: string; nilai: number; mazmur_id: string | null };
+type PenilaianDetail =
+  | { type: "grade"; grade: number; label: string; desc: string }
+  | { type: "catatan"; clearText: boolean; aspek: { nama: string; nilai: number; skipped?: boolean }[] }
+  | { type: "perhatian"; membacaPerikop: boolean | null; aspek: { nama: string; ayat: boolean[]; ditandai: number[] }[] }
+  | null;
+type Penilaian = { id: string; peserta_id: string; juri_id: string; kriteria_id: string; nilai: number; mazmur_id: string | null; detail?: PenilaianDetail };
 type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: string | null; total_skor: number; rata_rata: number; jumlah_juri: number };
 type Kategori = { id: string; kategori: string | null; batas_atas: number; batas_bawah: number; kriteria_penilaian: string | null; kriteria_peserta: string | null; bobot: number; nilai_tengah: number; nilai_standart: number };
 
