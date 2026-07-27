@@ -661,19 +661,8 @@ function KategoriTab() {
 
 
   return (
-    <SectionCard title="Daftar Kategori" description="Kelola kriteria penilaian beserta bobot, batas, dan nilai standar.">
-      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <div className="lg:col-span-2">
-          <Label>Kriteria Penilaian</Label>
-          <Select value={kriteriaPenilaian} onValueChange={setKriteriaPenilaian}>
-            <SelectTrigger><SelectValue placeholder="Pilih kriteria" /></SelectTrigger>
-            <SelectContent>
-              {KRITERIA_PENILAIAN_OPTIONS.map(o => (
-                <SelectItem key={o} value={o}>{o}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+    <SectionCard title="Daftar Kategori" description="Kelola batas dan nilai standar untuk setiap kategori peserta.">
+      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
         <div className="lg:col-span-2">
           <Label>Kriteria Peserta</Label>
           <Select value={kriteriaPeserta} onValueChange={setKriteriaPeserta}>
@@ -685,13 +674,11 @@ function KategoriTab() {
             </SelectContent>
           </Select>
         </div>
-
-        <div><Label>Bobot</Label><Input type="number" step="0.01" value={bobot} onChange={e=>setBobot(e.target.value)} placeholder="0" /></div>
         <div><Label>Batas Atas</Label><Input type="number" step="0.01" value={batasAtas} onChange={e=>setBatasAtas(e.target.value)} placeholder="100" /></div>
         <div><Label>Batas Bawah</Label><Input type="number" step="0.01" value={batasBawah} onChange={e=>setBatasBawah(e.target.value)} placeholder="0" /></div>
         <div><Label>Nilai Tengah</Label><Input type="number" step="0.01" value={nilaiTengah} onChange={e=>setNilaiTengah(e.target.value)} placeholder="50" /></div>
         <div><Label>Nilai Standart</Label><Input type="number" step="0.01" value={nilaiStandart} onChange={e=>setNilaiStandart(e.target.value)} placeholder="75" /></div>
-        <div className="flex items-end sm:col-span-2 lg:col-span-4">
+        <div className="flex items-end sm:col-span-2 lg:col-span-5">
           <Button type="submit" className="gap-1"><Plus className="size-4" />Tambah</Button>
         </div>
       </form>
@@ -699,28 +686,28 @@ function KategoriTab() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Kriteria Penilaian</TableHead>
               <TableHead>Kriteria Peserta</TableHead>
-              <TableHead className="text-center">Bobot</TableHead>
               <TableHead className="text-center">Batas Atas</TableHead>
               <TableHead className="text-center">Batas Bawah</TableHead>
               <TableHead className="text-center">Nilai Tengah</TableHead>
               <TableHead className="text-center">Nilai Standart</TableHead>
-              <TableHead className="w-20 text-right">Aksi</TableHead>
+              <TableHead className="w-32 text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground py-8">Belum ada kategori.</TableCell></TableRow>}
+            {items.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Belum ada kategori.</TableCell></TableRow>}
             {items.map(k => (
               <TableRow key={k.id}>
-                <TableCell className="font-medium">{k.kriteria_penilaian || k.kategori || "—"}</TableCell>
-                <TableCell>{k.kriteria_peserta || <span className="text-muted-foreground">—</span>}</TableCell>
-                <TableCell className="text-center">{Number(k.bobot)}</TableCell>
+                <TableCell className="font-medium">{k.kriteria_peserta || k.kategori || "—"}</TableCell>
                 <TableCell className="text-center">{Number(k.batas_atas)}</TableCell>
                 <TableCell className="text-center">{Number(k.batas_bawah)}</TableCell>
                 <TableCell className="text-center">{Number(k.nilai_tengah)}</TableCell>
                 <TableCell className="text-center">{Number(k.nilai_standart)}</TableCell>
-                <TableCell className="text-right"><Button size="icon" variant="ghost" onClick={()=>hapus(k.id)}><Trash2 className="size-4 text-destructive" /></Button></TableCell>
+                <TableCell className="text-right">
+                  <Button size="sm" variant="destructive" onClick={()=>hapus(k.id)}>
+                    <Trash2 className="size-4 mr-1" /> Hapus
+                  </Button>
+                </TableCell>
               </TableRow>
             ))}
           </TableBody>
