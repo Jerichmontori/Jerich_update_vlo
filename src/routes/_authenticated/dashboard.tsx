@@ -1664,18 +1664,18 @@ function DashboardTab() {
               )}
 
               {r.belumList.length > 0 && (
-                <details className="mt-3">
-                  <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
-                    Lihat {r.belumList.length} peserta yang belum dinilai
-                  </summary>
-                  <div className="mt-2 flex flex-wrap gap-1.5">
+                <div className="mt-3">
+                  <div className="text-sm text-muted-foreground mb-2">
+                    {r.belumList.length} peserta belum dinilai
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
                     {r.belumList.map((p) => (
                       <Badge key={p.id} variant="outline" className="text-xs">
                         #{p.nomor_urut} {p.nama}
                       </Badge>
                     ))}
                   </div>
-                </details>
+                </div>
               )}
             </div>
           ))}
