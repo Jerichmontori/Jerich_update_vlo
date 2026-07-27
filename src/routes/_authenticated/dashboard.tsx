@@ -24,7 +24,12 @@ type Peserta = { id: string; nomor_urut: number; nama: string; asal: string | nu
 type Juri = { id: string; nama: string; jabatan: string | null; email: string | null; role: "admin" | "juri" | "viewer" | null; approved: boolean; user_id: string | null };
 type Kriteria = { id: string; nama: string; bobot: number; batas_atas: number; batas_bawah: number };
 type Mazmur = { id: string; bacaan: string; jumlah_ayat: number; kategori: string | null };
-type Penilaian = { id: string; peserta_id: string; juri_id: string; kriteria_id: string; nilai: number; mazmur_id: string | null };
+type PenilaianDetail =
+  | { type: "grade"; grade: number; label: string; desc: string }
+  | { type: "catatan"; clearText: boolean; aspek: { nama: string; nilai: number; skipped?: boolean }[] }
+  | { type: "perhatian"; membacaPerikop: boolean | null; aspek: { nama: string; ayat: boolean[]; ditandai: number[] }[] }
+  | null;
+type Penilaian = { id: string; peserta_id: string; juri_id: string; kriteria_id: string; nilai: number; mazmur_id: string | null; detail?: PenilaianDetail };
 type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: string | null; total_skor: number; rata_rata: number; jumlah_juri: number };
 type Kategori = { id: string; kategori: string | null; batas_atas: number; batas_bawah: number; kriteria_penilaian: string | null; kriteria_peserta: string | null; bobot: number; nilai_tengah: number; nilai_standart: number };
 
@@ -977,7 +982,7 @@ function PenilaianTab() {
   }
 
 
-  async function saveNilai(nilai: number) {
+  async function saveNilai(nilai: number, detail: PenilaianDetail = null) {
     if (!openKriteria) return;
     setSaving(true);
     const { error } = await supabase.from("penilaian").upsert(
@@ -987,7 +992,8 @@ function PenilaianTab() {
         kriteria_id: openKriteria.id,
         nilai,
         mazmur_id: mazmurId || null,
-      },
+        detail: detail as any,
+      } as any,
       { onConflict: "peserta_id,juri_id,kriteria_id" }
     );
     setSaving(false);
@@ -1005,7 +1011,16 @@ function PenilaianTab() {
     const effective = catatanValues.map((v, i) => i === 0 && !catatanClearText ? 1 : v);
     const avg = effective.reduce((a, b) => a + b, 0) / effective.length;
     const nilai = Math.round(avg * 20 * 100) / 100; // scale 1-5 → 20-100
-    await saveNilai(nilai);
+    const detail: PenilaianDetail = {
+      type: "catatan",
+      clearText: catatanClearText,
+      aspek: CATATAN_ASPEK.map((nama, i) => ({
+        nama,
+        nilai: effective[i],
+        skipped: i === 0 && !catatanClearText,
+      })),
+    };
+    await saveNilai(nilai, detail);
   }
 
   const perhatianTotal = perhatianChecks.reduce((s, row) => s + row.length, 0);
@@ -1015,7 +1030,17 @@ function PenilaianTab() {
     : Math.round(((perhatianTotal - perhatianChecked) / perhatianTotal) * 100 * 100) / 100;
 
   async function savePerhatian() {
-    await saveNilai(perhatianNilai);
+    const detail: PenilaianDetail = {
+      type: "perhatian",
+      membacaPerikop: (perhatianChecks[0]?.[0] as unknown as boolean) ?? null,
+      aspek: PERHATIAN_ASPEK.slice(1).map((nama, idx) => {
+        const row = perhatianChecks[idx + 1] ?? [];
+        const ditandai: number[] = [];
+        row.forEach((c, ai) => { if (c) ditandai.push(ai + 1); });
+        return { nama, ayat: row, ditandai };
+      }),
+    };
+    await saveNilai(perhatianNilai, detail);
   }
 
 
@@ -1252,7 +1277,7 @@ function PenilaianTab() {
                     key={grade}
                     type="button"
                     disabled={saving}
-                    onClick={() => saveNilai(grade * 20)}
+                    onClick={() => saveNilai(grade * 20, { type: "grade", grade, label, desc })}
                     className="flex items-start gap-4 text-left rounded-xl border-2 border-primary/20 bg-card p-4 hover:border-accent hover:bg-accent/5 transition disabled:opacity-60"
                   >
                     <div className="grid place-items-center size-12 shrink-0 rounded-full bg-primary text-primary-foreground font-serif text-lg font-bold shadow">
@@ -2137,7 +2162,53 @@ function RincianNilaiTab() {
         alternateRowStyles: { fillColor: [250, 247, 243] },
       });
       // @ts-ignore
-      y = (doc as any).lastAutoTable.finalY + 20;
+      y = (doc as any).lastAutoTable.finalY + 10;
+
+      // Rincian pilihan per kriteria (detail sub-tables)
+      kriteria.forEach((k) => {
+        const rec = penilaian.find((n) => n.peserta_id === p.id && n.juri_id === j.id && n.kriteria_id === k.id);
+        const d = (rec as any)?.detail as PenilaianDetail | undefined;
+        if (!d) return;
+        let head: string[][] = [];
+        let body: (string | number)[][] = [];
+        let title = `Rincian: ${k.nama}`;
+        if (d.type === "grade") {
+          head = [["Pilihan", "Deskripsi"]];
+          body = [[d.label, d.desc]];
+        } else if (d.type === "catatan") {
+          head = [["#", "Aspek", "Clear Text", "Nilai (1–5)"]];
+          body = d.aspek.map((a, i) => [
+            i + 1, a.nama,
+            i === 0 ? (d.clearText ? "Ya" : "Tidak") : "—",
+            a.skipped ? "— (dilewati)" : String(a.nilai),
+          ]);
+        } else if (d.type === "perhatian") {
+          head = [["#", "Aspek", "Penanda"]];
+          body = [
+            ["1", "Tidak Membaca Perikop", d.membacaPerikop === null ? "—" : d.membacaPerikop ? "Ya" : "Tidak"],
+            ...d.aspek.map((a, i) => [
+              String(i + 2),
+              a.nama,
+              a.ditandai.length ? `Ayat: ${a.ditandai.join(", ")}` : "—",
+            ]),
+          ];
+        }
+        if (body.length === 0) return;
+        doc.setFontSize(9); doc.setTextColor(90);
+        doc.text(title, 40, y);
+        autoTable(doc, {
+          startY: y + 4,
+          head, body,
+          styles: { fontSize: 7.5, cellPadding: 2.5 },
+          headStyles: { fillColor: [180, 140, 60], textColor: 255 },
+          alternateRowStyles: { fillColor: [252, 249, 244] },
+        });
+        // @ts-ignore
+        y = (doc as any).lastAutoTable.finalY + 10;
+        if (y > 520) { doc.addPage(); y = 40; }
+      });
+
+      y += 10;
       if (y > 520) { doc.addPage(); y = 40; }
     });
   }
@@ -2257,6 +2328,47 @@ function RincianNilaiTab() {
                             </TableRow>
                           </TableBody>
                         </Table>
+                        <div className="px-3 py-3 space-y-3 border-t bg-muted/20">
+                          {kriteria.map((k) => {
+                            const rec = penilaian.find((n) => n.peserta_id === p.id && n.juri_id === j.id && n.kriteria_id === k.id);
+                            const d = (rec as any)?.detail as PenilaianDetail | undefined;
+                            if (!d) return null;
+                            return (
+                              <div key={k.id} className="rounded border bg-background p-3">
+                                <div className="text-xs font-semibold text-primary mb-2">Rincian: {k.nama}</div>
+                                {d.type === "grade" && (
+                                  <div className="text-xs">
+                                    <span className="font-semibold">{d.label}</span> — <span className="text-muted-foreground">{d.desc}</span>
+                                  </div>
+                                )}
+                                {d.type === "catatan" && (
+                                  <div className="grid gap-1 text-xs">
+                                    {d.aspek.map((a, i) => (
+                                      <div key={i} className="flex justify-between gap-3 border-b last:border-0 py-1">
+                                        <span>{i + 1}. {a.nama}{i === 0 ? ` (Clear text: ${d.clearText ? "Ya" : "Tidak"})` : ""}</span>
+                                        <span className="font-mono">{a.skipped ? "—" : a.nilai}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                {d.type === "perhatian" && (
+                                  <div className="grid gap-1 text-xs">
+                                    <div className="flex justify-between gap-3 border-b py-1">
+                                      <span>1. Tidak Membaca Perikop</span>
+                                      <span className="font-mono">{d.membacaPerikop === null ? "—" : d.membacaPerikop ? "Ya" : "Tidak"}</span>
+                                    </div>
+                                    {d.aspek.map((a, i) => (
+                                      <div key={i} className="flex justify-between gap-3 border-b last:border-0 py-1">
+                                        <span>{i + 2}. {a.nama}</span>
+                                        <span className="font-mono text-right">{a.ditandai.length ? `Ayat: ${a.ditandai.join(", ")}` : "—"}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     );
                   })}

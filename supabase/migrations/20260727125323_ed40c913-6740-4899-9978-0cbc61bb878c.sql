@@ -1,0 +1,1 @@
+ALTER TABLE public.penilaian ADD COLUMN IF NOT EXISTS detail jsonb;

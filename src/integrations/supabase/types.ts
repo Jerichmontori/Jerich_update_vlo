@@ -149,6 +149,7 @@ export type Database = {
       penilaian: {
         Row: {
           created_at: string
+          detail: Json | null
           id: string
           juri_id: string
           kriteria_id: string
@@ -158,6 +159,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          detail?: Json | null
           id?: string
           juri_id: string
           kriteria_id: string
@@ -167,6 +169,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          detail?: Json | null
           id?: string
           juri_id?: string
           kriteria_id?: string
