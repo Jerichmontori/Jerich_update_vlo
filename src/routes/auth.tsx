@@ -37,50 +37,42 @@ function AuthPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (loading) return;
-    // Guard: hindari submit terpicu autofill/keystroke tunggal.
     if (!identifier.trim() || password.length < 6) {
       toast.error("Isi email/nama dan kata sandi (min. 6 karakter) sebelum masuk.");
       return;
     }
     setLoading(true);
-    let email = identifier.trim();
-    // Jika bukan format email, anggap sebagai nama dan cari email-nya.
-    if (!email.includes("@")) {
-      try {
-        const { getEmailByNama } = await import("@/lib/auth-lookup.functions");
-        const res = await getEmailByNama({ data: { nama: email } });
-        if (!res.email) {
-          setLoading(false);
-          toast.error("Nama tidak ditemukan. Periksa kembali atau gunakan email.");
-          return;
-        }
-        email = res.email;
-      } catch (err) {
+    try {
+      const { signInWithIdentifier } = await import("@/lib/auth-lookup.functions");
+      const res = await signInWithIdentifier({
+        data: { identifier: identifier.trim(), password },
+      });
+      const { error: setErr, data: setData } = await supabase.auth.setSession({
+        access_token: res.access_token,
+        refresh_token: res.refresh_token,
+      });
+      if (setErr || !setData.user) {
         setLoading(false);
-        toast.error(err instanceof Error ? err.message : "Gagal mencari akun");
+        toast.error(setErr?.message ?? "Gagal masuk");
         return;
       }
-    }
-
-    const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error || !signInData.user) {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", setData.user.id);
+      if (!roles || roles.length === 0) {
+        await supabase.auth.signOut();
+        setLoading(false);
+        toast.error("Akun Anda belum disetujui admin. Silakan hubungi panitia.");
+        return;
+      }
       setLoading(false);
-      toast.error(error?.message ?? "Gagal masuk");
-      return;
-    }
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", signInData.user.id);
-    if (!roles || roles.length === 0) {
-      await supabase.auth.signOut();
+      toast.success("Selamat datang kembali");
+      navigate({ to: "/dashboard" });
+    } catch (err) {
       setLoading(false);
-      toast.error("Akun Anda belum disetujui admin. Silakan hubungi panitia.");
-      return;
+      toast.error(err instanceof Error ? err.message : "Gagal masuk");
     }
-    setLoading(false);
-    toast.success("Selamat datang kembali");
-    navigate({ to: "/dashboard" });
   }
 
 
