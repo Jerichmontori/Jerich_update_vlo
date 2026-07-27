@@ -35,10 +35,11 @@ function App() {
       <Header />
       <main className="mx-auto max-w-6xl px-4 pb-16">
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-10 h-auto bg-secondary/60 p-1">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-11 h-auto bg-secondary/60 p-1">
             <TabsTrigger value="dashboard" className="gap-2"><LayoutDashboard className="size-4" />Dashboard</TabsTrigger>
             <TabsTrigger value="ranking" className="gap-2"><Trophy className="size-4" />Ranking</TabsTrigger>
             <TabsTrigger value="lihat" className="gap-2"><FileText className="size-4" />Lihat Nilai</TabsTrigger>
+            <TabsTrigger value="rincian" className="gap-2"><FileText className="size-4" />Rincian Nilai</TabsTrigger>
             <TabsTrigger value="posisi" className="gap-2"><Trophy className="size-4" />Posisi</TabsTrigger>
             <TabsTrigger value="penilaian" className="gap-2"><ClipboardCheck className="size-4" />Penilaian</TabsTrigger>
             <TabsTrigger value="peserta" className="gap-2"><Users className="size-4" />Peserta</TabsTrigger>
@@ -50,6 +51,8 @@ function App() {
           <TabsContent value="dashboard"><DashboardTab /></TabsContent>
           <TabsContent value="ranking"><RankingTab /></TabsContent>
           <TabsContent value="lihat"><LihatPenilaianTab /></TabsContent>
+          <TabsContent value="rincian"><RincianNilaiTab /></TabsContent>
+
           <TabsContent value="posisi"><PosisiTab /></TabsContent>
           <TabsContent value="penilaian"><PenilaianTab /></TabsContent>
           <TabsContent value="peserta"><PesertaTab /></TabsContent>
@@ -2011,6 +2014,257 @@ function LihatPenilaianTab() {
             })}
           </TableBody>
         </Table>
+      </div>
+    </SectionCard>
+  );
+}
+
+function RincianNilaiTab() {
+  const [peserta, setPeserta] = useState<Peserta[]>([]);
+  const [juri, setJuri] = useState<Juri[]>([]);
+  const [kriteria, setKriteria] = useState<Kriteria[]>([]);
+  const [penilaian, setPenilaian] = useState<Penilaian[]>([]);
+  const [kategoriRows, setKategoriRows] = useState<Kategori[]>([]);
+  const [mazmur, setMazmur] = useState<Mazmur[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [kategoriFilter, setKategoriFilter] = useState<string>(LIHAT_ALL);
+  const [pesertaFilter, setPesertaFilter] = useState<string>(LIHAT_ALL);
+
+  async function load() {
+    setLoading(true);
+    const [p, j, k, n, kt, m] = await Promise.all([
+      supabase.from("peserta").select("*").order("nomor_urut"),
+      supabase.rpc("admin_list_juri" as any),
+      supabase.from("kriteria").select("*").order("created_at"),
+      supabase.from("penilaian").select("*"),
+      supabase.from("kategori").select("*").order("created_at"),
+      supabase.from("mazmur").select("*"),
+    ]);
+    setLoading(false);
+    for (const r of [p, j, k, n, kt, m]) if ((r as any).error) return toast.error((r as any).error.message);
+    setPeserta((p.data ?? []) as Peserta[]);
+    setJuri(((j.data ?? []) as Juri[]).filter((x) => x.approved && x.role !== "viewer"));
+    setKriteria((k.data ?? []) as Kriteria[]);
+    setPenilaian((n.data ?? []) as Penilaian[]);
+    setKategoriRows((kt.data ?? []) as Kategori[]);
+    setMazmur((m.data ?? []) as Mazmur[]);
+  }
+  useEffect(() => { load(); }, []);
+
+  const kategoriList = useMemo(() => {
+    const s = new Set<string>();
+    peserta.forEach((p) => { if (p.kategori && p.kategori.trim()) s.add(p.kategori.trim()); });
+    return Array.from(s).sort();
+  }, [peserta]);
+
+  const pesertaFiltered = useMemo(
+    () => (kategoriFilter === LIHAT_ALL ? peserta : peserta.filter((p) => (p.kategori ?? "") === kategoriFilter)),
+    [peserta, kategoriFilter]
+  );
+  const pesertaShown = useMemo(
+    () => (pesertaFilter === LIHAT_ALL ? pesertaFiltered : pesertaFiltered.filter((p) => p.id === pesertaFilter)),
+    [pesertaFiltered, pesertaFilter]
+  );
+
+  const totalBobotKriteria = useMemo(() => kriteria.reduce((s, k) => s + Number(k.bobot || 0), 0), [kriteria]);
+
+  function kategoriForKriteria(krNama: string) {
+    return kategoriRows.find(
+      (k) => (k.kriteria_penilaian ?? "").toLowerCase().trim() === krNama.toLowerCase().trim()
+    );
+  }
+
+  function buildPesertaPDF(doc: jsPDF, p: Peserta, startFresh: boolean) {
+    if (!startFresh) doc.addPage();
+    doc.setFontSize(16); doc.text("Rincian Penilaian Peserta", 40, 40);
+    doc.setFontSize(12); doc.setTextColor(60);
+    doc.text(`${p.nomor_urut}. ${p.nama}`, 40, 62);
+    doc.setFontSize(10); doc.setTextColor(100);
+    const meta = [
+      p.kategori ? `Kategori: ${p.kategori}` : null,
+      p.asal ? `Asal: ${p.asal}` : null,
+      p.sesi ? `Sesi: ${p.sesi}` : null,
+    ].filter(Boolean).join("  •  ");
+    if (meta) doc.text(meta, 40, 78);
+    doc.setTextColor(0);
+
+    let y = meta ? 96 : 82;
+
+    const juriDenganNilai = juri.filter((j) => penilaian.some((n) => n.peserta_id === p.id && n.juri_id === j.id));
+    if (juriDenganNilai.length === 0) {
+      doc.setFontSize(11); doc.setTextColor(120);
+      doc.text("Belum ada penilaian untuk peserta ini.", 40, y);
+      return;
+    }
+
+    juriDenganNilai.forEach((j) => {
+      const rows = kriteria.map((k) => {
+        const rec = penilaian.find((n) => n.peserta_id === p.id && n.juri_id === j.id && n.kriteria_id === k.id);
+        const kat = kategoriForKriteria(k.nama);
+        const nilai = rec ? Number(rec.nilai) : null;
+        const bobot = Number(k.bobot || 0);
+        const berbobot = nilai !== null ? (nilai * bobot) : null;
+        return [
+          k.nama,
+          kat?.kriteria_peserta ?? (p.kategori || "—"),
+          bobot.toString(),
+          kat ? `${kat.batas_bawah} – ${kat.batas_atas}` : "—",
+          kat ? String(kat.nilai_tengah) : "—",
+          kat ? String(kat.nilai_standart) : "—",
+          nilai !== null ? nilai.toFixed(2) : "—",
+          berbobot !== null ? berbobot.toFixed(2) : "—",
+        ];
+      });
+      const totalNilai = rows.reduce((s, r) => s + (r[6] === "—" ? 0 : parseFloat(r[6] as string)), 0);
+      const totalBerbobot = rows.reduce((s, r) => s + (r[7] === "—" ? 0 : parseFloat(r[7] as string)), 0);
+      const rata = totalBobotKriteria > 0 ? totalBerbobot / totalBobotKriteria : 0;
+
+      const mzId = penilaian.find((n) => n.peserta_id === p.id && n.juri_id === j.id)?.mazmur_id;
+      const mz = mazmur.find((x) => x.id === mzId);
+
+      doc.setFontSize(11); doc.setTextColor(0);
+      doc.text(`Juri: ${j.nama}${j.jabatan ? " — " + j.jabatan : ""}`, 40, y);
+      if (mz) { doc.setFontSize(9); doc.setTextColor(110); doc.text(`Mazmur: ${mz.bacaan} (${mz.jumlah_ayat} ayat)`, 40, y + 12); doc.setTextColor(0); }
+      autoTable(doc, {
+        startY: y + (mz ? 18 : 6),
+        head: [["Kriteria (Kategori)", "Kriteria Peserta", "Bobot", "Batas", "Tengah", "Standar", "Nilai", "Berbobot"]],
+        body: rows,
+        foot: [["", "", "", "", "", "Total", totalNilai.toFixed(2), totalBerbobot.toFixed(2)],
+               ["", "", "", "", "", "Rata-rata Berbobot", "", rata.toFixed(2)]],
+        styles: { fontSize: 8, cellPadding: 3 },
+        headStyles: { fillColor: [120, 30, 45], textColor: 255 },
+        footStyles: { fillColor: [245, 235, 220], textColor: 40, fontStyle: "bold" },
+        alternateRowStyles: { fillColor: [250, 247, 243] },
+      });
+      // @ts-ignore
+      y = (doc as any).lastAutoTable.finalY + 20;
+      if (y > 520) { doc.addPage(); y = 40; }
+    });
+  }
+
+  function downloadSatu(p: Peserta) {
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    buildPesertaPDF(doc, p, true);
+    doc.save(`rincian-${p.nomor_urut}-${p.nama.replace(/\s+/g, "_")}.pdf`);
+  }
+  function downloadSemua() {
+    if (pesertaShown.length === 0) return;
+    const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
+    pesertaShown.forEach((p, i) => buildPesertaPDF(doc, p, i === 0));
+    const stamp = new Date().toISOString().slice(0, 10);
+    const suffix = kategoriFilter === LIHAT_ALL ? "semua" : kategoriFilter.replace(/\s+/g, "_");
+    doc.save(`rincian-nilai-${suffix}-${stamp}.pdf`);
+  }
+
+  return (
+    <SectionCard
+      title="Rincian Nilai"
+      description="Rincian penilaian per juri, per kriteria, dan per pilihan kategori. Unduh laporan PDF satu-satu atau sekaligus."
+      action={
+        <div className="flex flex-wrap items-center gap-2">
+          <Select value={kategoriFilter} onValueChange={(v) => { setKategoriFilter(v); setPesertaFilter(LIHAT_ALL); }}>
+            <SelectTrigger className="w-[200px]"><SelectValue placeholder="Semua Kategori" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={LIHAT_ALL}>Semua Kategori</SelectItem>
+              {kategoriList.map((k) => (<SelectItem key={k} value={k}>{k}</SelectItem>))}
+            </SelectContent>
+          </Select>
+          <Select value={pesertaFilter} onValueChange={setPesertaFilter}>
+            <SelectTrigger className="w-[220px]"><SelectValue placeholder="Semua Peserta" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={LIHAT_ALL}>Semua Peserta</SelectItem>
+              {pesertaFiltered.map((p) => (<SelectItem key={p.id} value={p.id}>{p.nomor_urut}. {p.nama}</SelectItem>))}
+            </SelectContent>
+          </Select>
+          <Button variant="outline" onClick={load}>Muat Ulang</Button>
+          <Button onClick={downloadSemua} disabled={loading || pesertaShown.length === 0} className="gap-2">
+            <Download className="size-4" /> Unduh Semua PDF
+          </Button>
+        </div>
+      }
+    >
+      <div className="space-y-6">
+        {loading && <div className="text-center py-10 text-muted-foreground">Memuat…</div>}
+        {!loading && pesertaShown.length === 0 && <div className="text-center py-10 text-muted-foreground">Tidak ada peserta.</div>}
+        {!loading && pesertaShown.map((p) => {
+          const juriDenganNilai = juri.filter((j) => penilaian.some((n) => n.peserta_id === p.id && n.juri_id === j.id));
+          return (
+            <div key={p.id} className="rounded-lg border bg-card p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+                <div>
+                  <div className="font-semibold text-base">{p.nomor_urut}. {p.nama}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {[p.kategori && `Kategori: ${p.kategori}`, p.asal && `Asal: ${p.asal}`, p.sesi && `Sesi: ${p.sesi}`].filter(Boolean).join(" • ") || "—"}
+                  </div>
+                </div>
+                <Button size="sm" variant="outline" onClick={() => downloadSatu(p)} className="gap-2">
+                  <Download className="size-4" /> Unduh PDF
+                </Button>
+              </div>
+              {juriDenganNilai.length === 0 ? (
+                <div className="text-sm text-muted-foreground italic">Belum ada penilaian.</div>
+              ) : (
+                <div className="space-y-4">
+                  {juriDenganNilai.map((j) => {
+                    let totalNilai = 0, totalBerbobot = 0;
+                    const rows = kriteria.map((k) => {
+                      const rec = penilaian.find((n) => n.peserta_id === p.id && n.juri_id === j.id && n.kriteria_id === k.id);
+                      const kat = kategoriForKriteria(k.nama);
+                      const nilai = rec ? Number(rec.nilai) : null;
+                      const bobot = Number(k.bobot || 0);
+                      const berbobot = nilai !== null ? nilai * bobot : null;
+                      if (nilai !== null) { totalNilai += nilai; totalBerbobot += berbobot!; }
+                      return { k, kat, nilai, bobot, berbobot };
+                    });
+                    const rata = totalBobotKriteria > 0 ? totalBerbobot / totalBobotKriteria : 0;
+                    return (
+                      <div key={j.id} className="rounded-md border bg-background overflow-x-auto">
+                        <div className="px-3 py-2 text-sm font-medium bg-secondary/60">Juri: {j.nama}{j.jabatan ? ` — ${j.jabatan}` : ""}</div>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Kriteria</TableHead>
+                              <TableHead>Kriteria Peserta</TableHead>
+                              <TableHead className="text-right">Bobot</TableHead>
+                              <TableHead className="text-right">Batas</TableHead>
+                              <TableHead className="text-right">Tengah</TableHead>
+                              <TableHead className="text-right">Standar</TableHead>
+                              <TableHead className="text-right">Nilai</TableHead>
+                              <TableHead className="text-right">Berbobot</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {rows.map(({ k, kat, nilai, bobot, berbobot }) => (
+                              <TableRow key={k.id}>
+                                <TableCell className="font-medium">{k.nama}</TableCell>
+                                <TableCell className="text-muted-foreground">{kat?.kriteria_peserta ?? (p.kategori || "—")}</TableCell>
+                                <TableCell className="text-right font-mono">{bobot}</TableCell>
+                                <TableCell className="text-right font-mono text-xs">{kat ? `${kat.batas_bawah}–${kat.batas_atas}` : "—"}</TableCell>
+                                <TableCell className="text-right font-mono">{kat ? kat.nilai_tengah : "—"}</TableCell>
+                                <TableCell className="text-right font-mono">{kat ? kat.nilai_standart : "—"}</TableCell>
+                                <TableCell className="text-right font-mono">{nilai !== null ? nilai.toFixed(2) : <span className="italic text-muted-foreground">—</span>}</TableCell>
+                                <TableCell className="text-right font-mono">{berbobot !== null ? berbobot.toFixed(2) : "—"}</TableCell>
+                              </TableRow>
+                            ))}
+                            <TableRow className="bg-secondary/40 font-semibold">
+                              <TableCell colSpan={6} className="text-right">Total</TableCell>
+                              <TableCell className="text-right font-mono">{totalNilai.toFixed(2)}</TableCell>
+                              <TableCell className="text-right font-mono">{totalBerbobot.toFixed(2)}</TableCell>
+                            </TableRow>
+                            <TableRow className="bg-primary/10 font-semibold">
+                              <TableCell colSpan={7} className="text-right">Rata-rata Berbobot</TableCell>
+                              <TableCell className="text-right font-mono text-primary">{rata.toFixed(2)}</TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </SectionCard>
   );
