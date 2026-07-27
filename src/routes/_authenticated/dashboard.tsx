@@ -1103,12 +1103,43 @@ function PenilaianTab() {
             const totalNilai = Math.round(weighted * 100) / 100;
             const semuaTerisi = scored.length === kriteria.length && kriteria.length > 0;
 
+            // Cek apakah juri lain yang aktif sedang menilai peserta yang sama.
+            // Ambil peserta terakhir yang dinilai tiap juri lain — jika ada yang beda dari pilihan saat ini, blokir.
+            const otherJuri = juri.filter(j => j.id !== juriId);
+            const mismatched: { nama: string; peserta: string }[] = [];
+            for (const oj of otherJuri) {
+              const theirs = penilaian
+                .filter(p => p.juri_id === oj.id)
+                .sort((a, b) => (b as any).created_at?.localeCompare?.((a as any).created_at) || 0);
+              if (theirs.length === 0) continue;
+              const lastPesertaId = theirs[0].peserta_id;
+              if (lastPesertaId && lastPesertaId !== pesertaId) {
+                const pes = peserta.find(p => p.id === lastPesertaId);
+                mismatched.push({ nama: oj.nama, peserta: pes ? `#${pes.nomor_urut} ${pes.nama}` : "—" });
+              }
+            }
+            const pesertaMismatch = mismatched.length > 0;
+            const currentPesertaLabel = (() => {
+              const p = peserta.find(x => x.id === pesertaId);
+              return p ? `#${p.nomor_urut} ${p.nama}` : "";
+            })();
+
             async function kirimPenilaian() {
               if (!juriId || !pesertaId) return toast.error("Pilih juri dan peserta");
               if (scored.length === 0) return toast.error("Belum ada nilai yang diberikan");
+              if (pesertaMismatch) {
+                return toast.error(
+                  `Nama peserta tidak sama dengan juri lain (${mismatched.map(m => `${m.nama}: ${m.peserta}`).join(", ")}). Form tidak dapat dikirim.`
+                );
+              }
+              const ok = window.confirm(
+                `Apakah Anda yakin akan mengirim data penilaian untuk ${currentPesertaLabel}?\n\nNilai akhir: ${totalNilai}`
+              );
+              if (!ok) return;
               toast.success(`Penilaian dikirim. Nilai akhir: ${totalNilai}`);
               await loadAll();
             }
+
 
             return (
               <div className="rounded-2xl border-2 border-accent/40 bg-gradient-to-br from-card to-secondary/40 p-5 sm:p-6 mb-4">
