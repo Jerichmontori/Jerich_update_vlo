@@ -1023,16 +1023,11 @@ function PenilaianTab() {
     await saveNilai(nilai, detail);
   }
 
-  const perhatianTotal = perhatianChecks.reduce((s, row, i) => s + (i === 0 ? 0 : row.length), 0);
-  const perhatianChecked = perhatianChecks.reduce(
-    (s, row, i) => s + (i === 0 ? ((row[0] as unknown as boolean) === true ? row.length || 1 : 0) : row.filter(Boolean).length),
-    0
-  );
-  const perhatianDenom = perhatianTotal + 1; // +1 for "Tidak Membaca Perikop" ya/tidak
-  const perhatianDeduct = perhatianChecked + ((perhatianChecks[0]?.[0] as unknown as boolean) === true ? 1 : 0);
-  const perhatianNilai = perhatianDenom === 0
+  const perhatianTotal = perhatianChecks.reduce((s, row) => s + row.length, 0);
+  const perhatianChecked = perhatianChecks.reduce((s, row) => s + row.filter(Boolean).length, 0);
+  const perhatianNilai = perhatianTotal === 0
     ? 0
-    : Math.round(((perhatianDenom - perhatianDeduct) / perhatianDenom) * 100 * 100) / 100;
+    : Math.round(((perhatianTotal - perhatianChecked) / perhatianTotal) * 100 * 100) / 100;
 
   async function savePerhatian() {
     const detail: PenilaianDetail = {
