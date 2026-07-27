@@ -1863,7 +1863,7 @@ function LihatPenilaianTab() {
     if (k.error) return toast.error(k.error.message);
     if (n.error) return toast.error(n.error.message);
     setPeserta((p.data ?? []) as Peserta[]);
-    setJuri(((j.data ?? []) as Juri[]).filter((x) => x.approved && x.role !== "viewer"));
+    setJuri(((j.data ?? []) as unknown as Juri[]).filter((x) => x.approved && x.role !== "viewer"));
     setKriteria((k.data ?? []) as Kriteria[]);
     setPenilaian((n.data ?? []) as Penilaian[]);
   }
@@ -2062,7 +2062,7 @@ function RincianNilaiTab() {
     setLoading(false);
     for (const r of [p, j, k, n, kt, m]) if ((r as any).error) return toast.error((r as any).error.message);
     setPeserta((p.data ?? []) as Peserta[]);
-    setJuri(((j.data ?? []) as Juri[]).filter((x) => x.approved && x.role !== "viewer"));
+    setJuri(((j.data ?? []) as unknown as Juri[]).filter((x) => x.approved && x.role !== "viewer"));
     setKriteria((k.data ?? []) as Kriteria[]);
     setPenilaian((n.data ?? []) as Penilaian[]);
     setKategoriRows((kt.data ?? []) as Kategori[]);
