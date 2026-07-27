@@ -37,7 +37,7 @@ function PosisiPublic() {
   async function load() {
     setLoading(true);
     const [{ data: rankData, error: rankErr }, { data: pesertaData, error: pesertaErr }] = await Promise.all([
-      supabase.from("ranking").select("*"),
+      supabase.rpc("get_ranking" as any),
       supabase.from("peserta").select("id, nama, asal, sesi, nomor_urut"),
     ]);
     setLoading(false);
