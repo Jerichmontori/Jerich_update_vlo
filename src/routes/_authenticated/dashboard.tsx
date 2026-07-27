@@ -1201,14 +1201,15 @@ function PenilaianTab() {
               );
               if (!ok) return;
               toast.success(`✦ Penilaian dikirim`, {
-                description: `Nilai akhir untuk ${currentPesertaLabel}: ${totalNilai}. Form kriteria direset — peserta tetap dipilih.`,
+                description: `Nilai akhir untuk ${currentPesertaLabel}: ${totalNilai}. Peserta ini otomatis dikeluarkan dari daftar juri terkait.`,
               });
-              // Reset juri & kriteria supaya juri berikutnya bisa langsung menilai peserta yang sama;
-              // pesertaId sengaja TIDAK di-reset agar tidak perlu memilih peserta ulang.
+              // Reset juri, peserta, & kriteria — peserta yang sudah lengkap juga otomatis hilang dari dropdown.
               setJuriId("");
+              setPesertaId("");
               setOpenKriteria(null);
               await loadAll();
             }
+
 
 
 
