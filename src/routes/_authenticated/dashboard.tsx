@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
-import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight, LayoutDashboard, CheckCircle2, XCircle, FileText } from "lucide-react";
+import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight, LayoutDashboard, CheckCircle2, XCircle, FileText, Calculator, Sparkles } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -36,17 +36,34 @@ type Kategori = { id: string; kategori: string | null; batas_atas: number; batas
 function App() {
   return (
     <div className="min-h-screen">
-      <Toaster richColors position="top-center" />
+      <Toaster
+        richColors
+        position="top-center"
+        expand
+        toastOptions={{
+          classNames: {
+            toast:
+              "!font-serif !border-2 !border-accent/40 !bg-gradient-to-br !from-card !to-secondary/60 !text-foreground !shadow-[0_8px_24px_-6px_hsl(var(--primary)/0.35)] !rounded-2xl",
+            title: "!text-base !tracking-wide",
+            description: "!text-muted-foreground",
+            success: "!border-accent !bg-gradient-to-br !from-accent/25 !to-card",
+            error: "!border-destructive/60 !bg-gradient-to-br !from-destructive/15 !to-card !text-destructive",
+            warning: "!border-gold !bg-gradient-to-br !from-gold/20 !to-card",
+            info: "!border-primary/50 !bg-gradient-to-br !from-primary/10 !to-card",
+          },
+        }}
+      />
       <Header />
       <main className="mx-auto max-w-6xl px-4 pb-16">
         <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-11 h-auto bg-secondary/60 p-1">
+          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-12 h-auto bg-secondary/60 p-1">
             <TabsTrigger value="dashboard" className="gap-2"><LayoutDashboard className="size-4" />Dashboard</TabsTrigger>
             <TabsTrigger value="ranking" className="gap-2"><Trophy className="size-4" />Ranking</TabsTrigger>
             <TabsTrigger value="lihat" className="gap-2"><FileText className="size-4" />Lihat Nilai</TabsTrigger>
             <TabsTrigger value="rincian" className="gap-2"><FileText className="size-4" />Rincian Nilai</TabsTrigger>
             <TabsTrigger value="posisi" className="gap-2"><Trophy className="size-4" />Posisi</TabsTrigger>
             <TabsTrigger value="penilaian" className="gap-2"><ClipboardCheck className="size-4" />Penilaian</TabsTrigger>
+            <TabsTrigger value="kalkulator" className="gap-2"><Calculator className="size-4" />Kalkulator</TabsTrigger>
             <TabsTrigger value="peserta" className="gap-2"><Users className="size-4" />Peserta</TabsTrigger>
             <TabsTrigger value="juri" className="gap-2"><Gavel className="size-4" />Juri</TabsTrigger>
             <TabsTrigger value="kriteria" className="gap-2"><ListChecks className="size-4" />Kriteria</TabsTrigger>
@@ -60,6 +77,7 @@ function App() {
 
           <TabsContent value="posisi"><PosisiTab /></TabsContent>
           <TabsContent value="penilaian"><PenilaianTab /></TabsContent>
+          <TabsContent value="kalkulator"><KalkulatorTab /></TabsContent>
           <TabsContent value="peserta"><PesertaTab /></TabsContent>
           <TabsContent value="juri"><JuriTab /></TabsContent>
           <TabsContent value="kriteria"><KriteriaTab /></TabsContent>
@@ -1182,7 +1200,13 @@ function PenilaianTab() {
                 `Apakah Anda yakin akan mengirim data penilaian untuk ${currentPesertaLabel}?\n\nNilai akhir: ${totalNilai}`
               );
               if (!ok) return;
-              toast.success(`Penilaian dikirim. Nilai akhir: ${totalNilai}`);
+              toast.success(`✦ Penilaian dikirim`, {
+                description: `Nilai akhir untuk ${currentPesertaLabel}: ${totalNilai}. Form direset untuk penilaian berikutnya.`,
+              });
+              setJuriId("");
+              setPesertaId("");
+              setMazmurId("");
+              setOpenKriteria(null);
               await loadAll();
             }
 
@@ -2401,3 +2425,216 @@ function RincianNilaiTab() {
   );
 }
 
+
+/* ============================================================
+   STANDAR PENILAIAN "VOCAL DAN ARTIKULASI"
+   Dipakai oleh Kalkulator Penilaian Juri untuk memecah nilai
+   Vocal & Artikulasi menjadi sub-aspek berskala 1-5, lalu
+   dirata-rata & diskalakan ke 0-100 sebagai nilai akhir.
+   ============================================================ */
+const VOKAL_ASPEK: { nama: string; deskripsi: string }[] = [
+  { nama: "Kejelasan Vokal", deskripsi: "Suara terdengar jelas, bulat, dan stabil dari awal hingga akhir bacaan." },
+  { nama: "Ketepatan Artikulasi", deskripsi: "Pelafalan huruf vokal & konsonan tepat, tanpa cadel atau kabur." },
+  { nama: "Intonasi & Warna Suara", deskripsi: "Naik-turun nada mendukung makna teks; warna suara ekspresif." },
+  { nama: "Volume & Proyeksi", deskripsi: "Volume terkontrol, terdengar hingga baris belakang tanpa berteriak." },
+  { nama: "Pernapasan & Frasering", deskripsi: "Pengaturan napas rapi, jeda tepat pada tanda baca, tidak terputus di tengah kata." },
+];
+
+const VOKAL_SKALA: { nilai: number; label: string; makna: string }[] = [
+  { nilai: 1, label: "Sangat Kurang", makna: "Aspek hampir tidak terpenuhi." },
+  { nilai: 2, label: "Kurang", makna: "Terlihat usaha tetapi masih banyak kekurangan." },
+  { nilai: 3, label: "Cukup", makna: "Memenuhi standar dasar, masih ada ruang perbaikan." },
+  { nilai: 4, label: "Baik", makna: "Aspek dijalankan dengan konsisten dan meyakinkan." },
+  { nilai: 5, label: "Sangat Baik", makna: "Aspek tampil menonjol dan mendukung penuh makna Mazmur." },
+];
+
+function KalkulatorTab() {
+  // Default nilai 3 (Cukup) untuk masing-masing sub-aspek.
+  const [vokal, setVokal] = useState<number[]>(() => VOKAL_ASPEK.map(() => 3));
+  const [penghayatan, setPenghayatan] = useState<number>(3);
+  const [intonasi, setIntonasi] = useState<number>(3);
+  const [penampilan, setPenampilan] = useState<number>(3);
+  const [bobotVokal, setBobotVokal] = useState<number>(30);
+  const [bobotPeng, setBobotPeng] = useState<number>(25);
+  const [bobotInto, setBobotInto] = useState<number>(25);
+  const [bobotPena, setBobotPena] = useState<number>(20);
+
+  const nilaiVokal = useMemo(() => {
+    const avg = vokal.reduce((a, b) => a + b, 0) / vokal.length;
+    return Math.round(avg * 20 * 100) / 100;
+  }, [vokal]);
+  const nilaiPeng = penghayatan * 20;
+  const nilaiInto = intonasi * 20;
+  const nilaiPena = penampilan * 20;
+
+  const totalBobot = bobotVokal + bobotPeng + bobotInto + bobotPena;
+  const nilaiAkhir = totalBobot > 0
+    ? Math.round(((nilaiVokal * bobotVokal + nilaiPeng * bobotPeng + nilaiInto * bobotInto + nilaiPena * bobotPena) / totalBobot) * 100) / 100
+    : 0;
+
+  function reset() {
+    setVokal(VOKAL_ASPEK.map(() => 3));
+    setPenghayatan(3); setIntonasi(3); setPenampilan(3);
+    toast.info("✦ Kalkulator direset", { description: "Semua nilai kembali ke standar Cukup (3)." });
+  }
+
+  return (
+    <SectionCard
+      title="Kalkulator Penilaian Juri"
+      description="Alat bantu perhitungan manual — juri dapat mempertanggungjawabkan setiap nilai yang diberikan berdasarkan standar rubrik yang sama seperti pada form Penilaian."
+      action={
+        <Button variant="outline" size="sm" onClick={reset} className="gap-2">
+          <Sparkles className="size-4" />Reset
+        </Button>
+      }
+    >
+      <div className="grid gap-6 lg:grid-cols-[1fr_320px]">
+        <div className="space-y-6">
+          {/* VOCAL & ARTIKULASI — sub-aspek */}
+          <div className="rounded-2xl border-2 border-accent/40 bg-gradient-to-br from-card to-secondary/40 p-5">
+            <div className="flex items-start justify-between gap-3 mb-4">
+              <div>
+                <div className="text-xs uppercase tracking-[0.25em] text-accent font-semibold">Standar Rubrik</div>
+                <h3 className="font-serif text-2xl text-primary">Vocal &amp; Artikulasi</h3>
+                <p className="text-xs text-muted-foreground mt-1">Rata-rata dari {VOKAL_ASPEK.length} sub-aspek × 20 = nilai akhir 0–100.</p>
+              </div>
+              <div className="text-right shrink-0">
+                <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Nilai</div>
+                <div className="font-serif text-3xl font-bold text-primary">{nilaiVokal}</div>
+              </div>
+            </div>
+            <div className="grid gap-3">
+              {VOKAL_ASPEK.map((a, i) => (
+                <div key={a.nama} className="rounded-lg border bg-card p-3">
+                  <div className="flex items-baseline justify-between gap-2 mb-1">
+                    <div className="font-medium text-sm">{i + 1}. {a.nama}</div>
+                    <Badge variant="secondary" className="font-serif">{vokal[i]} / 5</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-2">{a.deskripsi}</p>
+                  <div className="grid grid-cols-5 gap-2">
+                    {VOKAL_SKALA.map(s => (
+                      <button
+                        key={s.nilai}
+                        type="button"
+                        onClick={() => setVokal(prev => prev.map((x, idx) => idx === i ? s.nilai : x))}
+                        title={`${s.label} — ${s.makna}`}
+                        className={[
+                          "rounded-md border-2 py-2 text-sm font-semibold transition",
+                          vokal[i] === s.nilai
+                            ? "border-accent bg-accent text-accent-foreground shadow"
+                            : "border-primary/20 bg-background hover:border-accent/60",
+                        ].join(" ")}
+                      >
+                        {s.nilai}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              <div className="rounded-lg border border-dashed border-accent/40 bg-accent/5 p-3 text-xs text-muted-foreground">
+                <b className="text-foreground">Legenda skala:</b>{" "}
+                {VOKAL_SKALA.map(s => `${s.nilai}=${s.label}`).join(" · ")}
+              </div>
+            </div>
+          </div>
+
+          {/* Kriteria lain — grade 1..5 */}
+          {([
+            { key: "penghayatan", label: "Penghayatan", val: penghayatan, set: setPenghayatan },
+            { key: "intonasi", label: "Intonasi & Pelafalan", val: intonasi, set: setIntonasi },
+            { key: "penampilan", label: "Penampilan", val: penampilan, set: setPenampilan },
+          ] as const).map(({ key, label, val, set }) => (
+            <div key={key} className="rounded-2xl border-2 border-primary/20 bg-card p-5">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div>
+                  <div className="text-xs uppercase tracking-[0.25em] text-accent font-semibold">Standar Rubrik</div>
+                  <h3 className="font-serif text-xl text-primary">{label}</h3>
+                </div>
+                <div className="text-right shrink-0">
+                  <div className="text-[10px] uppercase tracking-widest text-muted-foreground">Nilai</div>
+                  <div className="font-serif text-2xl font-bold text-primary">{val * 20}</div>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                {GRADE_DESCRIPTIONS[key].map((desc, idx) => {
+                  const grade = idx + 1;
+                  return (
+                    <button
+                      key={grade}
+                      type="button"
+                      onClick={() => set(grade)}
+                      className={[
+                        "flex items-start gap-3 text-left rounded-xl border-2 p-3 transition",
+                        val === grade
+                          ? "border-accent bg-accent/15"
+                          : "border-primary/15 bg-background hover:border-accent/60",
+                      ].join(" ")}
+                    >
+                      <div className={[
+                        "grid place-items-center size-9 shrink-0 rounded-full font-serif font-bold",
+                        val === grade ? "bg-primary text-primary-foreground shadow" : "bg-secondary text-foreground",
+                      ].join(" ")}>{grade}</div>
+                      <div className="text-sm">{desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* PANEL HASIL */}
+        <div className="lg:sticky lg:top-4 self-start space-y-4">
+          <div className="rounded-2xl border-2 border-accent/50 bg-gradient-to-br from-primary/5 via-card to-accent/10 p-5 shadow-lg">
+            <div className="text-xs uppercase tracking-[0.25em] text-accent font-semibold flex items-center gap-2">
+              <Sparkles className="size-4" />Nilai Akhir
+            </div>
+            <div className="mt-2 font-serif text-6xl font-bold text-primary leading-none">
+              {nilaiAkhir}
+            </div>
+            <div className="text-xs text-muted-foreground mt-2">
+              Rata-rata tertimbang dari 4 kriteria, skala 0–100.
+            </div>
+            <div className="mt-4 space-y-2 text-sm">
+              {[
+                { label: "Vocal & Artikulasi", nilai: nilaiVokal, bobot: bobotVokal },
+                { label: "Penghayatan", nilai: nilaiPeng, bobot: bobotPeng },
+                { label: "Intonasi & Pelafalan", nilai: nilaiInto, bobot: bobotInto },
+                { label: "Penampilan", nilai: nilaiPena, bobot: bobotPena },
+              ].map(r => (
+                <div key={r.label} className="flex items-center justify-between gap-2 border-b border-border/50 pb-1.5">
+                  <span className="text-muted-foreground truncate">{r.label}</span>
+                  <span className="font-medium">
+                    {r.nilai} <span className="text-xs text-muted-foreground">× {totalBobot > 0 ? Math.round((r.bobot / totalBobot) * 1000) / 10 : 0}%</span>
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border bg-card p-4">
+            <div className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-semibold mb-3">Bobot Kriteria (%)</div>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { label: "Vocal", val: bobotVokal, set: setBobotVokal },
+                { label: "Penghayatan", val: bobotPeng, set: setBobotPeng },
+                { label: "Intonasi", val: bobotInto, set: setBobotInto },
+                { label: "Penampilan", val: bobotPena, set: setBobotPena },
+              ].map(b => (
+                <div key={b.label}>
+                  <Label className="text-xs">{b.label}</Label>
+                  <Input type="number" min={0} max={100} value={b.val}
+                    onChange={e => b.set(Math.max(0, Math.min(100, Number(e.target.value) || 0)))} />
+                </div>
+              ))}
+            </div>
+            <div className="mt-3 text-xs text-muted-foreground">
+              Total bobot: <b className={totalBobot === 100 ? "text-primary" : "text-destructive"}>{totalBobot}%</b>
+              {totalBobot !== 100 && " — sistem tetap menormalkan otomatis."}
+            </div>
+          </div>
+        </div>
+      </div>
+    </SectionCard>
+  );
+}
