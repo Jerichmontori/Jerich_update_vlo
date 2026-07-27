@@ -1005,7 +1005,7 @@ function PenilaianTab() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-[1fr_180px] gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_180px] gap-4 mb-8">
             <div>
               <Label>Bacaan Mazmur</Label>
               <Select value={mazmurId} onValueChange={setMazmurId}>
@@ -1018,6 +1018,10 @@ function PenilaianTab() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div>
+              <Label>Kriteria Peserta</Label>
+              <Input readOnly value={peserta.find(p => p.id === pesertaId)?.kategori || ""} placeholder="Otomatis dari kategori peserta" className="bg-muted/50" />
             </div>
             <div>
               <Label>Jumlah Ayat</Label>
