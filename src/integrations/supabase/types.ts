@@ -247,6 +247,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active_session_id: string | null
           created_at: string
           id: string
           juri_id: string | null
@@ -254,6 +255,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          active_session_id?: string | null
           created_at?: string
           id: string
           juri_id?: string | null
@@ -261,6 +263,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          active_session_id?: string | null
           created_at?: string
           id?: string
           juri_id?: string | null
