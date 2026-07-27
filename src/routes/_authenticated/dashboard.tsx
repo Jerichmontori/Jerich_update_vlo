@@ -629,7 +629,7 @@ function KategoriTab() {
         <div className="lg:col-span-2">
           <Label>Kriteria Peserta</Label>
           <Select value={kriteriaPeserta} onValueChange={setKriteriaPeserta}>
-            <SelectTrigger><SelectValue placeholder={mazmurKategoriList.length ? "Pilih kategori peserta" : "Belum ada kategori di menu Mazmur"} /></SelectTrigger>
+            <SelectTrigger><SelectValue placeholder={mazmurKategoriList.length ? "Pilih kategori peserta" : "Belum ada kategori di Daftar Peserta"} /></SelectTrigger>
             <SelectContent>
               {mazmurKategoriList.map(k => (
                 <SelectItem key={k} value={k}>{k}</SelectItem>
