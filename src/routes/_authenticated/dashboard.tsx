@@ -1663,14 +1663,14 @@ function DashboardTab() {
                 </div>
               )}
 
-              {r.belumList.length > 0 && (
+              {r.sudahList.length > 0 && (
                 <div className="mt-3">
                   <div className="text-sm text-muted-foreground mb-2">
-                    {r.belumList.length} peserta belum dinilai
+                    {r.sudahList.length} peserta sudah dinilai
                   </div>
                   <div className="flex flex-wrap gap-1.5">
-                    {r.belumList.map((p) => (
-                      <Badge key={p.id} variant="outline" className="text-xs">
+                    {r.sudahList.map((p) => (
+                      <Badge key={p.id} variant="outline" className="text-xs bg-green-50 border-green-300 text-green-800">
                         #{p.nomor_urut} {p.nama}
                       </Badge>
                     ))}
