@@ -2328,6 +2328,47 @@ function RincianNilaiTab() {
                             </TableRow>
                           </TableBody>
                         </Table>
+                        <div className="px-3 py-3 space-y-3 border-t bg-muted/20">
+                          {kriteria.map((k) => {
+                            const rec = penilaian.find((n) => n.peserta_id === p.id && n.juri_id === j.id && n.kriteria_id === k.id);
+                            const d = (rec as any)?.detail as PenilaianDetail | undefined;
+                            if (!d) return null;
+                            return (
+                              <div key={k.id} className="rounded border bg-background p-3">
+                                <div className="text-xs font-semibold text-primary mb-2">Rincian: {k.nama}</div>
+                                {d.type === "grade" && (
+                                  <div className="text-xs">
+                                    <span className="font-semibold">{d.label}</span> — <span className="text-muted-foreground">{d.desc}</span>
+                                  </div>
+                                )}
+                                {d.type === "catatan" && (
+                                  <div className="grid gap-1 text-xs">
+                                    {d.aspek.map((a, i) => (
+                                      <div key={i} className="flex justify-between gap-3 border-b last:border-0 py-1">
+                                        <span>{i + 1}. {a.nama}{i === 0 ? ` (Clear text: ${d.clearText ? "Ya" : "Tidak"})` : ""}</span>
+                                        <span className="font-mono">{a.skipped ? "—" : a.nilai}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                                {d.type === "perhatian" && (
+                                  <div className="grid gap-1 text-xs">
+                                    <div className="flex justify-between gap-3 border-b py-1">
+                                      <span>1. Tidak Membaca Perikop</span>
+                                      <span className="font-mono">{d.membacaPerikop === null ? "—" : d.membacaPerikop ? "Ya" : "Tidak"}</span>
+                                    </div>
+                                    {d.aspek.map((a, i) => (
+                                      <div key={i} className="flex justify-between gap-3 border-b last:border-0 py-1">
+                                        <span>{i + 2}. {a.nama}</span>
+                                        <span className="font-mono text-right">{a.ditandai.length ? `Ayat: ${a.ditandai.join(", ")}` : "—"}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
                       </div>
                     );
                   })}
