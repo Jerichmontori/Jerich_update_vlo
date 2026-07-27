@@ -1103,12 +1103,43 @@ function PenilaianTab() {
             const totalNilai = Math.round(weighted * 100) / 100;
             const semuaTerisi = scored.length === kriteria.length && kriteria.length > 0;
 
+            // Cek apakah juri lain yang aktif sedang menilai peserta yang sama.
+            // Ambil peserta terakhir yang dinilai tiap juri lain — jika ada yang beda dari pilihan saat ini, blokir.
+            const otherJuri = juri.filter(j => j.id !== juriId);
+            const mismatched: { nama: string; peserta: string }[] = [];
+            for (const oj of otherJuri) {
+              const theirs = penilaian
+                .filter(p => p.juri_id === oj.id)
+                .sort((a, b) => (b as any).created_at?.localeCompare?.((a as any).created_at) || 0);
+              if (theirs.length === 0) continue;
+              const lastPesertaId = theirs[0].peserta_id;
+              if (lastPesertaId && lastPesertaId !== pesertaId) {
+                const pes = peserta.find(p => p.id === lastPesertaId);
+                mismatched.push({ nama: oj.nama, peserta: pes ? `#${pes.nomor_urut} ${pes.nama}` : "—" });
+              }
+            }
+            const pesertaMismatch = mismatched.length > 0;
+            const currentPesertaLabel = (() => {
+              const p = peserta.find(x => x.id === pesertaId);
+              return p ? `#${p.nomor_urut} ${p.nama}` : "";
+            })();
+
             async function kirimPenilaian() {
               if (!juriId || !pesertaId) return toast.error("Pilih juri dan peserta");
               if (scored.length === 0) return toast.error("Belum ada nilai yang diberikan");
+              if (pesertaMismatch) {
+                return toast.error(
+                  `Nama peserta tidak sama dengan juri lain (${mismatched.map(m => `${m.nama}: ${m.peserta}`).join(", ")}). Form tidak dapat dikirim.`
+                );
+              }
+              const ok = window.confirm(
+                `Apakah Anda yakin akan mengirim data penilaian untuk ${currentPesertaLabel}?\n\nNilai akhir: ${totalNilai}`
+              );
+              if (!ok) return;
               toast.success(`Penilaian dikirim. Nilai akhir: ${totalNilai}`);
               await loadAll();
             }
+
 
             return (
               <div className="rounded-2xl border-2 border-accent/40 bg-gradient-to-br from-card to-secondary/40 p-5 sm:p-6 mb-4">
@@ -1127,12 +1158,13 @@ function PenilaianTab() {
                     <Button
                       size="lg"
                       onClick={kirimPenilaian}
-                      disabled={saving || scored.length === 0}
+                      disabled={saving || scored.length === 0 || pesertaMismatch}
                       className="gap-2 min-w-[160px]"
                     >
                       <Check className="size-4" />
                       Kirim
                     </Button>
+
                   </div>
                 </div>
                 {scored.length > 0 && (
@@ -1144,9 +1176,23 @@ function PenilaianTab() {
                     ))}
                   </div>
                 )}
+                {pesertaMismatch && (
+                  <div className="mt-4 rounded-lg border-2 border-destructive/60 bg-destructive/10 p-3 text-sm text-destructive">
+                    <div className="font-semibold">⚠ Nama peserta tidak sama</div>
+                    <div className="mt-1 text-xs">
+                      Juri lain sedang menilai peserta yang berbeda. Form penilaian tidak dapat dikirim sampai semua juri memilih peserta yang sama.
+                    </div>
+                    <ul className="mt-2 text-xs list-disc pl-5">
+                      {mismatched.map((m, i) => (
+                        <li key={i}><b>{m.nama}</b> menilai {m.peserta}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
             );
           })()}
+
         </>
       )}
 
@@ -1610,24 +1656,41 @@ function DashboardTab() {
   const [juri, setJuri] = useState<Juri[]>([]);
   const [peserta, setPeserta] = useState<Peserta[]>([]);
   const [penilaian, setPenilaian] = useState<Penilaian[]>([]);
+  const [kriteria, setKriteria] = useState<Kriteria[]>([]);
   const [loading, setLoading] = useState(true);
 
   async function load() {
     setLoading(true);
-    const [j, p, n] = await Promise.all([
+    const [j, p, n, k] = await Promise.all([
       supabase.from("juri_public" as any).select("*").eq("approved", true).eq("role", "juri").order("nama"),
       supabase.from("peserta").select("*"),
       supabase.from("penilaian").select("*"),
+      supabase.from("kriteria").select("*"),
     ]);
     setJuri((j.data as unknown as Juri[]) || []);
     setPeserta((p.data as Peserta[]) || []);
     setPenilaian((n.data as Penilaian[]) || []);
+    setKriteria((k.data as Kriteria[]) || []);
     setLoading(false);
   }
 
   useEffect(() => { load(); }, []);
 
   const totalPeserta = peserta.length;
+
+  function computeNilai(juriId: string, pesertaId: string): number {
+    const rows = penilaian.filter(x => x.juri_id === juriId && x.peserta_id === pesertaId);
+    if (rows.length === 0) return 0;
+    const scored = rows.map(r => {
+      const k = kriteria.find(kk => kk.id === r.kriteria_id);
+      return { bobot: Number(k?.bobot || 0), nilai: Number(r.nilai) };
+    });
+    const totalBobot = scored.reduce((s, x) => s + x.bobot, 0);
+    const weighted = totalBobot > 0
+      ? scored.reduce((s, x) => s + x.nilai * x.bobot, 0) / totalBobot
+      : scored.reduce((s, x) => s + x.nilai, 0) / scored.length;
+    return Math.round(weighted * 100) / 100;
+  }
 
   const rows = useMemo(() => {
     return juri.map((j) => {
@@ -1706,12 +1769,27 @@ function DashboardTab() {
                   <div className="text-sm text-muted-foreground mb-2">
                     {r.sudahList.length} peserta sudah dinilai
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {r.sudahList.map((p) => (
-                      <Badge key={p.id} variant="outline" className="text-xs bg-green-50 border-green-300 text-green-800">
-                        #{p.nomor_urut} {p.nama}
-                      </Badge>
-                    ))}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="text-left text-xs text-muted-foreground border-b">
+                          <th className="py-1.5 pr-3">No</th>
+                          <th className="py-1.5 pr-3">Nama Peserta</th>
+                          <th className="py-1.5 pr-3 text-right">Nilai</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {r.sudahList.map((p) => (
+                          <tr key={p.id} className="border-b last:border-b-0">
+                            <td className="py-1.5 pr-3">{p.nomor_urut}</td>
+                            <td className="py-1.5 pr-3">{p.nama}{p.asal ? ` — ${p.asal}` : ""}</td>
+                            <td className="py-1.5 pr-3 text-right font-semibold text-primary">
+                              {computeNilai(r.juri.id, p.id)}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               )}
@@ -1722,6 +1800,7 @@ function DashboardTab() {
     </SectionCard>
   );
 }
+
 
 function StatCard({ label, value, tone }: { label: string; value: number; tone?: "ok" | "warn" }) {
   const color = tone === "ok" ? "text-green-600" : tone === "warn" ? "text-amber-600" : "text-foreground";
