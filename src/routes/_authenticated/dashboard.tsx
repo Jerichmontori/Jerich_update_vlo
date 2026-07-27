@@ -1176,8 +1176,21 @@ function PenilaianTab() {
                     ))}
                   </div>
                 )}
+                {pesertaMismatch && (
+                  <div className="mt-4 rounded-lg border-2 border-destructive/60 bg-destructive/10 p-3 text-sm text-destructive">
+                    <div className="font-semibold">⚠ Nama peserta tidak sama</div>
+                    <div className="mt-1 text-xs">
+                      Juri lain sedang menilai peserta yang berbeda. Form penilaian tidak dapat dikirim sampai semua juri memilih peserta yang sama.
+                    </div>
+                    <ul className="mt-2 text-xs list-disc pl-5">
+                      {mismatched.map((m, i) => (
+                        <li key={i}><b>{m.nama}</b> menilai {m.peserta}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
-            );
+
           })()}
         </>
       )}
