@@ -535,6 +535,7 @@ const KRITERIA_PENILAIAN_OPTIONS = [
 
 function KategoriTab() {
   const [items, setItems] = useState<Kategori[]>([]);
+  const [mazmurKategoriList, setMazmurKategoriList] = useState<string[]>([]);
   const [kriteriaPenilaian, setKriteriaPenilaian] = useState<string>("");
   const [kriteriaPeserta, setKriteriaPeserta] = useState("");
   const [bobot, setBobot] = useState("");
@@ -548,7 +549,14 @@ function KategoriTab() {
     if (error) return toast.error(error.message);
     setItems((data ?? []) as Kategori[]);
   }
-  useEffect(() => { load(); }, []);
+  async function loadMazmurKategori() {
+    const { data, error } = await supabase.from("mazmur").select("kategori");
+    if (error) return;
+    const uniq = Array.from(new Set((data ?? []).map((m: any) => (m.kategori || "").trim()).filter(Boolean))) as string[];
+    setMazmurKategoriList(uniq);
+  }
+  useEffect(() => { load(); loadMazmurKategori(); }, []);
+
 
   async function tambah(e: React.FormEvent) {
     e.preventDefault();
@@ -593,8 +601,16 @@ function KategoriTab() {
         </div>
         <div className="lg:col-span-2">
           <Label>Kriteria Peserta</Label>
-          <Input value={kriteriaPeserta} onChange={e=>setKriteriaPeserta(e.target.value)} placeholder="Contoh: Anak / Remaja / Dewasa" />
+          <Select value={kriteriaPeserta} onValueChange={setKriteriaPeserta}>
+            <SelectTrigger><SelectValue placeholder={mazmurKategoriList.length ? "Pilih kategori peserta" : "Belum ada kategori di menu Mazmur"} /></SelectTrigger>
+            <SelectContent>
+              {mazmurKategoriList.map(k => (
+                <SelectItem key={k} value={k}>{k}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
+
         <div><Label>Bobot</Label><Input type="number" step="0.01" value={bobot} onChange={e=>setBobot(e.target.value)} placeholder="0" /></div>
         <div><Label>Batas Atas</Label><Input type="number" step="0.01" value={batasAtas} onChange={e=>setBatasAtas(e.target.value)} placeholder="100" /></div>
         <div><Label>Batas Bawah</Label><Input type="number" step="0.01" value={batasBawah} onChange={e=>setBatasBawah(e.target.value)} placeholder="0" /></div>
