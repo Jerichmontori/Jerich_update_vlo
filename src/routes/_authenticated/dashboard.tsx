@@ -773,7 +773,17 @@ function KriteriaTab() {
   return (
     <SectionCard title="Kriteria Penilaian" description="Atur aspek dan bobot setiap kriteria.">
       <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-[1fr_120px_auto] gap-3 mb-6">
-        <div><Label>Nama Kriteria</Label><Input value={nama} onChange={e=>setNama(e.target.value)} placeholder="Contoh: Seri Baca Mazmur" /></div>
+        <div>
+          <Label>Nama Kriteria</Label>
+          <Select value={nama} onValueChange={setNama}>
+            <SelectTrigger><SelectValue placeholder="Pilih kriteria penilaian" /></SelectTrigger>
+            <SelectContent>
+              {KRITERIA_PENILAIAN_OPTIONS.filter(o => !items.some(i => i.nama === o)).map(o => (
+                <SelectItem key={o} value={o}>{o}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <div><Label>Bobot (%)</Label><Input type="number" step="0.1" value={bobot} onChange={e=>setBobot(e.target.value)} placeholder="25" /></div>
         <div className="flex items-end"><Button type="submit" className="gap-1"><Plus className="size-4" />Tambah</Button></div>
       </form>
