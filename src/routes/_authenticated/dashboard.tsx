@@ -968,9 +968,36 @@ function PenilaianTab() {
   const [catatanClearText, setCatatanClearText] = useState<boolean>(false);
   const [perhatianChecks, setPerhatianChecks] = useState<boolean[][]>(() => PERHATIAN_ASPEK.map(() => []));
   const [saving, setSaving] = useState(false);
+  // Aturan #3 — nama juri otomatis dari user yang login (juri tidak bisa memilih juri lain)
+  const [myJuriId, setMyJuriId] = useState<string>("");
+  const [myJuriNama, setMyJuriNama] = useState<string>("");
+  const [isAdmin, setIsAdmin] = useState<boolean>(false);
+  // Aturan #7 — kunci form setelah kirim, buka lagi setelah semua juri selesai
+  const [submittedFor, setSubmittedFor] = useState<string | null>(null);
+  const [judgesDoneForPeserta, setJudgesDoneForPeserta] = useState<number>(0);
+  // Aturan #6 — konfirmasi kirim
+  const [confirmOpen, setConfirmOpen] = useState(false);
 
 
   async function loadAll() {
+    const { data: userData } = await supabase.auth.getUser();
+    const uid = userData.user?.id ?? null;
+    let admin = false;
+    if (uid) {
+      const { data: adminCheck } = await supabase.rpc("has_role", { _user_id: uid, _role: "admin" as any });
+      admin = !!adminCheck;
+      setIsAdmin(admin);
+      const { data: prof } = await supabase
+        .from("profiles")
+        .select("juri_id, nama")
+        .eq("id", uid)
+        .maybeSingle();
+      if (prof?.juri_id) {
+        setMyJuriId(prof.juri_id);
+        setMyJuriNama(prof.nama ?? "");
+        if (!admin) setJuriId(prof.juri_id);
+      }
+    }
     const [p, j, k, m, n] = await Promise.all([
       supabase.from("peserta").select("*").order("nomor_urut"),
       supabase.from("juri_public" as any).select("*").order("created_at"),
@@ -987,6 +1014,39 @@ function PenilaianTab() {
     setPenilaian((n.data ?? []) as Penilaian[]);
   }
   useEffect(() => { loadAll(); }, []);
+
+  const totalJuriApproved = juri.length;
+
+  // Aturan #7 — polling jumlah juri yang sudah menilai peserta terkunci
+  useEffect(() => {
+    if (!submittedFor) return;
+    let stopped = false;
+    async function tick() {
+      const { data } = await supabase.rpc("get_ranking" as any);
+      if (stopped) return;
+      const rows = (data ?? []) as unknown as Ranking[];
+      const row = rows.find(r => r.peserta_id === submittedFor);
+      const done = row ? Number(row.jumlah_juri) : 0;
+      setJudgesDoneForPeserta(done);
+      if (totalJuriApproved > 0 && done >= totalJuriApproved) {
+        toast.success("✦ Semua juri sudah menilai", {
+          description: "Silahkan melakukan penilaian peserta selanjutnya.",
+        });
+        setSubmittedFor(null);
+        setPesertaId("");
+        setMazmurId("");
+        setOpenKriteria(null);
+        setJudgesDoneForPeserta(0);
+        stopped = true;
+        loadAll();
+      }
+    }
+    tick();
+    const id = setInterval(tick, 4000);
+    return () => { stopped = true; clearInterval(id); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [submittedFor, totalJuriApproved]);
+
 
   const canJudge = peserta.length > 0 && juri.length > 0 && kriteria.length > 0;
   const selectedMazmur = mazmur.find(m => m.id === mazmurId);
