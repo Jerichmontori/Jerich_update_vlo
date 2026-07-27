@@ -350,10 +350,11 @@ function JuriTab() {
   const [items, setItems] = useState<Juri[]>([]);
 
   async function load() {
-    const { data, error } = await supabase.from("juri").select("*").order("created_at");
+    const { data, error } = await supabase.rpc("admin_list_juri" as any);
     if (error) return toast.error(error.message);
     setItems((data ?? []) as Juri[]);
   }
+
   useEffect(() => { load(); }, []);
 
   async function approve(id: string) {
