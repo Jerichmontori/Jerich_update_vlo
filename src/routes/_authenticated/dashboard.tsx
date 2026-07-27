@@ -949,13 +949,15 @@ function PenilaianTab() {
     toast.success(`Nilai ${openKriteria.nama} disimpan`);
     setOpenKriteria(null);
     setCatatanValues(CATATAN_ASPEK.map(() => 3));
+    setCatatanClearText(false);
     setPerhatianChecks([]);
     setPesertaId("");
     loadAll();
   }
 
   async function saveCatatan() {
-    const avg = catatanValues.reduce((a, b) => a + b, 0) / catatanValues.length;
+    const effective = catatanValues.map((v, i) => i === 0 && !catatanClearText ? 1 : v);
+    const avg = effective.reduce((a, b) => a + b, 0) / effective.length;
     const nilai = Math.round(avg * 20 * 100) / 100; // scale 1-5 → 20-100
     await saveNilai(nilai);
   }
