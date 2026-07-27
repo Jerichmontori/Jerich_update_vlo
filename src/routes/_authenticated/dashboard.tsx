@@ -884,6 +884,7 @@ function PenilaianTab() {
   const [mazmurId, setMazmurId] = useState<string>("");
   const [openKriteria, setOpenKriteria] = useState<Kriteria | null>(null);
   const [catatanValues, setCatatanValues] = useState<number[]>(() => CATATAN_ASPEK.map(() => 3));
+  const [catatanClearText, setCatatanClearText] = useState<boolean>(false);
   const [perhatianChecks, setPerhatianChecks] = useState<boolean[][]>(() => PERHATIAN_ASPEK.map(() => []));
   const [saving, setSaving] = useState(false);
 
