@@ -327,12 +327,7 @@ function PesertaTab() {
         <div><Label>Asal / Jemaat</Label><Input value={asal} onChange={e=>setAsal(e.target.value)} placeholder="Jemaat / kelompok" /></div>
         <div>
           <Label>Kategori</Label>
-          <Select value={kategori} onValueChange={setKategori}>
-            <SelectTrigger><SelectValue placeholder={kategoriList.length ? "Pilih kategori" : "Belum ada kategori di Mazmur"} /></SelectTrigger>
-            <SelectContent>
-              {kategoriList.map(k => <SelectItem key={k} value={k}>{k}</SelectItem>)}
-            </SelectContent>
-          </Select>
+          <Input value={kategori} onChange={e=>setKategori(e.target.value)} placeholder="Contoh: Anak" />
         </div>
         <div className="flex items-end gap-2">
           <Button type="submit" disabled={loading} className="gap-1"><Plus className="size-4" />{editId ? "Ubah" : "Tambah"}</Button>
