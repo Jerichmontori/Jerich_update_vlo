@@ -921,10 +921,11 @@ function PenilaianTab() {
     const key = kriteriaKey(k.nama);
     if (key === "catatan") {
       setCatatanValues(CATATAN_ASPEK.map(() => 3));
+      setCatatanClearText(false);
     }
     if (key === "perhatian") {
       if (!selectedMazmur) return toast.error("Pilih bacaan mazmur terlebih dahulu");
-      setPerhatianChecks(PERHATIAN_ASPEK.map(() => Array(selectedMazmur.jumlah_ayat).fill(false)));
+      setPerhatianChecks(PERHATIAN_ASPEK.map((_, i) => i === 0 ? [false] : Array(selectedMazmur.jumlah_ayat).fill(false)));
     }
     setOpenKriteria(k);
   }
