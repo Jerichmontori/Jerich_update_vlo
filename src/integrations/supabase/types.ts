@@ -358,6 +358,27 @@ export type Database = {
       }
     }
     Functions: {
+      admin_list_juri: {
+        Args: never
+        Returns: {
+          approved: boolean
+          bacaan_mazmur: string | null
+          created_at: string
+          email: string | null
+          id: string
+          jabatan: string | null
+          jumlah_ayat: number | null
+          nama: string
+          role: Database["public"]["Enums"]["app_role"] | null
+          user_id: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "juri"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
