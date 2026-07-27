@@ -2004,8 +2004,19 @@ function LihatPenilaianTab() {
             </SelectContent>
           </Select>
           <Button variant="outline" onClick={load}>Muat Ulang</Button>
-          <Button onClick={downloadPDF} disabled={loading || pesertaFiltered.length === 0} className="gap-2">
+          <Select value={pesertaPilih} onValueChange={setPesertaPilih}>
+            <SelectTrigger className="w-[220px]"><SelectValue placeholder="Pilih Peserta" /></SelectTrigger>
+            <SelectContent>
+              {pesertaFiltered.map((p) => (
+                <SelectItem key={p.id} value={p.id}>{p.nomor_urut}. {p.nama}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant="secondary" onClick={downloadPesertaPDF} disabled={loading || !pesertaPilih} className="gap-2">
             <Download className="size-4" /> Unduh PDF
+          </Button>
+          <Button onClick={downloadPDF} disabled={loading || pesertaFiltered.length === 0} className="gap-2">
+            <Download className="size-4" /> Unduh Semua
           </Button>
         </div>
       }
