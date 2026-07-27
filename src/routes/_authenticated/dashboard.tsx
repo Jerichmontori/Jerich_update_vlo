@@ -1430,7 +1430,7 @@ function DashboardTab() {
   async function load() {
     setLoading(true);
     const [j, p, n] = await Promise.all([
-      supabase.from("juri").select("*").eq("approved", true).eq("role", "juri").order("nama"),
+      supabase.from("juri_public" as any).select("*").eq("approved", true).eq("role", "juri").order("nama"),
       supabase.from("peserta").select("*"),
       supabase.from("penilaian").select("*"),
     ]);
