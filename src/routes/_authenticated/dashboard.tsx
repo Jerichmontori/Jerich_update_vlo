@@ -533,13 +533,20 @@ function MazmurTab() {
   const [bacaan, setBacaan] = useState("");
   const [jumlahAyat, setJumlahAyat] = useState("");
   const [kategori, setKategori] = useState("");
+  const [kategoriList, setKategoriList] = useState<string[]>([]);
 
   async function load() {
     const { data, error } = await supabase.from("mazmur").select("*").order("created_at");
     if (error) return toast.error(error.message);
     setItems((data ?? []) as Mazmur[]);
   }
-  useEffect(() => { load(); }, []);
+  async function loadKategoriFromPeserta() {
+    const { data, error } = await supabase.from("peserta").select("kategori");
+    if (error) return;
+    const uniq = Array.from(new Set((data ?? []).map((m: any) => (m.kategori || "").trim()).filter(Boolean))) as string[];
+    setKategoriList(uniq);
+  }
+  useEffect(() => { load(); loadKategoriFromPeserta(); }, []);
 
   async function tambah(e: React.FormEvent) {
     e.preventDefault();
@@ -573,10 +580,22 @@ function MazmurTab() {
   }
   return (
     <SectionCard title="Daftar Bacaan Mazmur" description="Kelola daftar bacaan mazmur beserta jumlah ayat dan kategorinya.">
-      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-[1fr_160px_160px_auto] gap-3 mb-6">
+      <form onSubmit={tambah} className="grid grid-cols-1 sm:grid-cols-[1fr_160px_200px_auto] gap-3 mb-6">
         <div><Label>Bacaan Mazmur</Label><Input value={bacaan} onChange={e=>setBacaan(e.target.value)} placeholder="Mzm. 23" /></div>
         <div><Label>Jumlah Ayat</Label><Input type="number" min={0} value={jumlahAyat} onChange={e=>setJumlahAyat(e.target.value)} placeholder="6" /></div>
-        <div><Label>Kategori</Label><Input value={kategori} onChange={e=>setKategori(e.target.value)} placeholder="Contoh: Anak" /></div>
+        <div>
+          <Label>Kriteria</Label>
+          <Select value={kategori} onValueChange={setKategori}>
+            <SelectTrigger>
+              <SelectValue placeholder={kategoriList.length ? "Pilih kriteria dari peserta" : "Belum ada kategori peserta"} />
+            </SelectTrigger>
+            <SelectContent>
+              {kategoriList.map(k => (
+                <SelectItem key={k} value={k}>{k}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
         <div className="flex items-end"><Button type="submit" className="gap-1"><Plus className="size-4" />Tambah</Button></div>
       </form>
       <div className="rounded-lg border bg-card overflow-x-auto">
