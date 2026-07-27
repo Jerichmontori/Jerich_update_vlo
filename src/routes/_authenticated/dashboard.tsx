@@ -313,9 +313,10 @@ function PesertaTab() {
       title="Daftar Peserta"
       description="Tambahkan peserta satu per satu atau impor banyak sekaligus dari file Excel."
       action={
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={unduhTemplate} className="gap-1"><Download className="size-4" />Template</Button>
           <Button variant="secondary" size="sm" onClick={pickFile} disabled={importing} className="gap-1"><Upload className="size-4" />{importing ? "Mengimpor..." : "Impor Excel"}</Button>
+          <Button variant="destructive" size="sm" onClick={resetSemua} disabled={resetting || items.length === 0} className="gap-1"><Trash2 className="size-4" />{resetting ? "Menghapus..." : "Reset"}</Button>
           <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFile} />
         </div>
       }
@@ -324,7 +325,15 @@ function PesertaTab() {
         <div><Label>Nomor</Label><Input type="number" value={nomor} onChange={e=>setNomor(e.target.value)} placeholder="1" /></div>
         <div><Label>Nama</Label><Input value={nama} onChange={e=>setNama(e.target.value)} placeholder="Nama peserta" /></div>
         <div><Label>Asal / Jemaat</Label><Input value={asal} onChange={e=>setAsal(e.target.value)} placeholder="Jemaat / kelompok" /></div>
-        <div><Label>Kategori</Label><Input value={kategori} onChange={e=>setKategori(e.target.value)} placeholder="Dewasa / Remaja / dll" /></div>
+        <div>
+          <Label>Kategori</Label>
+          <Select value={kategori} onValueChange={setKategori}>
+            <SelectTrigger><SelectValue placeholder={kategoriList.length ? "Pilih kategori" : "Belum ada kategori di Mazmur"} /></SelectTrigger>
+            <SelectContent>
+              {kategoriList.map(k => <SelectItem key={k} value={k}>{k}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        </div>
         <div className="flex items-end gap-2">
           <Button type="submit" disabled={loading} className="gap-1"><Plus className="size-4" />{editId ? "Ubah" : "Tambah"}</Button>
           {editId && <Button type="button" variant="ghost" onClick={batalEdit}>Batal</Button>}
