@@ -127,3 +127,44 @@ export const deleteJuriUser = createServerFn({ method: "POST" })
     }
     return { ok: true };
   });
+
+export const setJuriRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { juriId: string; role: "admin" | "juri" }) => {
+    if (!data?.juriId) throw new Error("juriId wajib");
+    if (!["admin", "juri"].includes(data?.role)) throw new Error("Role tidak valid");
+    return data;
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: juri, error: getErr } = await supabaseAdmin
+      .from("juri")
+      .select("id, user_id, role, approved")
+      .eq("id", data.juriId)
+      .single();
+    if (getErr || !juri) throw new Error(getErr?.message ?? "Juri tidak ditemukan");
+
+    const { error: updErr } = await supabaseAdmin
+      .from("juri")
+      .update({ role: data.role })
+      .eq("id", juri.id);
+    if (updErr) throw new Error(updErr.message);
+
+    // Sync user_roles when the account is already approved
+    if (juri.user_id && juri.approved) {
+      const other: "admin" | "juri" = data.role === "admin" ? "juri" : "admin";
+      await supabaseAdmin
+        .from("user_roles")
+        .delete()
+        .eq("user_id", juri.user_id)
+        .eq("role", other);
+      const { error: rolErr } = await supabaseAdmin
+        .from("user_roles")
+        .upsert({ user_id: juri.user_id, role: data.role }, { onConflict: "user_id,role" });
+      if (rolErr) throw new Error(rolErr.message);
+    }
+
+    return { ok: true };
+  });

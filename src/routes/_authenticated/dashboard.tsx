@@ -389,6 +389,29 @@ function JuriTab() {
       toast.error(err instanceof Error ? err.message : "Gagal menyetujui");
     }
   }
+
+  async function hapus(id: string, nama: string) {
+    if (!confirm(`Hapus juri "${nama}"? Akun login juga akan dihapus.`)) return;
+    try {
+      const { deleteJuriUser } = await import("@/lib/juri-users.functions");
+      await deleteJuriUser({ data: { juriId: id } });
+      toast.success("Juri dihapus");
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menghapus");
+    }
+  }
+
+  async function ubahRole(id: string, role: "admin" | "juri") {
+    try {
+      const { setJuriRole } = await import("@/lib/juri-users.functions");
+      await setJuriRole({ data: { juriId: id, role } });
+      toast.success(`Role diubah menjadi ${role}`);
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal mengubah role");
+    }
+  }
   return (
     <SectionCard title="Dewan Juri" description="Daftar pendaftar juri dari halaman beranda. Setujui akun agar dapat login.">
       {/* Mobile: card list */}
@@ -403,7 +426,13 @@ function JuriTab() {
                 <div className="font-semibold truncate">{j.nama}</div>
                 <div className="text-xs text-muted-foreground truncate">{j.jabatan || "—"}</div>
               </div>
-              <Badge variant="outline" className="capitalize shrink-0">{j.role || "—"}</Badge>
+              <Select value={j.role ?? undefined} onValueChange={(v)=>ubahRole(j.id, v as "admin"|"juri")}>
+                <SelectTrigger className="h-8 w-[110px] shrink-0"><SelectValue placeholder="Role" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="juri">Juri</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <div className="text-xs text-muted-foreground break-all">{j.email || "—"}</div>
             <div className="flex items-center justify-between gap-2 pt-1">
@@ -412,11 +441,16 @@ function JuriTab() {
               ) : (
                 <Badge variant="outline" className="text-muted-foreground">Menunggu</Badge>
               )}
-              {!j.approved && (
-                <Button size="sm" variant="default" onClick={()=>approve(j.id)} className="gap-1">
-                  <Check className="size-4" />Approve
+              <div className="flex items-center gap-2">
+                {!j.approved && (
+                  <Button size="sm" variant="default" onClick={()=>approve(j.id)} className="gap-1">
+                    <Check className="size-4" />Approve
+                  </Button>
+                )}
+                <Button size="icon" variant="ghost" onClick={()=>hapus(j.id, j.nama)}>
+                  <Trash2 className="size-4 text-destructive" />
                 </Button>
-              )}
+              </div>
             </div>
           </div>
         ))}
@@ -442,7 +476,13 @@ function JuriTab() {
                 <TableCell className="text-muted-foreground">{j.jabatan || "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{j.email || "—"}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="capitalize">{j.role || "—"}</Badge>
+                  <Select value={j.role ?? undefined} onValueChange={(v)=>ubahRole(j.id, v as "admin"|"juri")}>
+                    <SelectTrigger className="h-8 w-[120px]"><SelectValue placeholder="Role" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="juri">Juri</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </TableCell>
                 <TableCell>
                   {j.approved ? (
@@ -452,13 +492,16 @@ function JuriTab() {
                   )}
                 </TableCell>
                 <TableCell className="text-right">
-                  {j.approved ? (
-                    <span className="text-xs text-muted-foreground">—</span>
-                  ) : (
-                    <Button size="sm" variant="default" onClick={()=>approve(j.id)} className="gap-1">
-                      <Check className="size-4" />Approve
+                  <div className="flex items-center justify-end gap-2">
+                    {!j.approved && (
+                      <Button size="sm" variant="default" onClick={()=>approve(j.id)} className="gap-1">
+                        <Check className="size-4" />Approve
+                      </Button>
+                    )}
+                    <Button size="icon" variant="ghost" onClick={()=>hapus(j.id, j.nama)}>
+                      <Trash2 className="size-4 text-destructive" />
                     </Button>
-                  )}
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
