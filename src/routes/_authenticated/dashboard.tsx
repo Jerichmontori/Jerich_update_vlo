@@ -1193,6 +1193,18 @@ function PenilaianTab() {
       setMazmurId(prev => prev === activeSession.mazmur_id ? prev : activeSession.mazmur_id!);
     }
   }, [activeSession, isAdmin, editMode]);
+  // Ketika Operator mengakhiri sesi → kosongkan field Peserta & Bacaan Mazmur untuk juri.
+  const prevActiveSessionIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    const prevId = prevActiveSessionIdRef.current;
+    const currId = activeSession?.id ?? null;
+    if (!isAdmin && !editMode && prevId && !currId && !submittedFor) {
+      setPesertaId("");
+      setMazmurId("");
+      setOpenKriteria(null);
+    }
+    prevActiveSessionIdRef.current = currId;
+  }, [activeSession, isAdmin, editMode, submittedFor]);
   const lockPesertaMazmur = !!activeSession && !isAdmin && !editMode;
 
 
