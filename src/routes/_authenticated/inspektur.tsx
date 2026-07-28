@@ -172,7 +172,9 @@ function InspekturPage() {
       toast.error(message);
       return;
     }
-    setDetailData(data);
+    // Override nilai_akhir dengan perhitungan non-linear terbaru (3 desimal)
+    const { data: nilai } = await supabase.rpc("hitung_nilai_akhir" as any, { _peserta: row.peserta_id });
+    setDetailData({ ...(data as any), nilai_akhir: nilai ?? (data as any)?.nilai_akhir });
   }
 
   async function simpanCatatan() {
