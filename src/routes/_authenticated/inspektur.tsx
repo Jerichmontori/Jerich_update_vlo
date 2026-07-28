@@ -16,6 +16,10 @@ export const Route = createFileRoute("/_authenticated/inspektur")({
     meta: [
       { title: "Inspektur Pertandingan · Sistem Penjurian" },
       { name: "description", content: "Pengawas independen: monitoring peserta, juri, dan Potensi VAR secara real-time." },
+      { property: "og:title", content: "Inspektur Pertandingan · Sistem Penjurian" },
+      { property: "og:description", content: "Pengawas independen: monitoring peserta, juri, dan Potensi VAR secara real-time." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
 });
