@@ -1713,12 +1713,12 @@ function PenilaianTab() {
               </div>
             )}
             <p className="text-xs text-muted-foreground pt-2">
-              Klik <b>OK</b> untuk mengaktifkan kembali penilaian peserta ini. Penilaian Anda untuk peserta tersebut akan dihapus agar dapat diinput ulang sesuai kesepakatan.
+              Klik <b>OK</b> untuk mengaktifkan kembali penilaian peserta ini. Hanya pilihan <b>Peserta</b> dan <b>Bacaan Mazmur</b> yang dapat diubah — nilai kriteria yang sudah Anda berikan tetap tersimpan.
             </p>
           </div>
           <DialogFooter>
             <Button onClick={perbaikiPenilaianSaya} className="gap-1 w-full sm:w-auto">
-              <Check className="size-4" /> OK
+              <Check className="size-4" /> OK, Lakukan Perubahan
             </Button>
           </DialogFooter>
         </DialogContent>
