@@ -168,3 +168,37 @@ export const setJuriRole = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
+export const resetJuriPassword = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { juriId: string; password: string }) => {
+    if (!data?.juriId) throw new Error("juriId wajib");
+    if (!data?.password || data.password.length < 8)
+      throw new Error("Password minimal 8 karakter");
+    return data;
+  })
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: juri, error: getErr } = await supabaseAdmin
+      .from("juri")
+      .select("id, user_id")
+      .eq("id", data.juriId)
+      .single();
+    if (getErr || !juri) throw new Error(getErr?.message ?? "Juri tidak ditemukan");
+    if (!juri.user_id) throw new Error("Juri belum memiliki akun login");
+
+    const { error: updErr } = await supabaseAdmin.auth.admin.updateUserById(juri.user_id, {
+      password: data.password,
+    });
+    if (updErr) throw new Error(updErr.message);
+
+    // Invalidate any active session on other devices by clearing active_session_id.
+    await supabaseAdmin
+      .from("profiles")
+      .update({ active_session_id: null })
+      .eq("id", juri.user_id);
+
+    return { ok: true };
+  });
