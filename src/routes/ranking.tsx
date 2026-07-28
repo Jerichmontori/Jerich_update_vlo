@@ -122,15 +122,14 @@ function RankingPublic() {
                     <TableHead>Asal</TableHead>
                     <TableHead>Kategori</TableHead>
                     <TableHead className="text-center w-24">Juri</TableHead>
-                    <TableHead className="text-right w-32">Rata-rata</TableHead>
-                    <TableHead className="text-right w-32">Total Skor</TableHead>
+                    <TableHead className="text-right w-36">Nilai Akhir</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {loading && <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">Memuat…</TableCell></TableRow>}
-                  {!loading && filtered.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">Belum ada penilaian.</TableCell></TableRow>}
+                  {loading && <TableRow><TableCell colSpan={7} className="text-center py-10 text-muted-foreground">Memuat…</TableCell></TableRow>}
+                  {!loading && filtered.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-10 text-muted-foreground">Belum ada penilaian.</TableCell></TableRow>}
                   {filtered.map((r, i) => {
-                    const belum = !(Number(r.total_skor) > 0);
+                    const belum = r.nilai_akhir == null || Number(r.jumlah_juri) === 0;
                     const kat = kategoriMap[r.peserta_id];
                     return (
                     <TableRow key={r.peserta_id} className={!belum && i < 3 ? "bg-accent/10" : ""}>
@@ -140,8 +139,7 @@ function RankingPublic() {
                       <TableCell className="text-muted-foreground">{r.asal || "—"}</TableCell>
                       <TableCell className="text-muted-foreground">{kat || "—"}</TableCell>
                       <TableCell className="text-center">{belum ? <span className="text-muted-foreground italic">belum tampil</span> : r.jumlah_juri}</TableCell>
-                      <TableCell className="text-right font-mono">{belum ? <span className="text-muted-foreground italic">belum tampil</span> : Number(r.rata_rata).toFixed(2)}</TableCell>
-                      <TableCell className="text-right font-mono font-bold text-primary">{belum ? <span className="text-muted-foreground italic font-normal">belum tampil</span> : Number(r.total_skor).toFixed(2)}</TableCell>
+                      <TableCell className="text-right font-mono font-bold text-primary">{belum ? <span className="text-muted-foreground italic font-normal">belum tampil</span> : Number(r.nilai_akhir).toFixed(3)}</TableCell>
                     </TableRow>
                     );
                   })}
