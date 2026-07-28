@@ -1873,6 +1873,12 @@ function PenilaianTab() {
                   description: `Penilaian diperbarui untuk ${currentPesertaLabel}.`,
                 });
                 resolvingCompletionRef.current = null;
+                setMySubmittedIds(prev => {
+                  const next = new Set(prev);
+                  next.delete(editMode.oldPesertaId);
+                  next.add(pesertaId);
+                  return next;
+                });
                 setEditMode(null);
                 setSubmittedFor(pesertaId);
                 setOpenKriteria(null);
