@@ -2192,12 +2192,12 @@ function PenilaianTab() {
                         })}
                       </div>
                     ) : (
-                      <div className="flex flex-wrap gap-2">
+                      <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
                         {row.map((checked, ayatIdx) => (
                           <label
                             key={ayatIdx}
                             className={[
-                              "cursor-pointer select-none rounded-md border-2 px-3 py-1.5 text-xs font-semibold transition",
+                              "cursor-pointer select-none rounded-md border-2 px-2 py-1.5 text-xs font-semibold text-center leading-tight transition",
                               checked
                                 ? "border-destructive bg-destructive text-destructive-foreground"
                                 : "border-primary/20 bg-background hover:border-accent/60",
@@ -2219,6 +2219,7 @@ function PenilaianTab() {
                           </label>
                         ))}
                       </div>
+
                     )}
                   </div>
                 );
