@@ -1932,6 +1932,56 @@ function PenilaianTab() {
         </DialogContent>
       </Dialog>
 
+      {/* Dialog perbedaan input Perhatian (Q2 / Q4 / Q5) */}
+      <Dialog open={!!perhatianDiscrepancy} onOpenChange={() => { /* wajib konfirmasi OK */ }}>
+        <DialogContent
+          className="max-w-lg"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl text-destructive">
+              ✦ Potensi VAR — Perbedaan Perhatian
+            </DialogTitle>
+            <DialogDescription>
+              Semua juri sudah mengirim penilaian, namun ditemukan perbedaan pilihan pada form <b>Perhatian</b>. Form penilaian dikunci sampai Anda menekan <b>OK</b>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[55dvh] overflow-y-auto space-y-3 text-sm">
+            <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-3">
+              <div className="font-semibold mb-1">Peserta</div>
+              <div className="font-serif text-lg">{perhatianDiscrepancy?.pesertaNama}</div>
+            </div>
+            {perhatianDiscrepancy?.items.map((it, i) => (
+              <div key={i} className="rounded-lg border-2 border-destructive/40 bg-destructive/5 p-3">
+                <div className="font-semibold mb-2">{it.pertanyaan}</div>
+                <ul className="space-y-1">
+                  {it.rows.map((r, j) => (
+                    <li key={j} className="flex justify-between gap-2">
+                      <span className="text-muted-foreground">{r.juriNama}</span>
+                      <span className="font-medium text-right">
+                        {r.ayat.length ? `Ayat: ${r.ayat.join(", ")}` : "—"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+            <p className="text-xs text-muted-foreground pt-2">
+              Klik <b>OK</b> untuk mengaktifkan kembali penilaian peserta ini. Nilai <b>Perhatian</b> Anda akan direset — silakan buka kembali form Perhatian, perbaiki pilihan, lalu klik <b>Kirim</b>.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => perbaikiPerhatianSaya()} className="gap-1 w-full sm:w-auto">
+              <Check className="size-4" /> OK, Lakukan Perubahan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
+
 
 
 
