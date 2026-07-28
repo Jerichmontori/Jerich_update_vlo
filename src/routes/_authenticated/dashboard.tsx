@@ -1665,7 +1665,19 @@ function PenilaianTab() {
   }
 
   async function saveCatatan() {
-    const effective = catatanValues.map((v, i) => i === 0 && !catatanClearText ? 1 : v);
+    if (catatanClearText === null) {
+      return toast.warning("Pilih jawaban untuk 'Membaca teks yang jelas' terlebih dahulu.");
+    }
+    // Aspek 0 auto = 1 bila clearText=false (skipped); selain itu wajib dipilih 1-5.
+    for (let i = 0; i < catatanValues.length; i++) {
+      const skipped = i === 0 && !catatanClearText;
+      if (!skipped && (catatanValues[i] === null || catatanValues[i] === undefined)) {
+        return toast.warning("Lengkapi semua pilihan pada Catatan Juri terlebih dahulu.");
+      }
+    }
+    const effective: number[] = catatanValues.map((v, i) =>
+      i === 0 && !catatanClearText ? 1 : (v as number)
+    );
     const avg = effective.reduce((a, b) => a + b, 0) / effective.length;
     const nilai = Math.round(avg * 20 * 100) / 100; // scale 1-5 → 20-100
     const detail: PenilaianDetail = {
