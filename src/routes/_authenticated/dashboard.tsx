@@ -1101,13 +1101,14 @@ function PenilaianTab() {
   const [judgesDoneForPeserta, setJudgesDoneForPeserta] = useState<number>(0);
   // Aturan #6 — konfirmasi kirim
   const [confirmOpen, setConfirmOpen] = useState(false);
-  // Aturan #1 & #2 — deteksi perbedaan input antar juri
+  // Aturan — deteksi perbedaan input antar juri (nama peserta & bacaan mazmur)
   type DiscrepancyReport = {
     pesertaId: string;
+    pesertaNama: string;
     mazmur: { juriNama: string; mazmurLabel: string }[] | null;
-    perhatian: { questionLabel: string; entries: { juriNama: string; ditandai: number[] }[] }[];
   };
   const [discrepancy, setDiscrepancy] = useState<DiscrepancyReport | null>(null);
+
 
 
 
