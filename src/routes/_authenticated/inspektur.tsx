@@ -194,12 +194,33 @@ function InspekturPage() {
     window.location.href = "/auth";
   }
 
+  function openConfirmBukaPerbaikan(pesertaId: string, nama: string, catatan: string | null, source: "row" | "detail") {
+    setConfirmTarget({ pesertaId, nama, catatan, source });
+    setConfirmOpen(true);
+  }
+
+  async function handleConfirmBukaPerbaikan() {
+    if (!confirmTarget) return;
+    setConfirmLoading(true);
+    try {
+      const { error } = await supabase.rpc("inspektur_buka_perhatian" as any, {
+        _peserta: confirmTarget.pesertaId,
+        _catatan: confirmTarget.catatan || null,
+      });
+      if (error) throw error;
+      toast.success("Form Perhatian dibuka kembali untuk semua juri");
+      setConfirmOpen(false);
+      if (confirmTarget.source === "detail") setDetailOpen(false);
+      loadAll();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal membuka perbaikan");
+    } finally {
+      setConfirmLoading(false);
+    }
+  }
+
   async function bukaPerbaikanPerhatian(pesertaId: string, nama: string) {
-    if (!confirm(`Buka kembali form Perhatian untuk ${nama}? Semua juri akan diminta menilai ulang komponen Perhatian. Nilai kriteria lain tetap tersimpan.`)) return;
-    const { error } = await supabase.rpc("inspektur_buka_perhatian" as any, { _peserta: pesertaId, _catatan: null });
-    if (error) { toast.error(error.message); return; }
-    toast.success("Form Perhatian dibuka kembali untuk semua juri");
-    loadAll();
+    openConfirmBukaPerbaikan(pesertaId, nama, null, "row");
   }
 
   if (allowed === null) return null;
