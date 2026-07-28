@@ -99,7 +99,19 @@ function OperatorPage() {
     } else {
       setJuriDone(0);
     }
+    // Hitung submission per peserta untuk status "sudah dinilai"
+    const { data: allSubs } = await supabase
+      .from("penilaian_submission" as any)
+      .select("peserta_id, juri_id");
+    const map: Record<string, Set<string>> = {};
+    ((allSubs as any[] | null) ?? []).forEach((s: any) => {
+      (map[s.peserta_id] ??= new Set()).add(s.juri_id);
+    });
+    const counts: Record<string, number> = {};
+    Object.entries(map).forEach(([pid, set]) => { counts[pid] = set.size; });
+    setSubmissionCounts(counts);
   }
+
 
   useEffect(() => {
     if (!allowed) return;
