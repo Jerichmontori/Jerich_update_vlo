@@ -1894,6 +1894,7 @@ function PenilaianTab() {
                 description: `Penilaian untuk ${currentPesertaLabel} tersimpan.`,
               });
               resolvingCompletionRef.current = null;
+              setMySubmittedIds(prev => new Set(prev).add(pesertaId));
               setSubmittedFor(pesertaId);
               setOpenKriteria(null);
               await loadAll({ restoreSubmissionState: false });
