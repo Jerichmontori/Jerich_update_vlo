@@ -1,0 +1,371 @@
+import { createFileRoute } from "@tanstack/react-router";
+import { useEffect, useState, useCallback } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { Toaster, toast } from "sonner";
+import { Shield, RefreshCw, BookOpenText, AlertTriangle, Eye } from "lucide-react";
+
+export const Route = createFileRoute("/_authenticated/inspektur")({
+  component: InspekturPage,
+  head: () => ({
+    meta: [
+      { title: "Inspektur Pertandingan · Sistem Penjurian" },
+      { name: "description", content: "Pengawas independen: monitoring peserta, juri, dan Potensi VAR secara real-time." },
+    ],
+  }),
+});
+
+type Ringkasan = {
+  total_peserta: number;
+  sudah_tampil: number;
+  belum_tampil: number;
+  sedang_tampil: number;
+  sesi_aktif: number;
+  sesi_selesai: number;
+  total_var: number;
+};
+
+type MonitorRow = {
+  peserta_id: string;
+  nomor_urut: number;
+  nama: string;
+  kategori: string | null;
+  bacaan: string | null;
+  status: "Menunggu" | "Sedang Dinilai" | "Menunggu Juri" | "Potensi VAR" | "Final" | string;
+  juri_done: number;
+  juri_total: number;
+};
+
+type VarRow = {
+  peserta_id: string;
+  nomor_urut: number;
+  nama: string;
+  kategori: string | null;
+  mazmur_variants: any;
+  juri_berbeda: number;
+  detected_at: string;
+};
+
+function statusVariant(s: string): { label: string; className: string } {
+  switch (s) {
+    case "Final": return { label: "Final", className: "bg-emerald-600 text-white" };
+    case "Sedang Dinilai": return { label: "Sedang Dinilai", className: "bg-amber-500 text-white" };
+    case "Menunggu Juri": return { label: "Menunggu Juri", className: "bg-sky-600 text-white" };
+    case "Potensi VAR": return { label: "Potensi VAR", className: "bg-rose-600 text-white" };
+    default: return { label: "Menunggu", className: "bg-muted text-foreground" };
+  }
+}
+
+function InspekturPage() {
+  const [allowed, setAllowed] = useState<boolean | null>(null);
+  const [currentUser, setCurrentUser] = useState<{ nama: string; email: string; role: string } | null>(null);
+  const [ringkasan, setRingkasan] = useState<Ringkasan | null>(null);
+  const [monitor, setMonitor] = useState<MonitorRow[]>([]);
+  const [vars, setVars] = useState<VarRow[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailPeserta, setDetailPeserta] = useState<MonitorRow | null>(null);
+  const [detailData, setDetailData] = useState<any>(null);
+  const [catatan, setCatatan] = useState("");
+  const [keputusan, setKeputusan] = useState<"disetujui" | "ditolak" | "">("");
+  const [savingCatatan, setSavingCatatan] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      const uid = u.user?.id;
+      if (!uid) { setAllowed(false); window.location.href = "/auth"; return; }
+      const [{ data: isInsp }, { data: isAdm }] = await Promise.all([
+        supabase.rpc("has_role", { _user_id: uid, _role: "inspektur" as any }),
+        supabase.rpc("has_role", { _user_id: uid, _role: "admin" as any }),
+      ]);
+      const ok = !!isInsp || !!isAdm;
+      setAllowed(ok);
+      if (!ok) { toast.error("Akses ditolak"); window.location.href = "/dashboard"; return; }
+      const { data: prof } = await supabase.from("profiles").select("nama").eq("id", uid).maybeSingle();
+      setCurrentUser({
+        nama: prof?.nama ?? (u.user?.email?.split("@")[0] ?? "Pengguna"),
+        email: u.user?.email ?? "",
+        role: isAdm ? "Admin" : "Inspektur Pertandingan",
+      });
+    })();
+  }, []);
+
+  const loadAll = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [r, m, v] = await Promise.all([
+        supabase.rpc("inspektur_ringkasan" as any),
+        supabase.rpc("inspektur_monitor" as any),
+        supabase.rpc("inspektur_list_var" as any),
+      ]);
+      if (r.data && (r.data as any[])[0]) setRingkasan((r.data as any[])[0] as Ringkasan);
+      setMonitor(((m.data as any[]) ?? []) as MonitorRow[]);
+      setVars(((v.data as any[]) ?? []) as VarRow[]);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal memuat data");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!allowed) return;
+    loadAll();
+    const id = setInterval(loadAll, 3000);
+    return () => clearInterval(id);
+  }, [allowed, loadAll]);
+
+  async function openDetail(row: MonitorRow) {
+    setDetailPeserta(row);
+    setDetailData(null);
+    setCatatan("");
+    setKeputusan("");
+    setDetailOpen(true);
+    const { data, error } = await supabase.rpc("inspektur_var_detail" as any, { _peserta: row.peserta_id });
+    if (error) { toast.error(error.message); return; }
+    setDetailData(data);
+  }
+
+  async function simpanCatatan() {
+    if (!detailPeserta) return;
+    if (!catatan.trim() && !keputusan) {
+      toast.error("Isi catatan atau pilih keputusan");
+      return;
+    }
+    setSavingCatatan(true);
+    try {
+      const { error } = await supabase.rpc("inspektur_catat" as any, {
+        _peserta: detailPeserta.peserta_id,
+        _catatan: catatan.trim() || null,
+        _keputusan: keputusan || null,
+      });
+      if (error) throw error;
+      toast.success("Catatan inspektur tersimpan");
+      setDetailOpen(false);
+      loadAll();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menyimpan");
+    } finally {
+      setSavingCatatan(false);
+    }
+  }
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    window.location.href = "/auth";
+  }
+
+  if (allowed === null) return null;
+  if (!allowed) return null;
+
+  return (
+    <div className="min-h-screen">
+      <Toaster richColors position="top-center" />
+      <header className="border-b bg-card/60 backdrop-blur mb-8">
+        <div className="mx-auto max-w-6xl px-4 py-6 flex items-center gap-4 flex-wrap">
+          <div className="grid place-items-center size-12 shrink-0 rounded-full bg-primary text-primary-foreground shadow ring-4 ring-accent/30">
+            <Shield className="size-6" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">Pengawas Independen</p>
+            <h1 className="text-2xl font-serif font-semibold">Inspektur Pertandingan</h1>
+          </div>
+          {currentUser && (
+            <div className="text-right text-sm mr-2 hidden sm:block">
+              <div className="font-semibold leading-tight">{currentUser.nama}</div>
+              <div className="text-xs text-muted-foreground">{currentUser.role}{currentUser.email ? ` · ${currentUser.email}` : ""}</div>
+            </div>
+          )}
+          <Button variant="outline" onClick={loadAll} disabled={loading}>
+            <RefreshCw className={"size-4 mr-2 " + (loading ? "animate-spin" : "")} /> Muat Ulang
+          </Button>
+          <Button variant="outline" onClick={() => (window.location.href = "/dashboard")}>Ke Dashboard</Button>
+          <Button variant="ghost" onClick={signOut}>Keluar</Button>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-6xl px-4 pb-16 space-y-6">
+        {/* Ringkasan */}
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-4 lg:grid-cols-7">
+          <Card><CardHeader className="pb-2"><CardDescription>Total Peserta</CardDescription></CardHeader><CardContent className="text-2xl font-semibold">{ringkasan?.total_peserta ?? "—"}</CardContent></Card>
+          <Card><CardHeader className="pb-2"><CardDescription>Sudah Tampil</CardDescription></CardHeader><CardContent className="text-2xl font-semibold">{ringkasan?.sudah_tampil ?? "—"}</CardContent></Card>
+          <Card><CardHeader className="pb-2"><CardDescription>Sedang Tampil</CardDescription></CardHeader><CardContent className="text-2xl font-semibold">{ringkasan?.sedang_tampil ?? "—"}</CardContent></Card>
+          <Card><CardHeader className="pb-2"><CardDescription>Belum Tampil</CardDescription></CardHeader><CardContent className="text-2xl font-semibold">{ringkasan?.belum_tampil ?? "—"}</CardContent></Card>
+          <Card><CardHeader className="pb-2"><CardDescription>Sesi Aktif</CardDescription></CardHeader><CardContent className="text-2xl font-semibold">{ringkasan?.sesi_aktif ?? "—"}</CardContent></Card>
+          <Card><CardHeader className="pb-2"><CardDescription>Sesi Selesai</CardDescription></CardHeader><CardContent className="text-2xl font-semibold">{ringkasan?.sesi_selesai ?? "—"}</CardContent></Card>
+          <Card className={ringkasan && ringkasan.total_var > 0 ? "border-rose-500" : ""}>
+            <CardHeader className="pb-2"><CardDescription className="flex items-center gap-1"><AlertTriangle className="size-3 text-rose-500" />Potensi VAR</CardDescription></CardHeader>
+            <CardContent className="text-2xl font-semibold text-rose-600">{ringkasan?.total_var ?? "—"}</CardContent>
+          </Card>
+        </div>
+
+        {/* Monitoring */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><BookOpenText className="size-5" /> Monitoring Real-time Peserta</CardTitle>
+            <CardDescription>Status setiap peserta beserta progres juri. Diperbarui setiap 3 detik.</CardDescription>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>No.</TableHead>
+                  <TableHead>Nama</TableHead>
+                  <TableHead>Kategori</TableHead>
+                  <TableHead>Bacaan Mazmur</TableHead>
+                  <TableHead>Progres Juri</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {monitor.length === 0 && (
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Belum ada data</TableCell></TableRow>
+                )}
+                {monitor.map((r) => {
+                  const v = statusVariant(r.status);
+                  return (
+                    <TableRow key={r.peserta_id}>
+                      <TableCell className="font-medium">{r.nomor_urut}</TableCell>
+                      <TableCell className="font-medium">{r.nama}</TableCell>
+                      <TableCell className="text-muted-foreground">{r.kategori || "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">{r.bacaan || "—"}</TableCell>
+                      <TableCell>{r.juri_done} / {r.juri_total} juri</TableCell>
+                      <TableCell><Badge className={v.className}>{v.label}</Badge></TableCell>
+                      <TableCell className="text-right">
+                        <Button size="sm" variant="outline" onClick={() => openDetail(r)}>
+                          <Eye className="size-4 mr-1" /> Detail
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        {/* Daftar VAR */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><AlertTriangle className="size-5 text-rose-500" /> Daftar Potensi VAR</CardTitle>
+            <CardDescription>Peserta dengan perbedaan input Bacaan Mazmur antar juri.</CardDescription>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>No.</TableHead>
+                  <TableHead>Nama</TableHead>
+                  <TableHead>Kategori</TableHead>
+                  <TableHead>Varian Mazmur</TableHead>
+                  <TableHead>Juri Berbeda</TableHead>
+                  <TableHead className="text-right">Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {vars.length === 0 && (
+                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Tidak ada Potensi VAR saat ini.</TableCell></TableRow>
+                )}
+                {vars.map((r) => (
+                  <TableRow key={r.peserta_id}>
+                    <TableCell>{r.nomor_urut}</TableCell>
+                    <TableCell className="font-medium">{r.nama}</TableCell>
+                    <TableCell className="text-muted-foreground">{r.kategori || "—"}</TableCell>
+                    <TableCell className="text-xs">{Array.isArray(r.mazmur_variants) ? (r.mazmur_variants as any[]).map((x: any) => x.bacaan ?? x).join(" · ") : "—"}</TableCell>
+                    <TableCell>{r.juri_berbeda}</TableCell>
+                    <TableCell className="text-right">
+                      <Button size="sm" variant="outline" onClick={() => openDetail(monitor.find(m => m.peserta_id === r.peserta_id) ?? { peserta_id: r.peserta_id, nomor_urut: r.nomor_urut, nama: r.nama, kategori: r.kategori, bacaan: null, status: "Potensi VAR", juri_done: 0, juri_total: 0 })}>
+                        <Eye className="size-4 mr-1" /> Detail
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </main>
+
+      <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Detail — {detailPeserta ? `${detailPeserta.nomor_urut}. ${detailPeserta.nama}` : ""}</DialogTitle>
+            <DialogDescription>Rincian penilaian juri dan Potensi VAR (read-only).</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto">
+            {!detailData && <div className="text-sm text-muted-foreground">Memuat…</div>}
+            {detailData && (
+              <>
+                {detailData.mazmur_variants && Array.isArray(detailData.mazmur_variants) && detailData.mazmur_variants.length > 1 && (
+                  <div className="rounded-lg border border-rose-500/40 bg-rose-500/5 p-3">
+                    <div className="text-sm font-semibold text-rose-600 mb-1">Perbedaan Bacaan Mazmur</div>
+                    <ul className="text-sm list-disc pl-5">
+                      {detailData.mazmur_variants.map((v: any, i: number) => (
+                        <li key={i}>{v.bacaan ?? JSON.stringify(v)}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {detailData.penilaian && Array.isArray(detailData.penilaian) && (
+                  <div>
+                    <div className="text-sm font-semibold mb-2">Nilai per Juri</div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Juri</TableHead>
+                          <TableHead>Kriteria</TableHead>
+                          <TableHead className="text-right">Nilai</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {detailData.penilaian.map((p: any, i: number) => (
+                          <TableRow key={i}>
+                            <TableCell>{p.juri_nama ?? p.juri_id}</TableCell>
+                            <TableCell>{p.kriteria_nama ?? p.kriteria_id}</TableCell>
+                            <TableCell className="text-right font-mono">{p.nilai}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    {detailData.penilaian.length === 0 && (
+                      <div className="text-sm text-muted-foreground">Nilai belum dapat ditampilkan (menunggu semua juri mengirim).</div>
+                    )}
+                  </div>
+                )}
+                {detailData.nilai_akhir != null && (
+                  <div className="rounded-lg border bg-accent/10 p-3">
+                    <div className="text-xs text-muted-foreground">Nilai Akhir</div>
+                    <div className="text-2xl font-serif font-semibold">{Number(detailData.nilai_akhir).toFixed(2)}</div>
+                  </div>
+                )}
+              </>
+            )}
+
+            <div className="space-y-2 pt-2 border-t">
+              <div className="text-sm font-semibold">Catatan / Rekomendasi Inspektur</div>
+              <Textarea value={catatan} onChange={(e) => setCatatan(e.target.value)} placeholder="Tuliskan catatan pengawasan…" rows={3} />
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-xs text-muted-foreground">Keputusan (opsional):</span>
+                <Button size="sm" variant={keputusan === "disetujui" ? "default" : "outline"} onClick={() => setKeputusan(keputusan === "disetujui" ? "" : "disetujui")}>Setujui</Button>
+                <Button size="sm" variant={keputusan === "ditolak" ? "destructive" : "outline"} onClick={() => setKeputusan(keputusan === "ditolak" ? "" : "ditolak")}>Tolak</Button>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetailOpen(false)}>Tutup</Button>
+            <Button onClick={simpanCatatan} disabled={savingCatatan}>{savingCatatan ? "Menyimpan…" : "Simpan Catatan"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
