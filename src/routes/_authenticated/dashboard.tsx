@@ -1139,12 +1139,13 @@ function PenilaianTab() {
         if (!admin) setJuriId(prof.juri_id);
       }
     }
-    const [p, j, k, m, n] = await Promise.all([
+    const [p, j, k, m, n, s] = await Promise.all([
       supabase.from("peserta").select("*").order("nomor_urut"),
       supabase.from("juri_public" as any).select("*").order("created_at"),
       supabase.from("kriteria").select("*").order("created_at"),
       supabase.from("mazmur").select("*").order("created_at"),
       supabase.from("penilaian").select("*"),
+      supabase.from("penilaian_submission" as any).select("*"),
     ]);
     if (p.error || j.error || k.error || m.error || n.error) return toast.error("Gagal memuat data");
     const pesertaList = p.data ?? [];
@@ -1152,6 +1153,7 @@ function PenilaianTab() {
     const kriteriaList = k.data ?? [];
     const mazmurList = (m.data ?? []) as Mazmur[];
     const penilaianList = (n.data ?? []) as Penilaian[];
+    const submissionList = ((s?.data ?? []) as any[]) as Array<{ peserta_id: string; juri_id: string; created_at: string }>;
     setPeserta(pesertaList);
     // Admin tidak merangkap sebagai juri — hanya tampilkan yang role="juri" & sudah disetujui
     setJuri(juriList);
@@ -1159,44 +1161,30 @@ function PenilaianTab() {
     setMazmur(mazmurList);
     setPenilaian(penilaianList);
 
-    // Restore state setelah refresh: jika juri sudah menilai semua kriteria untuk seorang peserta
-    // tapi belum semua juri selesai, tampilkan overlay "menunggu". Jika sudah semua juri selesai
-    // dan ada perbedaan input, tampilkan dialog perbedaan.
+    // Restore state setelah refresh berbasis SUBMISSION (bukan kriteria terisi).
+    // Juri dianggap "sudah menilai" hanya jika sudah menekan Kirim (ada baris di penilaian_submission).
     const activeJuriId = admin ? (juriId || "") : (profJuriId || "");
-    if (activeJuriId && kriteriaList.length > 0 && !editMode) {
-      const kriteriaIds = new Set(kriteriaList.map((x: any) => x.id));
-      const byPeserta: Record<string, { done: Set<string>; latest: string }> = {};
-      penilaianList.forEach(pn => {
-        if (pn.juri_id !== activeJuriId) return;
-        if (!kriteriaIds.has(pn.kriteria_id)) return;
-        const ts = pn.created_at ?? "";
-        const cur = byPeserta[pn.peserta_id] ??= { done: new Set<string>(), latest: ts };
-        cur.done.add(pn.kriteria_id);
-        if (ts > cur.latest) cur.latest = ts;
-      });
-      const fullyScored = Object.entries(byPeserta)
-        .filter(([, v]) => v.done.size >= kriteriaIds.size)
-        .sort((a, b) => (a[1].latest < b[1].latest ? 1 : -1));
+    if (activeJuriId && !editMode) {
+      const mine = submissionList
+        .filter(sb => sb.juri_id === activeJuriId)
+        .sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
 
-      if (fullyScored.length > 0) {
-        const { data: rankData } = await supabase.rpc("get_ranking" as any);
-        const rank = (rankData ?? []) as unknown as Ranking[];
-        const total = juriList.length;
-        // Peserta paling baru yang masih pending juri lain
-        const pending = fullyScored.find(([pid]) => {
-          const r = rank.find(x => x.peserta_id === pid);
-          const done = r ? Number(r.jumlah_juri) : 0;
-          return total > 0 && done < total;
+      if (mine.length > 0) {
+        const totalJuri = juriList.length;
+        // Peserta paling baru yang saya kirim tapi belum semua juri kirim
+        const pending = mine.find(sb => {
+          const done = submissionList.filter(x => x.peserta_id === sb.peserta_id).length;
+          return totalJuri > 0 && done < totalJuri;
         });
         if (pending) {
-          const [pid] = pending;
+          const pid = pending.peserta_id;
           const myRow = penilaianList.find(x => x.juri_id === activeJuriId && x.peserta_id === pid && x.mazmur_id);
           setSubmittedFor(pid);
           setPesertaId(pid);
           if (myRow?.mazmur_id) setMazmurId(myRow.mazmur_id);
         } else {
-          // Semua juri sudah selesai untuk peserta terakhir yang saya nilai — cek perbedaan.
-          const [pid] = fullyScored[0];
+          // Semua juri sudah kirim untuk peserta terakhir yang saya nilai — cek perbedaan.
+          const pid = mine[0].peserta_id;
           const report = await checkDiscrepancyWith(pid, mazmurList, pesertaList);
           if (report) {
             const myRow = penilaianList.find(x => x.juri_id === activeJuriId && x.peserta_id === pid && x.mazmur_id);
@@ -1205,7 +1193,6 @@ function PenilaianTab() {
             setDiscrepancy(report);
             setSubmittedFor(null);
           }
-          // Jika tidak ada perbedaan, biarkan pilihan peserta kosong agar juri lanjut ke peserta berikutnya.
         }
       }
     }
