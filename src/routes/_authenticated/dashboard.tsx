@@ -1612,6 +1612,14 @@ function PenilaianTab() {
 
             return (
               <>
+                {editMode && (
+                  <div className="rounded-2xl border-2 border-destructive/40 bg-destructive/5 p-4 mb-4">
+                    <div className="font-serif text-lg text-destructive">✦ Mode Perubahan</div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Silakan perbaiki pilihan <b>Peserta</b> dan/atau <b>Bacaan Mazmur</b> agar sesuai dengan juri lain, lalu klik <b>Kirim</b>. Nilai kriteria yang sudah Anda berikan tetap disimpan.
+                    </p>
+                  </div>
+                )}
                 <div className="rounded-2xl border-2 border-accent/40 bg-gradient-to-br from-card to-secondary/40 p-5 sm:p-6 mb-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="text-sm text-muted-foreground">
@@ -1628,11 +1636,11 @@ function PenilaianTab() {
                     <Button
                       size="lg"
                       onClick={requestKirim}
-                      disabled={saving || scored.length === 0}
+                      disabled={saving || (!editMode && scored.length === 0)}
                       className="gap-2 min-w-[160px]"
                     >
                       <Check className="size-4" />
-                      Kirim
+                      {editMode ? "Kirim Perubahan" : "Kirim"}
                     </Button>
                   </div>
                 </div>
@@ -1643,7 +1651,11 @@ function PenilaianTab() {
                     <DialogHeader>
                       <DialogTitle className="font-serif text-xl">Konfirmasi Pengiriman</DialogTitle>
                       <DialogDescription>
-                        Apakah Anda yakin akan mengirim penilaian untuk <b>{currentPesertaLabel}</b>?
+                        {editMode ? (
+                          <>Perbarui penilaian menjadi <b>{currentPesertaLabel}</b>?</>
+                        ) : (
+                          <>Apakah Anda yakin akan mengirim penilaian untuk <b>{currentPesertaLabel}</b>?</>
+                        )}
                         {allDone && nilaiAkhir !== null && (
                           <span className="block mt-2">
                             Nilai akhir yang akan dikirim: <b>{nilaiAkhir.toFixed(2)}</b>.
