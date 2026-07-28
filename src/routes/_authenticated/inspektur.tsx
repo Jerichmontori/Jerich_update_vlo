@@ -86,8 +86,8 @@ function InspekturPage() {
   const [detailPeserta, setDetailPeserta] = useState<MonitorRow | null>(null);
   const [detailData, setDetailData] = useState<any>(null);
   const [catatan, setCatatan] = useState("");
-  const [keputusan, setKeputusan] = useState<"disetujui" | "ditolak" | "">("");
   const [savingCatatan, setSavingCatatan] = useState(false);
+  const [terapkanLoading, setTerapkanLoading] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmTarget, setConfirmTarget] = useState<{ pesertaId: string; nama: string; catatan: string | null; source: "row" | "detail" } | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
