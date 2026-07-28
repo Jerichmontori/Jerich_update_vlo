@@ -220,7 +220,7 @@ function OperatorPage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 pb-16 space-y-6">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="pb-2"><CardDescription>Peserta Aktif</CardDescription></CardHeader>
             <CardContent>
@@ -232,6 +232,16 @@ function OperatorPage() {
                 </div>
               ) : (
                 <div className="text-muted-foreground text-sm">Belum ada peserta aktif</div>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="pb-2"><CardDescription>Kategori Aktif</CardDescription></CardHeader>
+            <CardContent>
+              {pesertaAktif?.kategori ? (
+                <div className="text-lg font-semibold">{pesertaAktif.kategori}</div>
+              ) : (
+                <div className="text-muted-foreground text-sm">—</div>
               )}
             </CardContent>
           </Card>
