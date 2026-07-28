@@ -130,20 +130,29 @@ function App() {
 
 function Header() {
   const [canOperate, setCanOperate] = useState(false);
+  const [canInspect, setCanInspect] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ nama: string; email: string; role: string } | null>(null);
   useEffect(() => {
     (async () => {
       const { data: userData } = await supabase.auth.getUser();
       const uid = userData.user?.id;
       if (!uid) return;
-      const [{ data: isPan }, { data: isAdm }, { data: isJuri }] = await Promise.all([
+      const [{ data: isPan }, { data: isAdm }, { data: isJuri }, { data: isInsp }, { data: isKetua }] = await Promise.all([
         supabase.rpc("has_role", { _user_id: uid, _role: "panitia" as any }),
         supabase.rpc("has_role", { _user_id: uid, _role: "admin" as any }),
         supabase.rpc("has_role", { _user_id: uid, _role: "juri" as any }),
+        supabase.rpc("has_role", { _user_id: uid, _role: "inspektur" as any }),
+        supabase.rpc("has_role", { _user_id: uid, _role: "ketua_juri" as any }),
       ]);
       setCanOperate(!!isPan || !!isAdm);
+      setCanInspect(!!isInsp || !!isAdm);
+      // Inspektur-only users are read-only observers; send them to their own page.
+      if (isInsp && !isAdm && !isPan && !isJuri && !isKetua) {
+        window.location.href = "/inspektur";
+        return;
+      }
       const { data: prof } = await supabase.from("profiles").select("nama").eq("id", uid).maybeSingle();
-      const role = isAdm ? "Admin" : isPan ? "Panitia" : isJuri ? "Juri" : "Pengguna";
+      const role = isAdm ? "Admin" : isPan ? "Panitia" : isKetua ? "Ketua Dewan Juri" : isInsp ? "Inspektur Pertandingan" : isJuri ? "Juri" : "Pengguna";
       setCurrentUser({
         nama: prof?.nama ?? (userData.user?.email?.split("@")[0] ?? "Pengguna"),
         email: userData.user?.email ?? "",
@@ -168,7 +177,7 @@ function Header() {
             <p className="text-sm text-muted-foreground mt-1">Kelola peserta, juri, kriteria, dan lihat ranking secara langsung.</p>
           </div>
         </div>
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-3 shrink-0 flex-wrap justify-end">
           {currentUser && (
             <div className="text-right text-sm hidden sm:block">
               <div className="font-semibold leading-tight">{currentUser.nama}</div>
@@ -178,6 +187,11 @@ function Header() {
           {canOperate && (
             <Button variant="secondary" onClick={() => (window.location.href = "/operator")}>
               Operator Lomba
+            </Button>
+          )}
+          {canInspect && (
+            <Button variant="secondary" onClick={() => (window.location.href = "/inspektur")}>
+              Inspektur
             </Button>
           )}
           <Button variant="outline" onClick={signOut}>Keluar</Button>
