@@ -1813,57 +1813,17 @@ function PenilaianTab() {
             </div>
             <div>
               <Label>Peserta</Label>
-              <Select
-                value={pesertaId}
-                disabled={lockPesertaMazmur}
-                onValueChange={(val) => {
-                  if (editMode) { setPesertaId(val); return; }
-                  const kriteriaIds = new Set(kriteria.map(k => k.id));
-                  const scoredKrit = new Set(
-                    penilaian
-                      .filter(pn => pn.juri_id === juriId && pn.peserta_id === val && kriteriaIds.has(pn.kriteria_id))
-                      .map(pn => pn.kriteria_id)
-                  );
-                  const done = kriteriaIds.size > 0 && scoredKrit.size >= kriteriaIds.size;
-                  if (done) {
-                    const p = peserta.find(x => x.id === val);
-                    toast.warning("✦ Peserta sudah dinilai", {
-                      description: `Anda telah selesai menilai ${p ? `#${p.nomor_urut} ${p.nama}` : "peserta ini"}.`,
-                    });
-                    return;
-                  }
-                  setPesertaId(val);
-                }}
-              >
-                <SelectTrigger><SelectValue placeholder={lockPesertaMazmur ? "Ditentukan Operator Lomba" : (juriId ? "Pilih peserta" : "—")} /></SelectTrigger>
-                <SelectContent>
-                  {(() => {
-                    const kriteriaIds = new Set(kriteria.map(k => k.id));
-                    const doneSet = new Set<string>();
-                    if (juriId && kriteriaIds.size > 0) {
-                      const byPeserta: Record<string, Set<string>> = {};
-                      penilaian.forEach(pn => {
-                        if (pn.juri_id !== juriId) return;
-                        if (!kriteriaIds.has(pn.kriteria_id)) return;
-                        (byPeserta[pn.peserta_id] ??= new Set()).add(pn.kriteria_id);
-                      });
-                      Object.entries(byPeserta).forEach(([pid, set]) => {
-                        if (set.size >= kriteriaIds.size) doneSet.add(pid);
-                      });
-                    }
-                    if (peserta.length === 0) {
-                      return <div className="px-3 py-2 text-sm text-muted-foreground">Belum ada peserta.</div>;
-                    }
-                    return peserta.map(p => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.nomor_urut}. {p.nama}{p.asal ? ` — ${p.asal}` : ""}
-                        {doneSet.has(p.id) ? "  ✓ sudah dinilai" : ""}
-                      </SelectItem>
-                    ));
-                  })()}
-                </SelectContent>
-              </Select>
+              <Input
+                readOnly
+                value={(() => {
+                  const p = peserta.find(x => x.id === pesertaId);
+                  return p ? `${p.nomor_urut}. ${p.nama}${p.asal ? ` — ${p.asal}` : ""}` : "";
+                })()}
+                placeholder={lockPesertaMazmur ? "Ditentukan Operator Lomba" : "Menunggu sesi dari Operator Lomba"}
+                className="bg-muted/50"
+              />
             </div>
+
 
           </div>
 
