@@ -1222,33 +1222,26 @@ function PenilaianTab() {
   async function perbaikiPenilaianSaya() {
     if (!discrepancy) return;
     const juriTarget = juriId;
+    const pesertaTarget = discrepancy.pesertaId;
     if (!juriTarget) { setDiscrepancy(null); return; }
     // Hapus penilaian juri ini untuk peserta tsb agar bisa dinilai ulang
     const { error } = await supabase
       .from("penilaian")
       .delete()
-      .eq("peserta_id", discrepancy.pesertaId)
+      .eq("peserta_id", pesertaTarget)
       .eq("juri_id", juriTarget);
     if (error) { toast.error(error.message); return; }
     toast.warning("✦ Silakan menilai ulang", {
-      description: "Penilaian Anda dihapus untuk peserta ini. Silakan input ulang sesuai kesepakatan.",
+      description: "Form penilaian peserta terakhir kembali aktif. Silakan input ulang sesuai kesepakatan.",
     });
     setDiscrepancy(null);
     setSubmittedFor(null);
     setJudgesDoneForPeserta(0);
-    // pesertaId & mazmurId dipertahankan
+    setPesertaId(pesertaTarget); // aktifkan peserta terakhir yang dinilai
+    setOpenKriteria(null);
     loadAll();
   }
 
-  function abaikanPerbedaan() {
-    setDiscrepancy(null);
-    setSubmittedFor(null);
-    setPesertaId("");
-    setMazmurId("");
-    setOpenKriteria(null);
-    setJudgesDoneForPeserta(0);
-    loadAll();
-  }
 
 
 
