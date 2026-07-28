@@ -1,4 +1,6 @@
-import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
+import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -41,5 +43,52 @@ export const Route = createFileRoute("/_authenticated")({
 
     return { user: data.user };
   },
-  component: () => <Outlet />,
+  component: AuthenticatedLayout,
 });
+
+function AuthenticatedLayout() {
+  const navigate = useNavigate();
+
+  // Single-device enforcement across ALL authenticated pages (dashboard,
+  // operator, inspektur, dll). Tanpa polling ini, user yang login di device B
+  // tidak menendang keluar device A selama A tidak berpindah halaman.
+  useEffect(() => {
+    let stopped = false;
+    async function check() {
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        const uid = userData.user?.id;
+        if (!uid) return;
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("active_session_id")
+          .eq("id", uid)
+          .maybeSingle();
+        const local = localStorage.getItem("device_session_id");
+        if (prof && !prof.active_session_id && local) {
+          await supabase.from("profiles").update({ active_session_id: local }).eq("id", uid);
+          return;
+        }
+        if (prof?.active_session_id && local && prof.active_session_id !== local) {
+          if (stopped) return;
+          toast.error("Akun Anda login di perangkat lain. Sesi ini akan dikeluarkan.");
+          await supabase.auth.signOut();
+          navigate({ to: "/auth" });
+        }
+      } catch {
+        // abaikan — cek berikutnya akan mencoba lagi
+      }
+    }
+    check();
+    const id = setInterval(check, 8000);
+    const onFocus = () => check();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      stopped = true;
+      clearInterval(id);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [navigate]);
+
+  return <Outlet />;
+}
