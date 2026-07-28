@@ -610,6 +610,11 @@ function JuriTab() {
                         <Check className="size-4" />Approve
                       </Button>
                     )}
+                    {j.approved && (
+                      <Button size="sm" variant="outline" onClick={()=>openReset(j)} className="gap-1">
+                        <KeyRound className="size-4" />Reset Password
+                      </Button>
+                    )}
                     <Button size="icon" variant="ghost" onClick={()=>hapus(j.id, j.nama)}>
                       <Trash2 className="size-4 text-destructive" />
                     </Button>
@@ -620,6 +625,43 @@ function JuriTab() {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={!!resetTarget} onOpenChange={(o)=>{ if(!o){ setResetTarget(null); setResetPw(""); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif">✦ Reset Password Juri</DialogTitle>
+            <DialogDescription>
+              Buat password baru untuk <span className="font-semibold text-foreground">{resetTarget?.nama}</span>.
+              Sesi login aktif di perangkat manapun akan otomatis keluar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="reset-pw">Password Baru (min. 8 karakter)</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="reset-pw"
+                  type="text"
+                  value={resetPw}
+                  onChange={(e)=>setResetPw(e.target.value)}
+                  placeholder="Masukkan atau generate"
+                  autoComplete="new-password"
+                />
+                <Button type="button" variant="outline" onClick={generatePw}>Generate</Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Salin & sampaikan password ini ke juri secara aman — tidak akan bisa dilihat lagi setelah dialog ditutup.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={()=>{ setResetTarget(null); setResetPw(""); }}>Batal</Button>
+            <Button onClick={submitReset} disabled={resetLoading || resetPw.length < 8}>
+              {resetLoading ? "Menyimpan…" : "Simpan Password Baru"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </SectionCard>
   );
 }
