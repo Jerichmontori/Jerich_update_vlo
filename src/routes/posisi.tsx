@@ -147,8 +147,7 @@ function PosisiPublic() {
                         <TableHead>Peserta</TableHead>
                         <TableHead>Asal</TableHead>
                         <TableHead className="text-center w-24">Juri</TableHead>
-                        <TableHead className="text-right w-32">Rata-rata</TableHead>
-                        <TableHead className="text-right w-32">Total Skor</TableHead>
+                        <TableHead className="text-right w-36">Nilai Akhir</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -164,8 +163,7 @@ function PosisiPublic() {
                           <TableCell className="font-semibold">{r.nama}</TableCell>
                           <TableCell className="text-muted-foreground">{r.asal || "—"}</TableCell>
                           <TableCell className="text-center">{r.scored ? r.jumlah_juri : <span className="text-muted-foreground italic">belum tampil</span>}</TableCell>
-                          <TableCell className="text-right font-mono">{r.scored ? r.rata_rata.toFixed(2) : <span className="text-muted-foreground italic">belum tampil</span>}</TableCell>
-                          <TableCell className="text-right font-mono font-bold text-primary">{r.scored ? r.total_skor.toFixed(2) : <span className="text-muted-foreground italic font-normal">belum tampil</span>}</TableCell>
+                          <TableCell className="text-right font-mono font-bold text-primary">{r.scored && r.nilai_akhir != null ? Number(r.nilai_akhir).toFixed(3) : <span className="text-muted-foreground italic font-normal">belum tampil</span>}</TableCell>
                         </TableRow>
                         );
                       })}
