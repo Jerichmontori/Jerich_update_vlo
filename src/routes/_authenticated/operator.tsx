@@ -236,6 +236,16 @@ function OperatorPage() {
             </CardContent>
           </Card>
           <Card>
+            <CardHeader className="pb-2"><CardDescription>Kategori Aktif</CardDescription></CardHeader>
+            <CardContent>
+              {pesertaAktif?.kategori ? (
+                <div className="text-lg font-semibold">{pesertaAktif.kategori}</div>
+              ) : (
+                <div className="text-muted-foreground text-sm">—</div>
+              )}
+            </CardContent>
+          </Card>
+          <Card>
             <CardHeader className="pb-2"><CardDescription>Bacaan Mazmur Aktif</CardDescription></CardHeader>
             <CardContent>
               {mazmurAktif ? (
