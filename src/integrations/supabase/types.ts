@@ -215,6 +215,49 @@ export type Database = {
           },
         ]
       }
+      penilaian_submission: {
+        Row: {
+          created_at: string
+          id: string
+          juri_id: string
+          peserta_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          juri_id: string
+          peserta_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          juri_id?: string
+          peserta_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "penilaian_submission_juri_id_fkey"
+            columns: ["juri_id"]
+            isOneToOne: false
+            referencedRelation: "juri"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "penilaian_submission_juri_id_fkey"
+            columns: ["juri_id"]
+            isOneToOne: false
+            referencedRelation: "juri_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "penilaian_submission_peserta_id_fkey"
+            columns: ["peserta_id"]
+            isOneToOne: false
+            referencedRelation: "peserta"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       peserta: {
         Row: {
           asal: string | null
