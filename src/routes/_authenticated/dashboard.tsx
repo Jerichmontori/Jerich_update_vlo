@@ -1683,6 +1683,15 @@ function PenilaianTab() {
                   .eq("juri_id", juriId)
                   .eq("peserta_id", editMode.oldPesertaId);
                 if (error) { toast.error(error.message); return; }
+                // Pindahkan submission ke peserta baru
+                await supabase
+                  .from("penilaian_submission" as any)
+                  .delete()
+                  .eq("juri_id", juriId)
+                  .eq("peserta_id", editMode.oldPesertaId);
+                await supabase
+                  .from("penilaian_submission" as any)
+                  .upsert({ juri_id: juriId, peserta_id: pesertaId } as any, { onConflict: "peserta_id,juri_id" });
                 toast.success("✦ Perubahan tersimpan", {
                   description: `Penilaian diperbarui untuk ${currentPesertaLabel}.`,
                 });
@@ -1692,6 +1701,11 @@ function PenilaianTab() {
                 await loadAll();
                 return;
               }
+              // Catat submission juri untuk peserta ini — ini penanda "sudah mengirim".
+              const { error: subErr } = await supabase
+                .from("penilaian_submission" as any)
+                .upsert({ juri_id: juriId, peserta_id: pesertaId } as any, { onConflict: "peserta_id,juri_id" });
+              if (subErr) { toast.error(subErr.message); return; }
               toast.success("✦ Penilaian dikirim", {
                 description: `Penilaian untuk ${currentPesertaLabel} tersimpan.`,
               });
