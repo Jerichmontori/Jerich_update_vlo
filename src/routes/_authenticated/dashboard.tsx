@@ -188,6 +188,7 @@ function PesertaTab() {
   async function resetSemua() {
     if (!confirm("Yakin ingin menghapus SEMUA daftar peserta beserta seluruh nilainya? Tindakan ini tidak dapat dibatalkan.")) return;
     setResetting(true);
+    await supabase.from("penilaian_submission" as any).delete().not("id", "is", null);
     const { error: pe } = await supabase.from("penilaian").delete().not("id", "is", null);
     if (pe) { setResetting(false); return toast.error("Gagal menghapus penilaian: " + pe.message); }
     const { error } = await supabase.from("peserta").delete().not("id", "is", null);
