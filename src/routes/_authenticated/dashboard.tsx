@@ -2395,7 +2395,7 @@ function PenilaianTab() {
                         })}
                       </div>
                     ) : (
-                      <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
+                      <div className={["grid grid-cols-5 sm:grid-cols-8 gap-2", locked ? "pointer-events-none" : ""].join(" ")}>
                         {row.map((checked, ayatIdx) => (
                           <label
                             key={ayatIdx}
@@ -2412,13 +2412,14 @@ function PenilaianTab() {
                               className="sr-only"
                               checked={checked}
                               disabled={locked}
-                              onChange={() =>
+                              onChange={() => {
+                                if (locked) return;
                                 setPerhatianChecks(prev =>
                                   prev.map((r, idx) =>
                                     idx === i ? r.map((c, ai) => (ai === ayatIdx ? !c : c)) : r
                                   )
-                                )
-                              }
+                                );
+                              }}
                             />
                             Ayat {ayatIdx + 1}
                           </label>
