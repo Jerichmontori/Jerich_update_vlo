@@ -86,8 +86,8 @@ function InspekturPage() {
   const [detailPeserta, setDetailPeserta] = useState<MonitorRow | null>(null);
   const [detailData, setDetailData] = useState<any>(null);
   const [catatan, setCatatan] = useState("");
-  const [keputusan, setKeputusan] = useState<"disetujui" | "ditolak" | "">("");
   const [savingCatatan, setSavingCatatan] = useState(false);
+  const [terapkanLoading, setTerapkanLoading] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmTarget, setConfirmTarget] = useState<{ pesertaId: string; nama: string; catatan: string | null; source: "row" | "detail" } | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
@@ -145,7 +145,6 @@ function InspekturPage() {
     setDetailPeserta(row);
     setDetailData(null);
     setCatatan("");
-    setKeputusan("");
     setDetailOpen(true);
     const { data, error } = await supabase.rpc("inspektur_var_detail" as any, { _peserta: row.peserta_id });
     if (error) { toast.error(error.message); return; }
@@ -154,40 +153,47 @@ function InspekturPage() {
 
   async function simpanCatatan() {
     if (!detailPeserta) return;
-    if (!catatan.trim() && !keputusan) {
-      toast.error("Isi catatan atau pilih keputusan");
+    if (!catatan.trim()) {
+      toast.error("Isi catatan terlebih dahulu");
       return;
     }
     setSavingCatatan(true);
     try {
-      const hasActiveVar = !!(detailData && detailData.var_session);
-      const keputusanFinal = keputusan || "catatan_saja";
-      if (hasActiveVar) {
-        const { error } = await supabase.rpc("inspektur_selesaikan_var" as any, {
-          _peserta: detailPeserta.peserta_id,
-          _catatan: catatan.trim() || null,
-          _keputusan: keputusanFinal,
-        });
-        if (error) throw error;
-        toast.success("Potensi VAR diselesaikan · catatan tersimpan");
-      } else {
-        const { error } = await supabase.rpc("inspektur_catat" as any, {
-          _peserta: detailPeserta.peserta_id,
-          _catatan: catatan.trim() || null,
-          _keputusan: keputusanFinal,
-        });
-        if (error) throw error;
-        toast.success("Catatan inspektur tersimpan");
-      }
+      const { error } = await supabase.rpc("inspektur_catat" as any, {
+        _peserta: detailPeserta.peserta_id,
+        _catatan: catatan.trim(),
+        _keputusan: "catatan_saja",
+      });
+      if (error) throw error;
+      toast.success("Catatan inspektur tersimpan");
       setDetailOpen(false);
       loadAll();
-
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal menyimpan");
     } finally {
       setSavingCatatan(false);
     }
   }
+
+  async function terapkanPerubahan() {
+    if (!detailPeserta) return;
+    setTerapkanLoading(true);
+    try {
+      const { error } = await supabase.rpc("inspektur_terapkan_perbaikan" as any, {
+        _peserta: detailPeserta.peserta_id,
+        _catatan: catatan.trim() || null,
+      });
+      if (error) throw error;
+      toast.success("Pilihan juri diterapkan · nilai peserta ditetapkan Final");
+      setDetailOpen(false);
+      loadAll();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menerapkan perubahan");
+    } finally {
+      setTerapkanLoading(false);
+    }
+  }
+
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -508,29 +514,41 @@ function InspekturPage() {
             <div className="space-y-2 pt-2 border-t">
               <div className="text-sm font-semibold">Catatan / Rekomendasi Inspektur</div>
               <Textarea value={catatan} onChange={(e) => setCatatan(e.target.value)} placeholder="Tuliskan catatan pengawasan…" rows={3} />
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs text-muted-foreground">Keputusan (opsional):</span>
-                <Button size="sm" variant={keputusan === "disetujui" ? "default" : "outline"} onClick={() => setKeputusan(keputusan === "disetujui" ? "" : "disetujui")}>Setujui</Button>
-                <Button size="sm" variant={keputusan === "ditolak" ? "destructive" : "outline"} onClick={() => setKeputusan(keputusan === "ditolak" ? "" : "ditolak")}>Tolak</Button>
-              </div>
+              {detailData?.var_session && (
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
+                  Klik <b>Terapkan Perubahan Juri</b> untuk mengganti pilihan lama juri pada 3 parameter pemicu VAR
+                  (Salah/Menambah/Mengurangi kata) dengan pilihan terbaru yang dikirim juri, memperbarui Rincian Nilai,
+                  dan menetapkan status peserta menjadi <b>Final</b>.
+                </p>
+              )}
             </div>
           </div>
 
           <DialogFooter className="flex-wrap gap-2">
             {detailData?.var_session && (
-              <Button
-                className="bg-amber-600 hover:bg-amber-700 text-white"
-                onClick={() => {
-                  if (!detailPeserta) return;
-                  openConfirmBukaPerbaikan(detailPeserta.peserta_id, detailPeserta.nama, catatan.trim() || null, "detail");
-                }}
-              >
-                <AlertTriangle className="size-4 mr-1" /> Buka Perbaikan Perhatian
-              </Button>
+              <>
+                <Button
+                  className="bg-amber-600 hover:bg-amber-700 text-white"
+                  onClick={() => {
+                    if (!detailPeserta) return;
+                    openConfirmBukaPerbaikan(detailPeserta.peserta_id, detailPeserta.nama, catatan.trim() || null, "detail");
+                  }}
+                >
+                  <AlertTriangle className="size-4 mr-1" /> Buka Perbaikan Perhatian
+                </Button>
+                <Button
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                  onClick={terapkanPerubahan}
+                  disabled={terapkanLoading}
+                >
+                  {terapkanLoading ? "Menerapkan…" : "Terapkan Perubahan Juri & Finalkan"}
+                </Button>
+              </>
             )}
             <Button variant="outline" onClick={() => setDetailOpen(false)}>Tutup</Button>
             <Button onClick={simpanCatatan} disabled={savingCatatan}>{savingCatatan ? "Menyimpan…" : "Simpan Catatan"}</Button>
           </DialogFooter>
+
 
         </DialogContent>
       </Dialog>

@@ -742,6 +742,10 @@ export type Database = {
         Args: { _catatan: string; _keputusan: string; _peserta: string }
         Returns: string
       }
+      inspektur_terapkan_perbaikan: {
+        Args: { _catatan?: string; _peserta: string }
+        Returns: string
+      }
       inspektur_var_detail: { Args: { _peserta: string }; Returns: Json }
       mulai_klarifikasi_var: { Args: { _peserta: string }; Returns: string }
       mulai_sesi: {
