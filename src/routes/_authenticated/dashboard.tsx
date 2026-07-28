@@ -2487,12 +2487,12 @@ function DashboardTab() {
     const [j, p, n, k] = await Promise.all([
       supabase.from("juri_public" as any).select("*").eq("approved", true).eq("role", "juri").order("nama"),
       supabase.from("peserta").select("*"),
-      supabase.from("penilaian").select("*"),
+      supabase.rpc("admin_list_penilaian" as any),
       supabase.from("kriteria").select("*"),
     ]);
     setJuri((j.data as unknown as Juri[]) || []);
     setPeserta((p.data as Peserta[]) || []);
-    setPenilaian((n.data as Penilaian[]) || []);
+    setPenilaian((n.data as unknown as Penilaian[]) || []);
     setKriteria((k.data as Kriteria[]) || []);
     setLoading(false);
   }
