@@ -1533,14 +1533,9 @@ function PenilaianTab() {
     const activeJuri = isAdmin ? juriId : (myJuriId || "");
     const perhatianKriteria = kriteria.find(k => kriteriaKey(k.nama) === "perhatian");
     if (activeJuri && perhatianKriteria) {
-      // Hapus HANYA baris kriteria Perhatian juri ini + submission,
-      // supaya juri wajib mengisi ulang Perhatian lalu Kirim lagi.
-      await supabase
-        .from("penilaian")
-        .delete()
-        .eq("juri_id", activeJuri)
-        .eq("peserta_id", target)
-        .eq("kriteria_id", perhatianKriteria.id);
+      // Hapus HANYA submission juri ini (paksa Kirim ulang) — baris penilaian
+      // Perhatian tetap disimpan supaya saat form dibuka lagi pilihan terakhir
+      // juri masih tampil dan tinggal diubah pada 3 parameter pemicu VAR.
       await supabase
         .from("penilaian_submission" as any)
         .delete()
@@ -1615,9 +1610,14 @@ function PenilaianTab() {
       const isPerbaikan = !!(pesertaId && perbaikanPerhatianIds.has(pesertaId));
       const prevRow = penilaian.find(x => x.juri_id === juriId && x.peserta_id === pesertaId && x.kriteria_id === k.id);
       const prevDetail: any = prevRow?.detail ?? null;
-      if (isPerbaikan && prevDetail && prevDetail.type === "perhatian") {
+      // Selalu tampilkan pilihan terakhir juri bila baris penilaian sebelumnya masih ada
+      // (mis. saat Potensi VAR / Perbaikan Perhatian) — bukan hanya di mode perbaikan Inspektur.
+      if (prevDetail && prevDetail.type === "perhatian") {
         const restored: boolean[][] = PERHATIAN_ASPEK.map((_, i) => {
-          if (i === 0) return [Boolean(prevDetail.membacaPerikop)];
+          if (i === 0) {
+            const v = prevDetail.membacaPerikop;
+            return v === true || v === false ? [Boolean(v)] : [];
+          }
           const aspek = prevDetail.aspek?.[i - 1];
           const arr: boolean[] | undefined = Array.isArray(aspek?.ayat) ? aspek.ayat : undefined;
           if (arr && arr.length === selectedMazmur.jumlah_ayat) return [...arr];
@@ -1628,7 +1628,7 @@ function PenilaianTab() {
           return filled;
         });
         setPerhatianChecks(restored);
-        perhatianBaselineRef.current = restored.map(r => [...r]);
+        perhatianBaselineRef.current = isPerbaikan ? restored.map(r => [...r]) : null;
       } else {
         const empty = PERHATIAN_ASPEK.map((_, i) => i === 0 ? [] : Array(selectedMazmur.jumlah_ayat).fill(false));
         setPerhatianChecks(empty);
