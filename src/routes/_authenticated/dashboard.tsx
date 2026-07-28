@@ -1699,6 +1699,10 @@ function PenilaianTab() {
     : Math.round(((perhatianTotal - perhatianChecked) / perhatianTotal) * 100 * 100) / 100;
 
   async function savePerhatian() {
+    // Wajibkan jawaban "Membaca Perikop" (Ya/Tidak) sebelum menyimpan.
+    if (perhatianChecks[0]?.[0] === undefined) {
+      return toast.warning("Pilih jawaban untuk 'Membaca Perikop' terlebih dahulu.");
+    }
     // Guard: bila mode Perbaikan Perhatian aktif, paksa baris non-pemicu (selain 1/3/4)
     // kembali ke baseline saat dialog dibuka — jadi hanya 3 parameter pemicu VAR yang benar-benar bisa diubah.
     const perbaikanAktifNow = !!(pesertaId && perbaikanPerhatianIds.has(pesertaId));
