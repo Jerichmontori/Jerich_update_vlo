@@ -1607,8 +1607,8 @@ function PenilaianTab() {
       return toast.warning("Mode Perbaikan Perhatian aktif — hanya kriteria Perhatian yang dapat diubah.");
     }
     if (key === "catatan") {
-      setCatatanValues(CATATAN_ASPEK.map(() => 3));
-      setCatatanClearText(false);
+      setCatatanValues(CATATAN_ASPEK.map(() => null));
+      setCatatanClearText(null);
     }
     if (key === "perhatian") {
       if (!selectedMazmur) return toast.error("Pilih bacaan mazmur terlebih dahulu");
