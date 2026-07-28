@@ -2304,7 +2304,7 @@ function PenilaianTab() {
                           { label: "Ya", val: true },
                           { label: "Tidak", val: false },
                         ].map(opt => {
-                          const active = (row[0] ?? false) === opt.val;
+                          const active = row[0] === opt.val;
                           return (
                             <button
                               key={opt.label}
