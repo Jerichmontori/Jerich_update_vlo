@@ -259,6 +259,7 @@ function OperatorPage() {
               </>
             )}
           </div>
+          <Button variant="secondary" onClick={() => (window.location.href = "/inspektur")}>Inspektur</Button>
           <Button variant="outline" onClick={() => (window.location.href = "/dashboard")}>Ke Dashboard</Button>
         </div>
       </header>
