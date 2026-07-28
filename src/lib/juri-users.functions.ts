@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-type Role = "admin" | "juri" | "panitia";
+type Role = "admin" | "juri" | "panitia" | "inspektur" | "ketua_juri";
+const ALL_ROLES: Role[] = ["admin", "juri", "panitia", "inspektur", "ketua_juri"];
 
 type CreateInput = {
   nama: string;
