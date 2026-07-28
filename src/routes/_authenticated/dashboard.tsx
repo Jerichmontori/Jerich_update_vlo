@@ -1882,12 +1882,19 @@ function PenilaianTab() {
                     <Button
                       size="lg"
                       onClick={requestKirim}
-                      disabled={saving || (!editMode && scored.length === 0)}
+                      disabled={
+                        saving ||
+                        (!editMode && scored.length === 0) ||
+                        (!editMode && !!submittedFor && submittedFor === pesertaId)
+                      }
                       className="gap-2 min-w-[160px]"
                     >
                       <Check className="size-4" />
-                      {editMode ? "Kirim Perubahan" : "Kirim"}
+                      {(!editMode && !!submittedFor && submittedFor === pesertaId)
+                        ? "Sudah Dikirim"
+                        : editMode ? "Kirim Perubahan" : "Kirim"}
                     </Button>
+
                   </div>
                 </div>
 
