@@ -29,7 +29,7 @@ type PenilaianDetail =
   | { type: "catatan"; clearText: boolean; aspek: { nama: string; nilai: number; skipped?: boolean }[] }
   | { type: "perhatian"; membacaPerikop: boolean | null; aspek: { nama: string; ayat: boolean[]; ditandai: number[] }[] }
   | null;
-type Penilaian = { id: string; peserta_id: string; juri_id: string; kriteria_id: string; nilai: number; mazmur_id: string | null; detail?: PenilaianDetail };
+type Penilaian = { id: string; peserta_id: string; juri_id: string; kriteria_id: string; nilai: number; mazmur_id: string | null; detail?: PenilaianDetail; created_at?: string };
 type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: string | null; total_skor: number; rata_rata: number; jumlah_juri: number };
 type Kategori = { id: string; kategori: string | null; batas_atas: number; batas_bawah: number; kriteria_penilaian: string | null; kriteria_peserta: string | null; bobot: number; nilai_tengah: number; nilai_standart: number };
 
@@ -1101,6 +1101,9 @@ function PenilaianTab() {
   const [judgesDoneForPeserta, setJudgesDoneForPeserta] = useState<number>(0);
   // Aturan #6 — konfirmasi kirim
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // Mode edit: dipicu setelah user menekan OK di dialog perbedaan.
+  // Hanya field peserta & mazmur yang aktif; nilai kriteria yang sudah ada TIDAK direset.
+  const [editMode, setEditMode] = useState<{ oldPesertaId: string } | null>(null);
   // Aturan — deteksi perbedaan input antar juri (nama peserta & bacaan mazmur)
   type DiscrepancyReport = {
     pesertaId: string;
@@ -1116,6 +1119,7 @@ function PenilaianTab() {
     const { data: userData } = await supabase.auth.getUser();
     const uid = userData.user?.id ?? null;
     let admin = false;
+    let profJuriId: string | null = null;
     if (uid) {
       const { data: adminCheck } = await supabase.rpc("has_role", { _user_id: uid, _role: "admin" as any });
       admin = !!adminCheck;
@@ -1126,6 +1130,7 @@ function PenilaianTab() {
         .eq("id", uid)
         .maybeSingle();
       if (prof?.juri_id) {
+        profJuriId = prof.juri_id;
         setMyJuriId(prof.juri_id);
         setMyJuriNama(prof.nama ?? "");
         if (!admin) setJuriId(prof.juri_id);
@@ -1139,12 +1144,67 @@ function PenilaianTab() {
       supabase.from("penilaian").select("*"),
     ]);
     if (p.error || j.error || k.error || m.error || n.error) return toast.error("Gagal memuat data");
-    setPeserta(p.data ?? []);
+    const pesertaList = p.data ?? [];
+    const juriList = ((j.data ?? []) as unknown as Juri[]).filter(x => x.approved && x.role === "juri");
+    const kriteriaList = k.data ?? [];
+    const mazmurList = (m.data ?? []) as Mazmur[];
+    const penilaianList = (n.data ?? []) as Penilaian[];
+    setPeserta(pesertaList);
     // Admin tidak merangkap sebagai juri — hanya tampilkan yang role="juri" & sudah disetujui
-    setJuri(((j.data ?? []) as unknown as Juri[]).filter(x => x.approved && x.role === "juri"));
-    setKriteria(k.data ?? []);
-    setMazmur((m.data ?? []) as Mazmur[]);
-    setPenilaian((n.data ?? []) as Penilaian[]);
+    setJuri(juriList);
+    setKriteria(kriteriaList);
+    setMazmur(mazmurList);
+    setPenilaian(penilaianList);
+
+    // Restore state setelah refresh: jika juri sudah menilai semua kriteria untuk seorang peserta
+    // tapi belum semua juri selesai, tampilkan overlay "menunggu". Jika sudah semua juri selesai
+    // dan ada perbedaan input, tampilkan dialog perbedaan.
+    const activeJuriId = admin ? (juriId || "") : (profJuriId || "");
+    if (activeJuriId && kriteriaList.length > 0 && !editMode) {
+      const kriteriaIds = new Set(kriteriaList.map((x: any) => x.id));
+      const byPeserta: Record<string, { done: Set<string>; latest: string }> = {};
+      penilaianList.forEach(pn => {
+        if (pn.juri_id !== activeJuriId) return;
+        if (!kriteriaIds.has(pn.kriteria_id)) return;
+        const ts = pn.created_at ?? "";
+        const cur = byPeserta[pn.peserta_id] ??= { done: new Set<string>(), latest: ts };
+        cur.done.add(pn.kriteria_id);
+        if (ts > cur.latest) cur.latest = ts;
+      });
+      const fullyScored = Object.entries(byPeserta)
+        .filter(([, v]) => v.done.size >= kriteriaIds.size)
+        .sort((a, b) => (a[1].latest < b[1].latest ? 1 : -1));
+
+      if (fullyScored.length > 0) {
+        const { data: rankData } = await supabase.rpc("get_ranking" as any);
+        const rank = (rankData ?? []) as unknown as Ranking[];
+        const total = juriList.length;
+        // Peserta paling baru yang masih pending juri lain
+        const pending = fullyScored.find(([pid]) => {
+          const r = rank.find(x => x.peserta_id === pid);
+          const done = r ? Number(r.jumlah_juri) : 0;
+          return total > 0 && done < total;
+        });
+        if (pending) {
+          const [pid] = pending;
+          const myRow = penilaianList.find(x => x.juri_id === activeJuriId && x.peserta_id === pid && x.mazmur_id);
+          setSubmittedFor(pid);
+          setPesertaId(pid);
+          if (myRow?.mazmur_id) setMazmurId(myRow.mazmur_id);
+        } else {
+          // Semua juri sudah selesai untuk peserta terakhir yang saya nilai — cek perbedaan.
+          const [pid] = fullyScored[0];
+          const myRow = penilaianList.find(x => x.juri_id === activeJuriId && x.peserta_id === pid && x.mazmur_id);
+          setPesertaId(pid);
+          if (myRow?.mazmur_id) setMazmurId(myRow.mazmur_id);
+          const report = await checkDiscrepancyWith(pid, mazmurList, pesertaList);
+          if (report) {
+            setDiscrepancy(report);
+            setSubmittedFor(null);
+          }
+        }
+      }
+    }
   }
   useEffect(() => { loadAll(); }, []);
 
@@ -1162,11 +1222,14 @@ function PenilaianTab() {
       const done = row ? Number(row.jumlah_juri) : 0;
       setJudgesDoneForPeserta(done);
       if (totalJuriApproved > 0 && done >= totalJuriApproved) {
-        // Jika ada perbedaan input mazmur/peserta antar juri, JANGAN buka kunci —
-        // biarkan overlay "menunggu penilaian juri lain" tetap tampil sampai data selaras.
+        // Semua juri sudah kirim → periksa perbedaan input.
         const report = await checkDiscrepancy(submittedFor!);
         if (report) {
-          return; // tetap terkunci, lanjut polling
+          stopped = true;
+          setDiscrepancy(report);
+          setSubmittedFor(null);
+          setJudgesDoneForPeserta(0);
+          return;
         }
         stopped = true;
         toast.success("✦ Semua juri sudah menilai", {
@@ -1187,7 +1250,11 @@ function PenilaianTab() {
   }, [submittedFor, totalJuriApproved]);
 
   // Bandingkan bacaan mazmur antar juri untuk peserta tsb.
-  async function checkDiscrepancy(pesertaIdCheck: string): Promise<DiscrepancyReport | null> {
+  async function checkDiscrepancyWith(
+    pesertaIdCheck: string,
+    mazmurArr: Mazmur[],
+    pesertaArr: Peserta[]
+  ): Promise<DiscrepancyReport | null> {
     const { data: rows } = await supabase
       .from("penilaian")
       .select("juri_id, mazmur_id")
@@ -1197,9 +1264,8 @@ function PenilaianTab() {
     const juriMap = new Map<string, string>();
     ((juriRows ?? []) as unknown as { id: string; nama: string }[]).forEach(j => juriMap.set(j.id, j.nama));
     const mazmurMap = new Map<string, string>();
-    mazmur.forEach(m => mazmurMap.set(m.id, m.bacaan));
+    mazmurArr.forEach(m => mazmurMap.set(m.id, m.bacaan));
 
-    // Mazmur per juri (setiap juri seharusnya konsisten pada satu bacaan)
     const juriMazmur = new Map<string, string | null>();
     for (const r of rows) {
       if (!juriMazmur.has(r.juri_id)) juriMazmur.set(r.juri_id, r.mazmur_id ?? null);
@@ -1214,32 +1280,27 @@ function PenilaianTab() {
     }
 
     if (!mazmurReport) return null;
-    const pesertaNama = peserta.find(p => p.id === pesertaIdCheck)?.nama ?? "—";
+    const pesertaNama = pesertaArr.find(p => p.id === pesertaIdCheck)?.nama ?? "—";
     return { pesertaId: pesertaIdCheck, pesertaNama, mazmur: mazmurReport };
+  }
+
+  async function checkDiscrepancy(pesertaIdCheck: string): Promise<DiscrepancyReport | null> {
+    return checkDiscrepancyWith(pesertaIdCheck, mazmur, peserta);
   }
 
 
   async function perbaikiPenilaianSaya() {
     if (!discrepancy) return;
-    const juriTarget = juriId;
     const pesertaTarget = discrepancy.pesertaId;
-    if (!juriTarget) { setDiscrepancy(null); return; }
-    // Hapus penilaian juri ini untuk peserta tsb agar bisa dinilai ulang
-    const { error } = await supabase
-      .from("penilaian")
-      .delete()
-      .eq("peserta_id", pesertaTarget)
-      .eq("juri_id", juriTarget);
-    if (error) { toast.error(error.message); return; }
-    toast.warning("✦ Silakan menilai ulang", {
-      description: "Form penilaian peserta terakhir kembali aktif. Silakan input ulang sesuai kesepakatan.",
+    toast.warning("✦ Lakukan perubahan", {
+      description: "Silakan perbaiki pilihan Peserta atau Bacaan Mazmur, lalu klik Kirim. Nilai kriteria Anda tetap disimpan.",
     });
     setDiscrepancy(null);
     setSubmittedFor(null);
     setJudgesDoneForPeserta(0);
-    setPesertaId(pesertaTarget); // aktifkan peserta terakhir yang dinilai
+    setEditMode({ oldPesertaId: pesertaTarget });
+    setPesertaId(pesertaTarget);
     setOpenKriteria(null);
-    loadAll();
   }
 
 
@@ -1255,6 +1316,7 @@ function PenilaianTab() {
   }
 
   function openDialog(k: Kriteria) {
+    if (editMode) return toast.warning("Mode perubahan aktif — hanya Peserta & Bacaan Mazmur yang dapat diubah.");
     if (!juriId) return toast.error("Pilih juri terlebih dahulu");
     if (!pesertaId) return toast.error("Pilih peserta terlebih dahulu");
     const key = kriteriaKey(k.nama);
@@ -1395,6 +1457,7 @@ function PenilaianTab() {
               <Select
                 value={pesertaId}
                 onValueChange={(val) => {
+                  if (editMode) { setPesertaId(val); return; }
                   const kriteriaIds = new Set(kriteria.map(k => k.id));
                   const scoredKrit = new Set(
                     penilaian
@@ -1511,12 +1574,34 @@ function PenilaianTab() {
 
             function requestKirim() {
               if (!juriId || !pesertaId) return toast.error("Pilih juri dan peserta");
+              if (editMode) {
+                if (!mazmurId) return toast.error("Pilih bacaan mazmur");
+                setConfirmOpen(true);
+                return;
+              }
               if (scored.length === 0) return toast.error("Belum ada nilai yang diberikan");
               setConfirmOpen(true);
             }
 
             async function doKirim() {
               setConfirmOpen(false);
+              if (editMode) {
+                // Update penilaian juri ini utk peserta lama → peserta baru & mazmur baru.
+                const { error } = await supabase
+                  .from("penilaian")
+                  .update({ peserta_id: pesertaId, mazmur_id: mazmurId || null } as any)
+                  .eq("juri_id", juriId)
+                  .eq("peserta_id", editMode.oldPesertaId);
+                if (error) { toast.error(error.message); return; }
+                toast.success("✦ Perubahan tersimpan", {
+                  description: `Penilaian diperbarui untuk ${currentPesertaLabel}.`,
+                });
+                setEditMode(null);
+                setSubmittedFor(pesertaId);
+                setOpenKriteria(null);
+                await loadAll();
+                return;
+              }
               toast.success("✦ Penilaian dikirim", {
                 description: `Penilaian untuk ${currentPesertaLabel} tersimpan.`,
               });
@@ -1527,6 +1612,14 @@ function PenilaianTab() {
 
             return (
               <>
+                {editMode && (
+                  <div className="rounded-2xl border-2 border-destructive/40 bg-destructive/5 p-4 mb-4">
+                    <div className="font-serif text-lg text-destructive">✦ Mode Perubahan</div>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Silakan perbaiki pilihan <b>Peserta</b> dan/atau <b>Bacaan Mazmur</b> agar sesuai dengan juri lain, lalu klik <b>Kirim</b>. Nilai kriteria yang sudah Anda berikan tetap disimpan.
+                    </p>
+                  </div>
+                )}
                 <div className="rounded-2xl border-2 border-accent/40 bg-gradient-to-br from-card to-secondary/40 p-5 sm:p-6 mb-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="text-sm text-muted-foreground">
@@ -1543,11 +1636,11 @@ function PenilaianTab() {
                     <Button
                       size="lg"
                       onClick={requestKirim}
-                      disabled={saving || scored.length === 0}
+                      disabled={saving || (!editMode && scored.length === 0)}
                       className="gap-2 min-w-[160px]"
                     >
                       <Check className="size-4" />
-                      Kirim
+                      {editMode ? "Kirim Perubahan" : "Kirim"}
                     </Button>
                   </div>
                 </div>
@@ -1558,7 +1651,11 @@ function PenilaianTab() {
                     <DialogHeader>
                       <DialogTitle className="font-serif text-xl">Konfirmasi Pengiriman</DialogTitle>
                       <DialogDescription>
-                        Apakah Anda yakin akan mengirim penilaian untuk <b>{currentPesertaLabel}</b>?
+                        {editMode ? (
+                          <>Perbarui penilaian menjadi <b>{currentPesertaLabel}</b>?</>
+                        ) : (
+                          <>Apakah Anda yakin akan mengirim penilaian untuk <b>{currentPesertaLabel}</b>?</>
+                        )}
                         {allDone && nilaiAkhir !== null && (
                           <span className="block mt-2">
                             Nilai akhir yang akan dikirim: <b>{nilaiAkhir.toFixed(2)}</b>.
@@ -1616,12 +1713,12 @@ function PenilaianTab() {
               </div>
             )}
             <p className="text-xs text-muted-foreground pt-2">
-              Klik <b>OK</b> untuk mengaktifkan kembali penilaian peserta ini. Penilaian Anda untuk peserta tersebut akan dihapus agar dapat diinput ulang sesuai kesepakatan.
+              Klik <b>OK</b> untuk mengaktifkan kembali penilaian peserta ini. Hanya pilihan <b>Peserta</b> dan <b>Bacaan Mazmur</b> yang dapat diubah — nilai kriteria yang sudah Anda berikan tetap tersimpan.
             </p>
           </div>
           <DialogFooter>
             <Button onClick={perbaikiPenilaianSaya} className="gap-1 w-full sm:w-auto">
-              <Check className="size-4" /> OK
+              <Check className="size-4" /> OK, Lakukan Perubahan
             </Button>
           </DialogFooter>
         </DialogContent>
