@@ -28,7 +28,7 @@ export const createJuriUser = createServerFn({ method: "POST" })
       throw new Error("nama, email, password, role wajib diisi");
     }
     if (data.password.length < 8) throw new Error("Password minimal 8 karakter");
-    if (!["admin", "juri"].includes(data.role)) throw new Error("Role tidak valid");
+    if (!["admin", "juri", "panitia"].includes(data.role)) throw new Error("Role tidak valid");
     return data;
   })
   .handler(async ({ data, context }) => {
