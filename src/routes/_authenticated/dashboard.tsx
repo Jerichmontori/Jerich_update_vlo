@@ -3251,9 +3251,17 @@ function RincianNilaiTab() {
                     {[p.kategori && `Kategori: ${p.kategori}`, p.asal && `Asal: ${p.asal}`, p.sesi && `Sesi: ${p.sesi}`].filter(Boolean).join(" • ") || "—"}
                   </div>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => downloadSatu(p)} className="gap-2">
-                  <Download className="size-4" /> Unduh PDF
-                </Button>
+                <div className="flex items-center gap-3">
+                  {nilaiAkhirMap[p.id] != null && (
+                    <div className="rounded-md border border-primary/30 bg-primary/10 px-3 py-1.5 text-right">
+                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Nilai Akhir</div>
+                      <div className="font-serif font-semibold text-primary text-lg leading-none">{Number(nilaiAkhirMap[p.id]).toFixed(3)}</div>
+                    </div>
+                  )}
+                  <Button size="sm" variant="outline" onClick={() => downloadSatu(p)} className="gap-2">
+                    <Download className="size-4" /> Unduh PDF
+                  </Button>
+                </div>
               </div>
               {juriDenganNilai.length === 0 ? (
                 <div className="text-sm text-muted-foreground italic">Belum ada penilaian.</div>
