@@ -1101,13 +1101,14 @@ function PenilaianTab() {
   const [judgesDoneForPeserta, setJudgesDoneForPeserta] = useState<number>(0);
   // Aturan #6 — konfirmasi kirim
   const [confirmOpen, setConfirmOpen] = useState(false);
-  // Aturan #1 & #2 — deteksi perbedaan input antar juri
+  // Aturan — deteksi perbedaan input antar juri (nama peserta & bacaan mazmur)
   type DiscrepancyReport = {
     pesertaId: string;
+    pesertaNama: string;
     mazmur: { juriNama: string; mazmurLabel: string }[] | null;
-    perhatian: { questionLabel: string; entries: { juriNama: string; ditandai: number[] }[] }[];
   };
   const [discrepancy, setDiscrepancy] = useState<DiscrepancyReport | null>(null);
+
 
 
 
@@ -1185,11 +1186,11 @@ function PenilaianTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submittedFor, totalJuriApproved]);
 
-  // Bandingkan mazmur & perhatian (Q2, Q4, Q5) antar juri untuk peserta tsb.
+  // Bandingkan bacaan mazmur antar juri untuk peserta tsb.
   async function checkDiscrepancy(pesertaIdCheck: string): Promise<DiscrepancyReport | null> {
     const { data: rows } = await supabase
       .from("penilaian")
-      .select("juri_id, mazmur_id, kriteria_id, detail")
+      .select("juri_id, mazmur_id")
       .eq("peserta_id", pesertaIdCheck);
     if (!rows || rows.length === 0) return null;
     const { data: juriRows } = await supabase.from("juri_public" as any).select("id, nama");
@@ -1198,7 +1199,7 @@ function PenilaianTab() {
     const mazmurMap = new Map<string, string>();
     mazmur.forEach(m => mazmurMap.set(m.id, m.bacaan));
 
-    // Mazmur per juri (ambil salah satu baris; setiap juri seharusnya konsisten)
+    // Mazmur per juri (setiap juri seharusnya konsisten pada satu bacaan)
     const juriMazmur = new Map<string, string | null>();
     for (const r of rows) {
       if (!juriMazmur.has(r.juri_id)) juriMazmur.set(r.juri_id, r.mazmur_id ?? null);
@@ -1212,66 +1213,35 @@ function PenilaianTab() {
       }));
     }
 
-    // Perhatian — bandingkan pertanyaan 2, 4, 5 (aspek index 0, 2, 3 di detail.aspek)
-    const perhatianKrit = kriteria.find(k => kriteriaKey(k.nama) === "perhatian");
-    const perhatianReport: DiscrepancyReport["perhatian"] = [];
-    if (perhatianKrit) {
-      const perJuri = new Map<string, any>();
-      for (const r of rows) {
-        if (r.kriteria_id === perhatianKrit.id) perJuri.set(r.juri_id, r.detail);
-      }
-      const targetIdx = [0, 2, 3]; // Q2, Q4, Q5
-      const targetLabels = ["Salah kata", "Menambah kata", "Mengurangi kata"];
-      for (let ti = 0; ti < targetIdx.length; ti++) {
-        const idx = targetIdx[ti];
-        const entries: { juriNama: string; ditandai: number[] }[] = [];
-        for (const [jid, det] of perJuri.entries()) {
-          const aspek = (det?.aspek ?? [])[idx];
-          const ditandai: number[] = Array.isArray(aspek?.ditandai) ? aspek.ditandai : [];
-          entries.push({ juriNama: juriMap.get(jid) ?? "—", ditandai });
-        }
-        // Bandingkan sebagai set ayat
-        const sig = new Set(entries.map(e => JSON.stringify([...e.ditandai].sort((a, b) => a - b))));
-        if (sig.size > 1) {
-          perhatianReport.push({ questionLabel: `${idx + 2}. ${targetLabels[ti]}`, entries });
-        }
-      }
-    }
-
-    if (!mazmurReport && perhatianReport.length === 0) return null;
-    return { pesertaId: pesertaIdCheck, mazmur: mazmurReport, perhatian: perhatianReport };
+    if (!mazmurReport) return null;
+    const pesertaNama = peserta.find(p => p.id === pesertaIdCheck)?.nama ?? "—";
+    return { pesertaId: pesertaIdCheck, pesertaNama, mazmur: mazmurReport };
   }
+
 
   async function perbaikiPenilaianSaya() {
     if (!discrepancy) return;
     const juriTarget = juriId;
+    const pesertaTarget = discrepancy.pesertaId;
     if (!juriTarget) { setDiscrepancy(null); return; }
     // Hapus penilaian juri ini untuk peserta tsb agar bisa dinilai ulang
     const { error } = await supabase
       .from("penilaian")
       .delete()
-      .eq("peserta_id", discrepancy.pesertaId)
+      .eq("peserta_id", pesertaTarget)
       .eq("juri_id", juriTarget);
     if (error) { toast.error(error.message); return; }
     toast.warning("✦ Silakan menilai ulang", {
-      description: "Penilaian Anda dihapus untuk peserta ini. Silakan input ulang sesuai kesepakatan.",
+      description: "Form penilaian peserta terakhir kembali aktif. Silakan input ulang sesuai kesepakatan.",
     });
     setDiscrepancy(null);
     setSubmittedFor(null);
     setJudgesDoneForPeserta(0);
-    // pesertaId & mazmurId dipertahankan
+    setPesertaId(pesertaTarget); // aktifkan peserta terakhir yang dinilai
+    setOpenKriteria(null);
     loadAll();
   }
 
-  function abaikanPerbedaan() {
-    setDiscrepancy(null);
-    setSubmittedFor(null);
-    setPesertaId("");
-    setMazmurId("");
-    setOpenKriteria(null);
-    setJudgesDoneForPeserta(0);
-    loadAll();
-  }
 
 
 
@@ -1611,18 +1581,27 @@ function PenilaianTab() {
         </div>
       )}
 
-      {/* Aturan #1 & #2 — dialog perbedaan input antar juri */}
-      <Dialog open={!!discrepancy} onOpenChange={(v) => { if (!v) setDiscrepancy(null); }}>
-        <DialogContent className="max-w-lg">
+      {/* Dialog perbedaan input antar juri — nama peserta & bacaan mazmur */}
+      <Dialog open={!!discrepancy} onOpenChange={() => { /* wajib konfirmasi OK */ }}>
+        <DialogContent
+          className="max-w-lg"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle className="font-serif text-xl text-destructive">
-              ✦ Potensi Var — Ada Perbedaan Input Juri
+              ✦ Perbedaan Data Antar Juri
             </DialogTitle>
             <DialogDescription>
-              Ditemukan perbedaan data antar juri untuk peserta yang sama. Silakan periksa perbedaan berikut.
+              Semua juri telah mengirim penilaian, namun ditemukan perbedaan input. Form penilaian dikunci sampai Anda menekan <b>OK</b>.
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[55dvh] overflow-y-auto space-y-3 text-sm">
+            <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-3">
+              <div className="font-semibold mb-1">Peserta</div>
+              <div className="font-serif text-lg">{discrepancy?.pesertaNama}</div>
+            </div>
             {discrepancy?.mazmur && (
               <div className="rounded-lg border-2 border-destructive/40 bg-destructive/5 p-3">
                 <div className="font-semibold mb-2">Perbedaan Bacaan Mazmur</div>
@@ -1636,33 +1615,18 @@ function PenilaianTab() {
                 </ul>
               </div>
             )}
-            {discrepancy?.perhatian.map((p, pi) => (
-              <div key={pi} className="rounded-lg border-2 border-accent/50 bg-accent/5 p-3">
-                <div className="font-semibold mb-2">Perhatian — Pertanyaan {p.questionLabel}</div>
-                <ul className="space-y-1">
-                  {p.entries.map((e, ei) => (
-                    <li key={ei} className="flex justify-between gap-2">
-                      <span className="text-muted-foreground">{e.juriNama}</span>
-                      <span className="font-medium text-right">
-                        {e.ditandai.length ? `Ayat ${e.ditandai.join(", ")}` : "(tidak ada)"}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
             <p className="text-xs text-muted-foreground pt-2">
-              Apakah Anda ingin menilai ulang peserta ini agar sesuai dengan juri lain?
+              Klik <b>OK</b> untuk mengaktifkan kembali penilaian peserta ini. Penilaian Anda untuk peserta tersebut akan dihapus agar dapat diinput ulang sesuai kesepakatan.
             </p>
           </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={abaikanPerbedaan}>Tidak, lanjutkan</Button>
-            <Button onClick={perbaikiPenilaianSaya} className="gap-1">
-              <Check className="size-4" /> Ya, nilai ulang
+          <DialogFooter>
+            <Button onClick={perbaikiPenilaianSaya} className="gap-1 w-full sm:w-auto">
+              <Check className="size-4" /> OK
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
 
 
 
