@@ -1222,11 +1222,14 @@ function PenilaianTab() {
       const done = row ? Number(row.jumlah_juri) : 0;
       setJudgesDoneForPeserta(done);
       if (totalJuriApproved > 0 && done >= totalJuriApproved) {
-        // Jika ada perbedaan input mazmur/peserta antar juri, JANGAN buka kunci —
-        // biarkan overlay "menunggu penilaian juri lain" tetap tampil sampai data selaras.
+        // Semua juri sudah kirim → periksa perbedaan input.
         const report = await checkDiscrepancy(submittedFor!);
         if (report) {
-          return; // tetap terkunci, lanjut polling
+          stopped = true;
+          setDiscrepancy(report);
+          setSubmittedFor(null);
+          setJudgesDoneForPeserta(0);
+          return;
         }
         stopped = true;
         toast.success("✦ Semua juri sudah menilai", {
