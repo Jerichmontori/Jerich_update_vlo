@@ -49,7 +49,13 @@ function OperatorPage() {
       ]);
       const ok = !!isPan || !!isAdm;
       setAllowed(ok);
-      if (!ok) window.location.href = "/dashboard";
+      if (!ok) { window.location.href = "/dashboard"; return; }
+      const { data: prof } = await supabase.from("profiles").select("nama").eq("id", uid).maybeSingle();
+      setCurrentUser({
+        nama: prof?.nama ?? (u.user?.email?.split("@")[0] ?? "Pengguna"),
+        email: u.user?.email ?? "",
+        role: isAdm ? "Admin" : "Panitia",
+      });
     })();
   }, []);
 
