@@ -34,8 +34,10 @@ function OperatorPage() {
   const [selectedMazmur, setSelectedMazmur] = useState<string>("");
   const [juriTotal, setJuriTotal] = useState<number>(0);
   const [juriDone, setJuriDone] = useState<number>(0);
+  const [submissionCounts, setSubmissionCounts] = useState<Record<string, number>>({});
   const [busy, setBusy] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ nama: string; email: string; role: string } | null>(null);
+
 
   // Role gate
   useEffect(() => {
@@ -97,7 +99,19 @@ function OperatorPage() {
     } else {
       setJuriDone(0);
     }
+    // Hitung submission per peserta untuk status "sudah dinilai"
+    const { data: allSubs } = await supabase
+      .from("penilaian_submission" as any)
+      .select("peserta_id, juri_id");
+    const map: Record<string, Set<string>> = {};
+    ((allSubs as any[] | null) ?? []).forEach((s: any) => {
+      (map[s.peserta_id] ??= new Set()).add(s.juri_id);
+    });
+    const counts: Record<string, number> = {};
+    Object.entries(map).forEach(([pid, set]) => { counts[pid] = set.size; });
+    setSubmissionCounts(counts);
   }
+
 
   useEffect(() => {
     if (!allowed) return;
@@ -315,10 +329,17 @@ function OperatorPage() {
                 <Select value={selectedPeserta} onValueChange={(v) => { setSelectedPeserta(v); logAudit("pilih_peserta", { peserta_id: v }); }} disabled={!!sesi}>
                   <SelectTrigger><SelectValue placeholder="Pilih peserta" /></SelectTrigger>
                   <SelectContent>
-                    {peserta.map(p => (
-                      <SelectItem key={p.id} value={p.id}>{p.nomor_urut}. {p.nama}{p.asal ? ` — ${p.asal}` : ""}</SelectItem>
-                    ))}
+                    {peserta.map(p => {
+                      const done = submissionCounts[p.id] ?? 0;
+                      const sudah = juriTotal > 0 && done >= juriTotal;
+                      return (
+                        <SelectItem key={p.id} value={p.id} disabled={sudah}>
+                          {p.nomor_urut}. {p.nama}{p.asal ? ` — ${p.asal}` : ""}{sudah ? "  ✓ sudah dinilai" : ""}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
+
                 </Select>
               </div>
               <div>
@@ -377,33 +398,54 @@ function OperatorPage() {
                     <TableHead>Nama</TableHead>
                     <TableHead>Asal</TableHead>
                     <TableHead>Kategori</TableHead>
+                    <TableHead>Status</TableHead>
                     <TableHead className="text-right w-56">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {peserta.length === 0 && (
-                    <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">Belum ada peserta.</TableCell></TableRow>
+                    <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Belum ada peserta.</TableCell></TableRow>
                   )}
-                  {peserta.map(p => (
-                    <TableRow key={p.id}>
-                      <TableCell className="font-medium">{p.nomor_urut}</TableCell>
-                      <TableCell>{p.nama}</TableCell>
-                      <TableCell className="text-muted-foreground">{p.asal || "—"}</TableCell>
-                      <TableCell className="text-muted-foreground">{p.kategori || "—"}</TableCell>
-                      <TableCell className="text-right space-x-1">
-                        <Button size="icon" variant="ghost" disabled={busy} onClick={() => pindahkanUrutan(p.id, "atas")}>
-                          <ArrowUp className="size-4" />
-                        </Button>
-                        <Button size="icon" variant="ghost" disabled={busy} onClick={() => pindahkanUrutan(p.id, "bawah")}>
-                          <ArrowDown className="size-4" />
-                        </Button>
-                        <Button size="sm" variant="outline" disabled={!!sesi} onClick={() => { setSelectedPeserta(p.id); logAudit("pilih_peserta", { peserta_id: p.id }); toast.success(`Peserta dipilih: ${p.nama}`); }}>
-                          Pilih
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {peserta.map(p => {
+                    const done = submissionCounts[p.id] ?? 0;
+                    const sudahDinilai = juriTotal > 0 && done >= juriTotal;
+                    return (
+                      <TableRow key={p.id} className={sudahDinilai ? "opacity-70" : ""}>
+                        <TableCell className="font-medium">{p.nomor_urut}</TableCell>
+                        <TableCell>{p.nama}</TableCell>
+                        <TableCell className="text-muted-foreground">{p.asal || "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{p.kategori || "—"}</TableCell>
+                        <TableCell>
+                          {sudahDinilai ? (
+                            <Badge className="bg-accent text-accent-foreground">Sudah dinilai</Badge>
+                          ) : done > 0 ? (
+                            <Badge variant="outline">{done}/{juriTotal} juri</Badge>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">Belum dinilai</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right space-x-1">
+                          <Button size="icon" variant="ghost" disabled={busy} onClick={() => pindahkanUrutan(p.id, "atas")}>
+                            <ArrowUp className="size-4" />
+                          </Button>
+                          <Button size="icon" variant="ghost" disabled={busy} onClick={() => pindahkanUrutan(p.id, "bawah")}>
+                            <ArrowDown className="size-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={!!sesi || sudahDinilai}
+                            title={sudahDinilai ? "Peserta ini sudah dinilai semua juri" : undefined}
+                            onClick={() => { setSelectedPeserta(p.id); logAudit("pilih_peserta", { peserta_id: p.id }); toast.success(`Peserta dipilih: ${p.nama}`); }}
+                          >
+                            {sudahDinilai ? "Selesai" : "Pilih"}
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
+
               </Table>
             </div>
           </CardContent>
