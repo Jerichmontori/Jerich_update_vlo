@@ -1104,21 +1104,25 @@ function kriteriaKey(nama: string): keyof typeof GRADE_DESCRIPTIONS | "catatan" 
 function CriteriaPillButton({
   label,
   active,
+  disabled,
   onClick,
 }: {
   label: string;
   active: boolean;
+  disabled?: boolean;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
+      aria-disabled={disabled}
       className={[
         "group relative w-full rounded-[2rem] border-[2px] border-primary/40 px-6 py-8 sm:py-10",
         "text-center font-serif transition-all duration-200 ease-out",
         "focus:outline-none focus-visible:ring-4 focus-visible:ring-accent/50",
-        "translate-y-0 hover:-translate-y-1 active:translate-y-1",
+        disabled ? "opacity-40 cursor-not-allowed grayscale" : "translate-y-0 hover:-translate-y-1 active:translate-y-1",
         active
           ? "bg-gradient-to-b from-accent/90 to-accent text-accent-foreground border-primary/70 shadow-[0_8px_0_0_hsl(var(--primary)/0.6),0_16px_24px_-6px_hsl(var(--primary)/0.35)] active:shadow-[0_3px_0_0_hsl(var(--primary)/0.6),0_6px_10px_-2px_hsl(var(--primary)/0.3)]"
           : "bg-gradient-to-b from-card to-secondary/60 text-foreground shadow-[0_6px_0_0_hsl(var(--primary)/0.35),0_12px_20px_-6px_hsl(var(--primary)/0.25)] hover:shadow-[0_10px_0_0_hsl(var(--primary)/0.45),0_18px_28px_-6px_hsl(var(--primary)/0.35)] active:shadow-[0_3px_0_0_hsl(var(--primary)/0.35),0_6px_10px_-2px_hsl(var(--primary)/0.25)]",
@@ -1261,6 +1265,17 @@ function PenilaianTab() {
     const id = setInterval(poll, 3000);
     return () => { stopped = true; clearInterval(id); };
   }, []);
+  const perbaikanPerhatianIds = new Set(varAktifList.filter(v => v.status === "perbaikan_perhatian").map(v => v.peserta_id));
+  useEffect(() => {
+    if (perbaikanPerhatianIds.size === 0) return;
+    setMySubmittedIds(prev => {
+      let changed = false;
+      const next = new Set(prev);
+      perbaikanPerhatianIds.forEach(id => { if (next.delete(id)) changed = true; });
+      return changed ? next : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [varAktifList]);
   const KOMP_LABEL: Record<string, string> = {
     salah_kata: "Salah kata",
     menambah_kata: "Menambah kata",
@@ -1597,6 +1612,9 @@ function PenilaianTab() {
     if (!juriId) return toast.error("Pilih juri terlebih dahulu");
     if (!pesertaId) return toast.error("Pilih peserta terlebih dahulu");
     const key = kriteriaKey(k.nama);
+    if (pesertaId && perbaikanPerhatianIds.has(pesertaId) && key !== "perhatian") {
+      return toast.warning("Mode Perbaikan Perhatian aktif — hanya kriteria Perhatian yang dapat diubah.");
+    }
     if (key === "catatan") {
       setCatatanValues(CATATAN_ASPEK.map(() => 3));
       setCatatanClearText(false);
@@ -1815,11 +1833,15 @@ function PenilaianTab() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mb-8 pb-4">
             {kriteria.map(k => {
               const val = currentNilai(k.id);
+              const key = kriteriaKey(k.nama);
+              const perbaikanAktif = !!pesertaId && perbaikanPerhatianIds.has(pesertaId);
+              const isDisabled = perbaikanAktif && key !== "perhatian";
               return (
                 <div key={k.id} className="relative">
                   <CriteriaPillButton
                     label={k.nama}
                     active={val !== null}
+                    disabled={isDisabled}
                     onClick={() => openDialog(k)}
                   />
                 </div>
@@ -1901,6 +1923,14 @@ function PenilaianTab() {
                 .from("penilaian_submission" as any)
                 .upsert({ juri_id: juriId, peserta_id: pesertaId } as any, { onConflict: "peserta_id,juri_id" });
               if (subErr) { toast.error(subErr.message); return; }
+              // Jika sedang mode Perbaikan Perhatian, tutup sesi klarifikasi utk peserta ini.
+              if (pesertaId && perbaikanPerhatianIds.has(pesertaId)) {
+                await supabase
+                  .from("var_clarification_session" as any)
+                  .update({ status: "final", finalized_at: new Date().toISOString() } as any)
+                  .eq("peserta_id", pesertaId)
+                  .eq("status", "perbaikan_perhatian");
+              }
               toast.success("✦ Penilaian dikirim", {
                 description: `Penilaian untuk ${currentPesertaLabel} tersimpan.`,
               });
@@ -1911,15 +1941,17 @@ function PenilaianTab() {
               await loadAll({ restoreSubmissionState: false });
             }
 
+            const perbaikanRows = varAktifList.filter(v => v.status === "perbaikan_perhatian");
+            const varRows = varAktifList.filter(v => v.status !== "perbaikan_perhatian");
             return (
               <>
-                {varAktifList.length > 0 && (
+                {varRows.length > 0 && (
                   <div className="rounded-2xl border-2 border-rose-500/60 bg-rose-500/10 p-4 mb-4 animate-pulse">
                     <div className="flex items-center gap-2 font-serif text-lg text-rose-700">
                       <AlertTriangle className="size-5" /> ⚠ POTENSI VAR — Menunggu Keputusan Inspektur
                     </div>
                     <ul className="mt-2 space-y-1 text-sm text-rose-900">
-                      {varAktifList.map((v) => (
+                      {varRows.map((v) => (
                         <li key={v.peserta_id}>
                           <b>{v.peserta_nama || "—"}</b> · Perbedaan pada:{" "}
                           <span className="font-semibold">
@@ -1930,6 +1962,23 @@ function PenilaianTab() {
                     </ul>
                     <p className="mt-2 text-xs text-rose-800/80">
                       Inspektur Pertandingan akan meninjau dan memberi catatan/keputusan. Anda tidak perlu mengubah penilaian yang sudah dikirim.
+                    </p>
+                  </div>
+                )}
+                {perbaikanRows.length > 0 && (
+                  <div className="rounded-2xl border-2 border-amber-500/60 bg-amber-50 p-4 mb-4">
+                    <div className="flex items-center gap-2 font-serif text-lg text-amber-800">
+                      <AlertTriangle className="size-5" /> ✦ Perbaikan Perhatian Dibuka oleh Inspektur
+                    </div>
+                    <ul className="mt-2 space-y-1 text-sm text-amber-900">
+                      {perbaikanRows.map((v) => (
+                        <li key={v.peserta_id}>
+                          <b>{v.peserta_nama || "—"}</b> — silakan buka kembali kriteria <b>Perhatian</b>, samakan jawaban Anda dengan juri lain, lalu klik <b>Kirim</b>.
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-2 text-xs text-amber-800/80">
+                      Kriteria lain terkunci — hanya form Perhatian yang dapat diubah selama mode ini aktif.
                     </p>
                   </div>
                 )}

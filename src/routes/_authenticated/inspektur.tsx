@@ -461,7 +461,26 @@ function InspekturPage() {
             </div>
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="flex-wrap gap-2">
+            {detailData?.var_session && (
+              <Button
+                variant="secondary"
+                onClick={async () => {
+                  if (!detailPeserta) return;
+                  if (!confirm("Buka kembali form Perhatian bagi semua juri untuk peserta ini? Nilai kriteria lain tetap tersimpan.")) return;
+                  const { error } = await supabase.rpc("inspektur_buka_perhatian" as any, {
+                    _peserta: detailPeserta.peserta_id,
+                    _catatan: catatan.trim() || null,
+                  });
+                  if (error) { toast.error(error.message); return; }
+                  toast.success("Form Perhatian dibuka kembali untuk semua juri");
+                  setDetailOpen(false);
+                  loadAll();
+                }}
+              >
+                Buka Perbaikan Perhatian
+              </Button>
+            )}
             <Button variant="outline" onClick={() => setDetailOpen(false)}>Tutup</Button>
             <Button onClick={simpanCatatan} disabled={savingCatatan}>{savingCatatan ? "Menyimpan…" : "Simpan Catatan"}</Button>
           </DialogFooter>
