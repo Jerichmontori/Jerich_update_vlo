@@ -1225,6 +1225,36 @@ function PenilaianTab() {
   }, [activeSession, isAdmin, editMode, submittedFor]);
   const lockPesertaMazmur = !!activeSession && !isAdmin && !editMode;
 
+  // Aturan #2 — Potensi VAR terbuka: banner untuk semua juri; diselesaikan oleh Inspektur
+  type VarAktifRow = { peserta_id: string; peserta_nama: string; komponen: string[]; status: string };
+  const [varAktifList, setVarAktifList] = useState<VarAktifRow[]>([]);
+  useEffect(() => {
+    let stopped = false;
+    async function poll() {
+      const { data } = await supabase
+        .from("var_clarification_session" as any)
+        .select("peserta_id, komponen_berbeda, status, peserta:peserta_id(nama, nomor_urut)")
+        .neq("status", "final");
+      if (stopped) return;
+      const rows = ((data as any[]) ?? []).map((r) => ({
+        peserta_id: r.peserta_id,
+        peserta_nama: r.peserta ? `${r.peserta.nomor_urut ?? ""}. ${r.peserta.nama ?? ""}`.trim().replace(/^\.\s*/, "") : "",
+        komponen: Array.isArray(r.komponen_berbeda) ? (r.komponen_berbeda as string[]) : [],
+        status: r.status,
+      })) as VarAktifRow[];
+      setVarAktifList(rows);
+    }
+    poll();
+    const id = setInterval(poll, 3000);
+    return () => { stopped = true; clearInterval(id); };
+  }, []);
+  const KOMP_LABEL: Record<string, string> = {
+    salah_kata: "Salah kata",
+    menambah_kata: "Menambah kata",
+    mengurangi_kata: "Mengurangi kata",
+  };
+
+
 
 
 
