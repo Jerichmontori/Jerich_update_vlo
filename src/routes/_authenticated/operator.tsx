@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Toaster, toast } from "sonner";
-import { ArrowUp, ArrowDown, Play, Square, RefreshCw, BookOpenText, Users, Gavel } from "lucide-react";
+import { ArrowUp, ArrowDown, Play, Square, RefreshCw, BookOpenText, Users, Gavel, AlertTriangle } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/operator")({
   component: OperatorPage,
