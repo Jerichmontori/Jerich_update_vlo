@@ -1224,6 +1224,11 @@ function PenilaianTab() {
       const row = rows.find(r => r.peserta_id === submittedFor);
       const done = row ? Number(row.jumlah_juri) : 0;
       setJudgesDoneForPeserta(done);
+
+      // Deteksi perbedaan input SELAMA menunggu (peserta/mazmur berbeda antar juri)
+      const pending = await checkPendingDiscrepancy(submittedFor!);
+      if (!stopped) setPendingDiscrepancy(pending);
+
       if (totalJuriApproved > 0 && done >= totalJuriApproved) {
         // Semua juri sudah kirim → periksa perbedaan input.
         const report = await checkDiscrepancy(submittedFor!);
@@ -1231,6 +1236,7 @@ function PenilaianTab() {
           stopped = true;
           setDiscrepancy(report);
           setSubmittedFor(null);
+          setPendingDiscrepancy(null);
           setJudgesDoneForPeserta(0);
           return;
         }
@@ -1239,6 +1245,7 @@ function PenilaianTab() {
           description: "Silahkan melakukan penilaian peserta selanjutnya.",
         });
         setSubmittedFor(null);
+        setPendingDiscrepancy(null);
         setPesertaId("");
         setMazmurId("");
         setOpenKriteria(null);
@@ -1251,6 +1258,54 @@ function PenilaianTab() {
     return () => { stopped = true; clearInterval(id); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submittedFor, totalJuriApproved]);
+
+  // Deteksi perbedaan input antar juri yang SUDAH menilai (dipakai saat overlay menunggu).
+  // Membandingkan peserta_id & mazmur_id terakhir per juri.
+  async function checkPendingDiscrepancy(currentPesertaId: string): Promise<DiscrepancyReport | null> {
+    const { data: rows } = await supabase
+      .from("penilaian")
+      .select("juri_id, peserta_id, mazmur_id, created_at")
+      .order("created_at", { ascending: false });
+    if (!rows || rows.length === 0) return null;
+    const { data: juriRows } = await supabase.from("juri_public" as any).select("id, nama");
+    const juriMap = new Map<string, string>();
+    ((juriRows ?? []) as unknown as { id: string; nama: string }[]).forEach(j => juriMap.set(j.id, j.nama));
+    const mazmurMap = new Map<string, string>();
+    mazmur.forEach(m => mazmurMap.set(m.id, m.bacaan));
+    const pesertaMap = new Map<string, string>();
+    peserta.forEach(p => pesertaMap.set(p.id, `#${p.nomor_urut} ${p.nama}`));
+
+    // Ambil pilihan TERAKHIR (peserta & mazmur) per juri
+    const latest = new Map<string, { peserta_id: string; mazmur_id: string | null }>();
+    for (const r of rows as any[]) {
+      if (!latest.has(r.juri_id)) latest.set(r.juri_id, { peserta_id: r.peserta_id, mazmur_id: r.mazmur_id ?? null });
+    }
+    if (latest.size < 2) return null;
+
+    const pesertaSet = new Set(Array.from(latest.values()).map(v => v.peserta_id));
+    let pesertaReport: DiscrepancyReport["peserta"] = null;
+    if (pesertaSet.size > 1) {
+      pesertaReport = Array.from(latest.entries()).map(([jid, v]) => ({
+        juriNama: juriMap.get(jid) ?? "—",
+        pesertaLabel: pesertaMap.get(v.peserta_id) ?? "—",
+      }));
+    }
+
+    // Bandingkan mazmur juri yang menilai peserta yang sama (current)
+    const juriSamePeserta = Array.from(latest.entries()).filter(([, v]) => v.peserta_id === currentPesertaId);
+    const distinctMazmur = new Set(juriSamePeserta.map(([, v]) => v.mazmur_id ?? "-"));
+    let mazmurReport: DiscrepancyReport["mazmur"] = null;
+    if (distinctMazmur.size > 1) {
+      mazmurReport = juriSamePeserta.map(([jid, v]) => ({
+        juriNama: juriMap.get(jid) ?? "—",
+        mazmurLabel: v.mazmur_id ? (mazmurMap.get(v.mazmur_id) ?? "—") : "(kosong)",
+      }));
+    }
+
+    if (!pesertaReport && !mazmurReport) return null;
+    const pesertaNama = peserta.find(p => p.id === currentPesertaId)?.nama ?? "—";
+    return { pesertaId: currentPesertaId, pesertaNama, mazmur: mazmurReport, peserta: pesertaReport };
+  }
 
   // Bandingkan bacaan mazmur antar juri untuk peserta tsb.
   async function checkDiscrepancyWith(
