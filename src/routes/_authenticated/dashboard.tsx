@@ -1533,14 +1533,9 @@ function PenilaianTab() {
     const activeJuri = isAdmin ? juriId : (myJuriId || "");
     const perhatianKriteria = kriteria.find(k => kriteriaKey(k.nama) === "perhatian");
     if (activeJuri && perhatianKriteria) {
-      // Hapus HANYA baris kriteria Perhatian juri ini + submission,
-      // supaya juri wajib mengisi ulang Perhatian lalu Kirim lagi.
-      await supabase
-        .from("penilaian")
-        .delete()
-        .eq("juri_id", activeJuri)
-        .eq("peserta_id", target)
-        .eq("kriteria_id", perhatianKriteria.id);
+      // Hapus HANYA submission juri ini (paksa Kirim ulang) — baris penilaian
+      // Perhatian tetap disimpan supaya saat form dibuka lagi pilihan terakhir
+      // juri masih tampil dan tinggal diubah pada 3 parameter pemicu VAR.
       await supabase
         .from("penilaian_submission" as any)
         .delete()
