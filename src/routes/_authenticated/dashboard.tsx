@@ -1765,6 +1765,7 @@ function PenilaianTab() {
               <Label>Peserta</Label>
               <Select
                 value={pesertaId}
+                disabled={lockPesertaMazmur}
                 onValueChange={(val) => {
                   if (editMode) { setPesertaId(val); return; }
                   const kriteriaIds = new Set(kriteria.map(k => k.id));
@@ -1784,7 +1785,7 @@ function PenilaianTab() {
                   setPesertaId(val);
                 }}
               >
-                <SelectTrigger><SelectValue placeholder={juriId ? "Pilih peserta" : "—"} /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={lockPesertaMazmur ? "Ditentukan Operator Lomba" : (juriId ? "Pilih peserta" : "—")} /></SelectTrigger>
                 <SelectContent>
                   {(() => {
                     const kriteriaIds = new Set(kriteria.map(k => k.id));
