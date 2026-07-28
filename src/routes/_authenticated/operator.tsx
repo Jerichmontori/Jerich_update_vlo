@@ -34,8 +34,10 @@ function OperatorPage() {
   const [selectedMazmur, setSelectedMazmur] = useState<string>("");
   const [juriTotal, setJuriTotal] = useState<number>(0);
   const [juriDone, setJuriDone] = useState<number>(0);
+  const [submissionCounts, setSubmissionCounts] = useState<Record<string, number>>({});
   const [busy, setBusy] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ nama: string; email: string; role: string } | null>(null);
+
 
   // Role gate
   useEffect(() => {
