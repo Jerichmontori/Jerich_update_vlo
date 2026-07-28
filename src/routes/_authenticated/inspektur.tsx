@@ -333,16 +333,27 @@ function InspekturPage() {
             {!detailData && <div className="text-sm text-muted-foreground">Memuat…</div>}
             {detailData && (
               <>
-                {detailData.mazmur_variants && Array.isArray(detailData.mazmur_variants) && detailData.mazmur_variants.length > 1 && (
-                  <div className="rounded-lg border border-rose-500/40 bg-rose-500/5 p-3">
-                    <div className="text-sm font-semibold text-rose-600 mb-1">Perbedaan Bacaan Mazmur</div>
-                    <ul className="text-sm list-disc pl-5">
-                      {detailData.mazmur_variants.map((v: any, i: number) => (
-                        <li key={i}>{v.bacaan ?? JSON.stringify(v)}</li>
-                      ))}
-                    </ul>
+                {detailData.var_session && (
+                  <div className="rounded-lg border-2 border-rose-500/60 bg-rose-500/10 p-3">
+                    <div className="text-sm font-semibold text-rose-700 mb-1 flex items-center gap-1">
+                      <AlertTriangle className="size-4" /> Potensi VAR — menunggu keputusan Inspektur
+                    </div>
+                    <div className="text-xs text-rose-900 mb-2">
+                      Bacaan: <b>{detailData.var_session.bacaan ?? "—"}</b>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {Array.isArray(detailData.var_session.komponen_berbeda) && detailData.var_session.komponen_berbeda.length > 0
+                        ? (detailData.var_session.komponen_berbeda as string[]).map((k) => (
+                            <Badge key={k} className="bg-rose-600 text-white">{KOMP_LABEL[k] ?? k}</Badge>
+                          ))
+                        : <span className="text-xs text-muted-foreground">Tidak ada komponen tercatat.</span>}
+                    </div>
+                    <p className="text-[11px] text-rose-800/80 mt-2">
+                      Tulis catatan/rekomendasi lalu pilih keputusan (Setujui / Tolak / Catatan Saja). Menyimpan akan menutup Potensi VAR.
+                    </p>
                   </div>
                 )}
+
                 {detailData.penilaian && Array.isArray(detailData.penilaian) && (
                   <div>
                     <div className="text-sm font-semibold mb-2">Nilai per Juri</div>
