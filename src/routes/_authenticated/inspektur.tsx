@@ -264,7 +264,7 @@ function InspekturPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><AlertTriangle className="size-5 text-rose-500" /> Daftar Potensi VAR</CardTitle>
-            <CardDescription>Peserta dengan perbedaan input Bacaan Mazmur antar juri.</CardDescription>
+            <CardDescription>Peserta dengan perbedaan input Perhatian antar juri (Salah/Menambah/Mengurangi kata).</CardDescription>
           </CardHeader>
           <CardContent className="overflow-x-auto">
             <Table>
@@ -273,8 +273,8 @@ function InspekturPage() {
                   <TableHead>No.</TableHead>
                   <TableHead>Nama</TableHead>
                   <TableHead>Kategori</TableHead>
-                  <TableHead>Varian Mazmur</TableHead>
-                  <TableHead>Juri Berbeda</TableHead>
+                  <TableHead>Bacaan</TableHead>
+                  <TableHead>Komponen Berbeda</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
@@ -287,8 +287,15 @@ function InspekturPage() {
                     <TableCell>{r.nomor_urut}</TableCell>
                     <TableCell className="font-medium">{r.nama}</TableCell>
                     <TableCell className="text-muted-foreground">{r.kategori || "—"}</TableCell>
-                    <TableCell className="text-xs">{Array.isArray(r.mazmur_variants) ? (r.mazmur_variants as any[]).map((x: any) => x.bacaan ?? x).join(" · ") : "—"}</TableCell>
-                    <TableCell>{r.juri_berbeda}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs">{r.bacaan || "—"}</TableCell>
+                    <TableCell className="text-xs">
+                      {Array.isArray(r.komponen_berbeda) && r.komponen_berbeda.length > 0
+                        ? r.komponen_berbeda.map((k) => (
+                            <Badge key={k} className="mr-1 bg-rose-600 text-white">{KOMP_LABEL[k] ?? k}</Badge>
+                          ))
+                        : "—"}
+                    </TableCell>
+
                     <TableCell className="text-right">
                       <Button size="sm" variant="outline" onClick={() => openDetail(monitor.find(m => m.peserta_id === r.peserta_id) ?? { peserta_id: r.peserta_id, nomor_urut: r.nomor_urut, nama: r.nama, kategori: r.kategori, bacaan: null, status: "Potensi VAR", juri_done: 0, juri_total: 0 })}>
                         <Eye className="size-4 mr-1" /> Detail
