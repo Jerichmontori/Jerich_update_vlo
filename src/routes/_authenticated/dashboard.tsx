@@ -1722,73 +1722,8 @@ function PenilaianTab() {
       )}
       {canJudge && (
         <div className="relative">
-          {/* Aturan #7 — overlay penguncian menunggu juri lain */}
-          {submittedFor && (() => {
-            const p = peserta.find(x => x.id === submittedFor);
-            const label = p ? `#${p.nomor_urut} ${p.nama}` : "peserta ini";
-            return (
-              <div className="absolute inset-0 z-20 -m-2 rounded-2xl bg-background/85 backdrop-blur-sm grid place-items-center px-6 py-10">
-                <div className="max-w-md text-center rounded-2xl border-2 border-accent/50 bg-gradient-to-br from-card to-secondary/60 p-6 shadow-lg">
-                  <div className="mx-auto grid place-items-center size-14 rounded-full bg-primary text-primary-foreground shadow ring-4 ring-accent/30 mb-3">
-                    <ClipboardCheck className="size-7" />
-                  </div>
-                  <h3 className="font-serif text-xl">Menunggu penilaian juri lain</h3>
-                  <p className="mt-2 text-sm text-muted-foreground">
-                    Penilaian Anda untuk <b>{label}</b> telah terkirim. Form dikunci sampai seluruh juri selesai menilai peserta ini.
-                  </p>
-                  <p className="mt-3 text-sm">
-                    <span className="font-semibold text-foreground">{judgesDoneForPeserta}</span>
-                    <span className="text-muted-foreground"> dari </span>
-                    <span className="font-semibold text-foreground">{totalJuriApproved}</span>
-                    <span className="text-muted-foreground"> juri telah mengirim.</span>
-                  </p>
+          {/* Overlay "menunggu juri" dihapus — juri langsung bebas ke peserta berikutnya setelah kirim. */}
 
-                  {pendingDiscrepancy && (
-                    <div className="mt-4 rounded-xl border-2 border-destructive/50 bg-destructive/5 p-4 text-left">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="text-destructive font-serif text-base font-semibold">✦ Ada perbedaan inputan antar juri</span>
-                      </div>
-                      {pendingDiscrepancy.peserta && (
-                        <div className="mb-3">
-                          <div className="text-xs font-semibold text-muted-foreground mb-1">Perbedaan Nama Peserta</div>
-                          <ul className="space-y-1 text-sm">
-                            {pendingDiscrepancy.peserta.map((p, i) => (
-                              <li key={i} className="flex justify-between gap-2">
-                                <span className="text-muted-foreground">{p.juriNama}</span>
-                                <span className="font-medium text-right">{p.pesertaLabel}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      {pendingDiscrepancy.mazmur && (
-                        <div className="mb-3">
-                          <div className="text-xs font-semibold text-muted-foreground mb-1">Perbedaan Bacaan Mazmur</div>
-                          <ul className="space-y-1 text-sm">
-                            {pendingDiscrepancy.mazmur.map((m, i) => (
-                              <li key={i} className="flex justify-between gap-2">
-                                <span className="text-muted-foreground">{m.juriNama}</span>
-                                <span className="font-medium text-right">{m.mazmurLabel}</span>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      )}
-                      <p className="text-xs text-muted-foreground mb-3">
-                        Nilai kriteria Anda tetap tersimpan. Hanya <b>Peserta</b> dan <b>Bacaan Mazmur</b> yang dapat diubah.
-                      </p>
-                      <Button
-                        onClick={() => perbaikiPenilaianSaya(pendingDiscrepancy.pesertaId)}
-                        className="gap-1 w-full"
-                      >
-                        <Check className="size-4" /> Lakukan Perubahan
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })()}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             <div>
