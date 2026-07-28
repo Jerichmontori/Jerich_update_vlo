@@ -454,6 +454,30 @@ function OperatorPage() {
           </CardContent>
         </Card>
       </main>
+
+      <Dialog open={confirmAkhiriOpen} onOpenChange={setConfirmAkhiriOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="mx-auto mb-2 grid place-items-center size-12 rounded-full bg-destructive/10 text-destructive ring-4 ring-destructive/20">
+              <AlertTriangle className="size-6" />
+            </div>
+            <DialogTitle className="text-center font-serif text-xl">Akhiri Sesi Penilaian?</DialogTitle>
+            <DialogDescription className="text-center">
+              {pesertaAktif ? (
+                <>Sesi untuk <span className="font-semibold text-foreground">{pesertaAktif.nama}</span>{mazmurAktif ? <> — <span className="font-semibold text-foreground">{mazmurAktif.bacaan}</span></> : null} akan diakhiri. Form penilaian juri akan dikosongkan.</>
+              ) : (
+                <>Sesi penilaian aktif akan diakhiri dan form juri akan dikosongkan.</>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center gap-2">
+            <Button variant="outline" onClick={() => setConfirmAkhiriOpen(false)} disabled={busy}>Batal</Button>
+            <Button variant="destructive" onClick={akhiriSesi} disabled={busy} className="gap-2">
+              <Square className="size-4" /> Ya, Akhiri
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
