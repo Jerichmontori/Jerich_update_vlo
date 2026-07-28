@@ -663,6 +663,7 @@ export type Database = {
           asal: string
           jumlah_juri: number
           nama: string
+          nilai_akhir: number
           nomor_urut: number
           peserta_id: string
           rata_rata: number
@@ -690,6 +691,11 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      hitung_nilai_akhir: { Args: { _peserta: string }; Returns: number }
+      hitung_nilai_juri: {
+        Args: { _juri: string; _peserta: string }
+        Returns: number
       }
       inspektur_buka_perhatian: {
         Args: { _catatan?: string; _peserta: string }
@@ -747,6 +753,7 @@ export type Database = {
         Returns: string
       }
       inspektur_var_detail: { Args: { _peserta: string }; Returns: Json }
+      lookup_nilai: { Args: { _grade: number }; Returns: number }
       mulai_klarifikasi_var: { Args: { _peserta: string }; Returns: string }
       mulai_sesi: {
         Args: { _mazmur: string; _peserta: string }
