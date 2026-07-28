@@ -1116,6 +1116,13 @@ function PenilaianTab() {
   // Perbedaan inputan yang muncul SAAT overlay "menunggu" (sebelum semua juri selesai)
   const [pendingDiscrepancy, setPendingDiscrepancy] = useState<DiscrepancyReport | null>(null);
 
+  type PerhatianDiscrepancyReport = {
+    pesertaId: string;
+    pesertaNama: string;
+    items: { pertanyaan: string; rows: { juriNama: string; ayat: number[] }[] }[];
+  };
+  const [perhatianDiscrepancy, setPerhatianDiscrepancy] = useState<PerhatianDiscrepancyReport | null>(null);
+
 
 
 
@@ -1219,11 +1226,23 @@ function PenilaianTab() {
       if (!stopped) setPendingDiscrepancy(pending);
 
       if (totalJuriApproved > 0 && done >= totalJuriApproved) {
-        // Semua juri sudah kirim → periksa perbedaan input.
+        // Urutan pemeriksaan:
+        // 1) Semua juri sudah klik Kirim (terpenuhi di sini).
+        // 2) Perbedaan pilihan Peserta / Bacaan Mazmur.
         const report = await checkDiscrepancy(submittedFor!);
         if (report) {
           stopped = true;
           setDiscrepancy(report);
+          setSubmittedFor(null);
+          setPendingDiscrepancy(null);
+          setJudgesDoneForPeserta(0);
+          return;
+        }
+        // 3) Perbedaan parameter di form Perhatian (Q2, Q4, Q5).
+        const perhatianReport = await checkPerhatianDiscrepancy(submittedFor!);
+        if (perhatianReport) {
+          stopped = true;
+          setPerhatianDiscrepancy(perhatianReport);
           setSubmittedFor(null);
           setPendingDiscrepancy(null);
           setJudgesDoneForPeserta(0);
@@ -1334,6 +1353,80 @@ function PenilaianTab() {
   async function checkDiscrepancy(pesertaIdCheck: string): Promise<DiscrepancyReport | null> {
     return checkDiscrepancyWith(pesertaIdCheck, mazmur, peserta);
   }
+
+  // Pemeriksaan #3 — Perbedaan pilihan pada form Perhatian, khusus Q2, Q4, Q5.
+  // Q1 = Tidak Membaca Perikop (membacaPerikop) → tidak dicek.
+  // Q2 = Salah kata → aspek[0]
+  // Q4 = Menambah kata → aspek[2]
+  // Q5 = Mengurangi kata → aspek[3]
+  async function checkPerhatianDiscrepancy(pesertaIdCheck: string): Promise<PerhatianDiscrepancyReport | null> {
+    const perhatianKriteria = kriteria.find(k => kriteriaKey(k.nama) === "perhatian");
+    if (!perhatianKriteria) return null;
+    const { data: rows } = await supabase
+      .from("penilaian")
+      .select("juri_id, detail")
+      .eq("peserta_id", pesertaIdCheck)
+      .eq("kriteria_id", perhatianKriteria.id);
+    if (!rows || rows.length < 2) return null;
+    const { data: juriRows } = await supabase.from("juri_public" as any).select("id, nama");
+    const juriMap = new Map<string, string>();
+    ((juriRows ?? []) as unknown as { id: string; nama: string }[]).forEach(j => juriMap.set(j.id, j.nama));
+
+    const targetIdx = [
+      { idx: 0, label: "Q2 — Salah kata" },
+      { idx: 2, label: "Q4 — Menambah kata" },
+      { idx: 3, label: "Q5 — Mengurangi kata" },
+    ];
+    const items: PerhatianDiscrepancyReport["items"] = [];
+    for (const t of targetIdx) {
+      const perJuri: { juriNama: string; ayat: number[] }[] = [];
+      for (const r of rows as any[]) {
+        const d = r.detail;
+        if (!d || d.type !== "perhatian") continue;
+        const aspek = d.aspek?.[t.idx];
+        const ayat: number[] = Array.isArray(aspek?.ditandai) ? [...aspek.ditandai].sort((a, b) => a - b) : [];
+        perJuri.push({ juriNama: juriMap.get(r.juri_id) ?? "—", ayat });
+      }
+      const sig = new Set(perJuri.map(x => x.ayat.join(",")));
+      if (sig.size > 1) items.push({ pertanyaan: t.label, rows: perJuri });
+    }
+    if (items.length === 0) return null;
+    const pesertaNama = peserta.find(p => p.id === pesertaIdCheck)?.nama ?? "—";
+    return { pesertaId: pesertaIdCheck, pesertaNama, items };
+  }
+
+  async function perbaikiPerhatianSaya() {
+    const target = perhatianDiscrepancy?.pesertaId;
+    if (!target) return;
+    const activeJuri = isAdmin ? juriId : (myJuriId || "");
+    const perhatianKriteria = kriteria.find(k => kriteriaKey(k.nama) === "perhatian");
+    if (activeJuri && perhatianKriteria) {
+      // Hapus HANYA baris kriteria Perhatian juri ini + submission,
+      // supaya juri wajib mengisi ulang Perhatian lalu Kirim lagi.
+      await supabase
+        .from("penilaian")
+        .delete()
+        .eq("juri_id", activeJuri)
+        .eq("peserta_id", target)
+        .eq("kriteria_id", perhatianKriteria.id);
+      await supabase
+        .from("penilaian_submission" as any)
+        .delete()
+        .eq("juri_id", activeJuri)
+        .eq("peserta_id", target);
+    }
+    toast.warning("✦ Lakukan perubahan Perhatian", {
+      description: "Silakan buka kembali form Perhatian, perbaiki pilihan, lalu klik Kirim.",
+    });
+    setPerhatianDiscrepancy(null);
+    setPendingDiscrepancy(null);
+    setSubmittedFor(null);
+    setJudgesDoneForPeserta(0);
+    setPesertaId(target);
+    setOpenKriteria(null);
+    await loadAll();
+  }
+
 
 
   async function perbaikiPenilaianSaya(pesertaOverride?: string) {
@@ -1838,6 +1931,56 @@ function PenilaianTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Dialog perbedaan input Perhatian (Q2 / Q4 / Q5) */}
+      <Dialog open={!!perhatianDiscrepancy} onOpenChange={() => { /* wajib konfirmasi OK */ }}>
+        <DialogContent
+          className="max-w-lg"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl text-destructive">
+              ✦ Potensi VAR — Perbedaan Perhatian
+            </DialogTitle>
+            <DialogDescription>
+              Semua juri sudah mengirim penilaian, namun ditemukan perbedaan pilihan pada form <b>Perhatian</b>. Form penilaian dikunci sampai Anda menekan <b>OK</b>.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[55dvh] overflow-y-auto space-y-3 text-sm">
+            <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-3">
+              <div className="font-semibold mb-1">Peserta</div>
+              <div className="font-serif text-lg">{perhatianDiscrepancy?.pesertaNama}</div>
+            </div>
+            {perhatianDiscrepancy?.items.map((it, i) => (
+              <div key={i} className="rounded-lg border-2 border-destructive/40 bg-destructive/5 p-3">
+                <div className="font-semibold mb-2">{it.pertanyaan}</div>
+                <ul className="space-y-1">
+                  {it.rows.map((r, j) => (
+                    <li key={j} className="flex justify-between gap-2">
+                      <span className="text-muted-foreground">{r.juriNama}</span>
+                      <span className="font-medium text-right">
+                        {r.ayat.length ? `Ayat: ${r.ayat.join(", ")}` : "—"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+            <p className="text-xs text-muted-foreground pt-2">
+              Klik <b>OK</b> untuk mengaktifkan kembali penilaian peserta ini. Nilai <b>Perhatian</b> Anda akan direset — silakan buka kembali form Perhatian, perbaiki pilihan, lalu klik <b>Kirim</b>.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => perbaikiPerhatianSaya()} className="gap-1 w-full sm:w-auto">
+              <Check className="size-4" /> OK, Lakukan Perubahan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
 
 
 
