@@ -409,6 +409,25 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      admin_list_penilaian: {
+        Args: never
+        Returns: {
+          created_at: string
+          detail: Json | null
+          id: string
+          juri_id: string
+          kriteria_id: string
+          mazmur_id: string | null
+          nilai: number
+          peserta_id: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "penilaian"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       admin_reset_all_penilaian: { Args: never; Returns: undefined }
       get_ranking: {
         Args: never
