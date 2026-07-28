@@ -1923,6 +1923,14 @@ function PenilaianTab() {
                 .from("penilaian_submission" as any)
                 .upsert({ juri_id: juriId, peserta_id: pesertaId } as any, { onConflict: "peserta_id,juri_id" });
               if (subErr) { toast.error(subErr.message); return; }
+              // Jika sedang mode Perbaikan Perhatian, tutup sesi klarifikasi utk peserta ini.
+              if (pesertaId && perbaikanPerhatianIds.has(pesertaId)) {
+                await supabase
+                  .from("var_clarification_session" as any)
+                  .update({ status: "final", finalized_at: new Date().toISOString() } as any)
+                  .eq("peserta_id", pesertaId)
+                  .eq("status", "perbaikan_perhatian");
+              }
               toast.success("✦ Penilaian dikirim", {
                 description: `Penilaian untuk ${currentPesertaLabel} tersimpan.`,
               });
