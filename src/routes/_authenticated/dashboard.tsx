@@ -1226,11 +1226,23 @@ function PenilaianTab() {
       if (!stopped) setPendingDiscrepancy(pending);
 
       if (totalJuriApproved > 0 && done >= totalJuriApproved) {
-        // Semua juri sudah kirim → periksa perbedaan input.
+        // Urutan pemeriksaan:
+        // 1) Semua juri sudah klik Kirim (terpenuhi di sini).
+        // 2) Perbedaan pilihan Peserta / Bacaan Mazmur.
         const report = await checkDiscrepancy(submittedFor!);
         if (report) {
           stopped = true;
           setDiscrepancy(report);
+          setSubmittedFor(null);
+          setPendingDiscrepancy(null);
+          setJudgesDoneForPeserta(0);
+          return;
+        }
+        // 3) Perbedaan parameter di form Perhatian (Q2, Q4, Q5).
+        const perhatianReport = await checkPerhatianDiscrepancy(submittedFor!);
+        if (perhatianReport) {
+          stopped = true;
+          setPerhatianDiscrepancy(perhatianReport);
           setSubmittedFor(null);
           setPendingDiscrepancy(null);
           setJudgesDoneForPeserta(0);
