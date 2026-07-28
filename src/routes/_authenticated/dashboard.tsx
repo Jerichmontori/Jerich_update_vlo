@@ -1109,8 +1109,11 @@ function PenilaianTab() {
     pesertaId: string;
     pesertaNama: string;
     mazmur: { juriNama: string; mazmurLabel: string }[] | null;
+    peserta?: { juriNama: string; pesertaLabel: string }[] | null;
   };
   const [discrepancy, setDiscrepancy] = useState<DiscrepancyReport | null>(null);
+  // Perbedaan inputan yang muncul SAAT overlay "menunggu" (sebelum semua juri selesai)
+  const [pendingDiscrepancy, setPendingDiscrepancy] = useState<DiscrepancyReport | null>(null);
 
 
 
