@@ -468,6 +468,83 @@ export type Database = {
         }
         Relationships: []
       }
+      var_clarification_response: {
+        Row: {
+          catatan: string | null
+          clarification_id: string
+          id: string
+          juri_id: string
+          keputusan: boolean
+          komponen: string
+          submitted_at: string
+        }
+        Insert: {
+          catatan?: string | null
+          clarification_id: string
+          id?: string
+          juri_id: string
+          keputusan: boolean
+          komponen: string
+          submitted_at?: string
+        }
+        Update: {
+          catatan?: string | null
+          clarification_id?: string
+          id?: string
+          juri_id?: string
+          keputusan?: boolean
+          komponen?: string
+          submitted_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "var_clarification_response_clarification_id_fkey"
+            columns: ["clarification_id"]
+            isOneToOne: false
+            referencedRelation: "var_clarification_session"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      var_clarification_session: {
+        Row: {
+          created_at: string
+          finalized_at: string | null
+          id: string
+          komponen_berbeda: Json
+          mazmur_id: string | null
+          peserta_id: string
+          started_at: string | null
+          started_by: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          finalized_at?: string | null
+          id?: string
+          komponen_berbeda?: Json
+          mazmur_id?: string | null
+          peserta_id: string
+          started_at?: string | null
+          started_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          finalized_at?: string | null
+          id?: string
+          komponen_berbeda?: Json
+          mazmur_id?: string | null
+          peserta_id?: string
+          started_at?: string | null
+          started_by?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       var_review: {
         Row: {
           catatan: string | null
@@ -578,6 +655,8 @@ export type Database = {
       admin_reset_all_penilaian: { Args: never; Returns: undefined }
       akhiri_sesi: { Args: { _id: string }; Returns: undefined }
       all_juri_submitted: { Args: { _peserta: string }; Returns: boolean }
+      detect_potensi_var: { Args: { _peserta: string }; Returns: string }
+      get_klarifikasi_status: { Args: { _peserta: string }; Returns: Json }
       get_ranking: {
         Args: never
         Returns: {
@@ -588,6 +667,21 @@ export type Database = {
           peserta_id: string
           rata_rata: number
           total_skor: number
+          var_status: string
+        }[]
+      }
+      get_var_aktif: {
+        Args: never
+        Returns: {
+          bacaan: string
+          juri_total: number
+          komponen_berbeda: Json
+          nama: string
+          nomor_urut: number
+          peserta_id: string
+          session_id: string
+          status: string
+          submitted_count: number
         }[]
       }
       has_role: {
@@ -639,9 +733,14 @@ export type Database = {
         }[]
       }
       inspektur_var_detail: { Args: { _peserta: string }; Returns: Json }
+      mulai_klarifikasi_var: { Args: { _peserta: string }; Returns: string }
       mulai_sesi: {
         Args: { _mazmur: string; _peserta: string }
         Returns: string
+      }
+      submit_klarifikasi_var: {
+        Args: { _peserta: string; _responses: Json }
+        Returns: Json
       }
       ubah_mazmur_sesi: {
         Args: { _id: string; _mazmur: string }
