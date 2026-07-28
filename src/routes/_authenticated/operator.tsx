@@ -222,6 +222,14 @@ function OperatorPage() {
             <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">Panitia</p>
             <h1 className="text-2xl font-serif font-semibold">Operator Lomba</h1>
           </div>
+          <div className="text-right text-sm mr-2 hidden sm:block">
+            {currentUser && (
+              <>
+                <div className="font-semibold leading-tight">{currentUser.nama}</div>
+                <div className="text-xs text-muted-foreground">{currentUser.role}{currentUser.email ? ` · ${currentUser.email}` : ""}</div>
+              </>
+            )}
+          </div>
           <Button variant="outline" onClick={() => (window.location.href = "/dashboard")}>Ke Dashboard</Button>
         </div>
       </header>
