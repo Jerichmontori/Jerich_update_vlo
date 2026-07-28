@@ -1186,11 +1186,11 @@ function PenilaianTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submittedFor, totalJuriApproved]);
 
-  // Bandingkan mazmur & perhatian (Q2, Q4, Q5) antar juri untuk peserta tsb.
+  // Bandingkan bacaan mazmur antar juri untuk peserta tsb.
   async function checkDiscrepancy(pesertaIdCheck: string): Promise<DiscrepancyReport | null> {
     const { data: rows } = await supabase
       .from("penilaian")
-      .select("juri_id, mazmur_id, kriteria_id, detail")
+      .select("juri_id, mazmur_id")
       .eq("peserta_id", pesertaIdCheck);
     if (!rows || rows.length === 0) return null;
     const { data: juriRows } = await supabase.from("juri_public" as any).select("id, nama");
@@ -1199,7 +1199,7 @@ function PenilaianTab() {
     const mazmurMap = new Map<string, string>();
     mazmur.forEach(m => mazmurMap.set(m.id, m.bacaan));
 
-    // Mazmur per juri (ambil salah satu baris; setiap juri seharusnya konsisten)
+    // Mazmur per juri (setiap juri seharusnya konsisten pada satu bacaan)
     const juriMazmur = new Map<string, string | null>();
     for (const r of rows) {
       if (!juriMazmur.has(r.juri_id)) juriMazmur.set(r.juri_id, r.mazmur_id ?? null);
@@ -1213,35 +1213,11 @@ function PenilaianTab() {
       }));
     }
 
-    // Perhatian — bandingkan pertanyaan 2, 4, 5 (aspek index 0, 2, 3 di detail.aspek)
-    const perhatianKrit = kriteria.find(k => kriteriaKey(k.nama) === "perhatian");
-    const perhatianReport: DiscrepancyReport["perhatian"] = [];
-    if (perhatianKrit) {
-      const perJuri = new Map<string, any>();
-      for (const r of rows) {
-        if (r.kriteria_id === perhatianKrit.id) perJuri.set(r.juri_id, r.detail);
-      }
-      const targetIdx = [0, 2, 3]; // Q2, Q4, Q5
-      const targetLabels = ["Salah kata", "Menambah kata", "Mengurangi kata"];
-      for (let ti = 0; ti < targetIdx.length; ti++) {
-        const idx = targetIdx[ti];
-        const entries: { juriNama: string; ditandai: number[] }[] = [];
-        for (const [jid, det] of perJuri.entries()) {
-          const aspek = (det?.aspek ?? [])[idx];
-          const ditandai: number[] = Array.isArray(aspek?.ditandai) ? aspek.ditandai : [];
-          entries.push({ juriNama: juriMap.get(jid) ?? "—", ditandai });
-        }
-        // Bandingkan sebagai set ayat
-        const sig = new Set(entries.map(e => JSON.stringify([...e.ditandai].sort((a, b) => a - b))));
-        if (sig.size > 1) {
-          perhatianReport.push({ questionLabel: `${idx + 2}. ${targetLabels[ti]}`, entries });
-        }
-      }
-    }
-
-    if (!mazmurReport && perhatianReport.length === 0) return null;
-    return { pesertaId: pesertaIdCheck, mazmur: mazmurReport, perhatian: perhatianReport };
+    if (!mazmurReport) return null;
+    const pesertaNama = peserta.find(p => p.id === pesertaIdCheck)?.nama ?? "—";
+    return { pesertaId: pesertaIdCheck, pesertaNama, mazmur: mazmurReport };
   }
+
 
   async function perbaikiPenilaianSaya() {
     if (!discrepancy) return;
