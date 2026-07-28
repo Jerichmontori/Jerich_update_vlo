@@ -1137,7 +1137,8 @@ function PenilaianTab() {
         .order("started_at", { ascending: false })
         .limit(1);
       if (stopped) return;
-      const row = (data && data[0]) || null;
+      const rows = (data as any[] | null) ?? [];
+      const row = rows[0] as { id: string; peserta_id: string; mazmur_id: string | null } | undefined;
       setActiveSession(row ? { id: row.id, peserta_id: row.peserta_id, mazmur_id: row.mazmur_id } : null);
     }
     poll();
