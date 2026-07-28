@@ -691,6 +691,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      inspektur_buka_perhatian: {
+        Args: { _catatan?: string; _peserta: string }
+        Returns: string
+      }
       inspektur_catat: {
         Args: { _catatan: string; _keputusan: string; _peserta: string }
         Returns: string
