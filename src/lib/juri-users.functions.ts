@@ -133,9 +133,9 @@ export const deleteJuriUser = createServerFn({ method: "POST" })
 
 export const setJuriRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { juriId: string; role: "admin" | "juri" }) => {
+  .inputValidator((data: { juriId: string; role: Role }) => {
     if (!data?.juriId) throw new Error("juriId wajib");
-    if (!["admin", "juri"].includes(data?.role)) throw new Error("Role tidak valid");
+    if (!["admin", "juri", "panitia"].includes(data?.role)) throw new Error("Role tidak valid");
     return data;
   })
   .handler(async ({ data, context }) => {
@@ -157,12 +157,13 @@ export const setJuriRole = createServerFn({ method: "POST" })
 
     // Sync user_roles when the account is already approved
     if (juri.user_id && juri.approved) {
-      const other: "admin" | "juri" = data.role === "admin" ? "juri" : "admin";
+      const allRoles: Role[] = ["admin", "juri", "panitia"];
+      const others = allRoles.filter((r) => r !== data.role);
       await supabaseAdmin
         .from("user_roles")
         .delete()
         .eq("user_id", juri.user_id)
-        .eq("role", other);
+        .in("role", others);
       const { error: rolErr } = await supabaseAdmin
         .from("user_roles")
         .upsert({ user_id: juri.user_id, role: data.role }, { onConflict: "user_id,role" });
@@ -171,6 +172,7 @@ export const setJuriRole = createServerFn({ method: "POST" })
 
     return { ok: true };
   });
+
 
 export const resetJuriPassword = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
