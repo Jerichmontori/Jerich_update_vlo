@@ -21,9 +21,9 @@ export const Route = createFileRoute("/posisi")({
   component: PosisiPublic,
 });
 
-type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: string | null; total_skor: number; rata_rata: number; jumlah_juri: number };
+type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: string | null; total_skor: number; rata_rata: number; jumlah_juri: number; nilai_akhir: number | null };
 type Peserta = { id: string; nama: string; asal: string | null; sesi: string | null; nomor_urut: number };
-type Row = Peserta & { total_skor: number; rata_rata: number; jumlah_juri: number; scored: boolean };
+type Row = Peserta & { total_skor: number; rata_rata: number; jumlah_juri: number; nilai_akhir: number | null; scored: boolean };
 
 const medals = ["🥇", "🥈", "🥉"];
 
