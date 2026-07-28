@@ -129,7 +129,19 @@ function App() {
 }
 
 function Header() {
-  
+  const [canOperate, setCanOperate] = useState(false);
+  useEffect(() => {
+    (async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const uid = userData.user?.id;
+      if (!uid) return;
+      const [{ data: isPan }, { data: isAdm }] = await Promise.all([
+        supabase.rpc("has_role", { _user_id: uid, _role: "panitia" as any }),
+        supabase.rpc("has_role", { _user_id: uid, _role: "admin" as any }),
+      ]);
+      setCanOperate(!!isPan || !!isAdm);
+    })();
+  }, []);
   async function signOut() {
     await supabase.auth.signOut();
     window.location.href = "/auth";
@@ -147,11 +159,19 @@ function Header() {
             <p className="text-sm text-muted-foreground mt-1">Kelola peserta, juri, kriteria, dan lihat ranking secara langsung.</p>
           </div>
         </div>
-        <Button variant="outline" onClick={signOut} className="shrink-0">Keluar</Button>
+        <div className="flex items-center gap-2 shrink-0">
+          {canOperate && (
+            <Button variant="secondary" onClick={() => (window.location.href = "/operator")}>
+              Operator Lomba
+            </Button>
+          )}
+          <Button variant="outline" onClick={signOut}>Keluar</Button>
+        </div>
       </div>
     </header>
   );
 }
+
 
 /* PESERTA */
 function PesertaTab() {
@@ -475,7 +495,7 @@ function JuriTab() {
     }
   }
 
-  async function ubahRole(id: string, role: "admin" | "juri") {
+  async function ubahRole(id: string, role: "admin" | "juri" | "panitia") {
     try {
       const { setJuriRole } = await import("@/lib/juri-users.functions");
       await setJuriRole({ data: { juriId: id, role } });
@@ -485,6 +505,7 @@ function JuriTab() {
       toast.error(err instanceof Error ? err.message : "Gagal mengubah role");
     }
   }
+
 
   function openReset(j: Juri) {
     setResetTarget(j);
@@ -534,10 +555,11 @@ function JuriTab() {
                 <div className="font-semibold truncate">{j.nama}</div>
                 <div className="text-xs text-muted-foreground truncate">{j.jabatan || "—"}</div>
               </div>
-              <Select value={j.role ?? undefined} onValueChange={(v)=>ubahRole(j.id, v as "admin"|"juri")}>
-                <SelectTrigger className="h-8 w-[110px] shrink-0"><SelectValue placeholder="Role" /></SelectTrigger>
+              <Select value={j.role ?? undefined} onValueChange={(v)=>ubahRole(j.id, v as "admin"|"juri"|"panitia")}>
+                <SelectTrigger className="h-8 w-[130px] shrink-0"><SelectValue placeholder="Role" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="juri">Juri</SelectItem>
+                  <SelectItem value="panitia">Panitia</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
@@ -589,10 +611,11 @@ function JuriTab() {
                 <TableCell className="text-muted-foreground">{j.jabatan || "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{j.email || "—"}</TableCell>
                 <TableCell>
-                  <Select value={j.role ?? undefined} onValueChange={(v)=>ubahRole(j.id, v as "admin"|"juri")}>
-                    <SelectTrigger className="h-8 w-[120px]"><SelectValue placeholder="Role" /></SelectTrigger>
+                  <Select value={j.role ?? undefined} onValueChange={(v)=>ubahRole(j.id, v as "admin"|"juri"|"panitia")}>
+                    <SelectTrigger className="h-8 w-[130px]"><SelectValue placeholder="Role" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="juri">Juri</SelectItem>
+                      <SelectItem value="panitia">Panitia</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
@@ -1124,6 +1147,39 @@ function PenilaianTab() {
     items: { pertanyaan: string; rows: { juriNama: string; ayat: number[] }[] }[];
   };
   const [perhatianDiscrepancy, setPerhatianDiscrepancy] = useState<PerhatianDiscrepancyReport | null>(null);
+
+  // Sesi aktif dari Panitia/Operator Lomba — juri tidak boleh memilih peserta/mazmur secara manual
+  const [activeSession, setActiveSession] = useState<{ id: string; peserta_id: string; mazmur_id: string | null } | null>(null);
+  useEffect(() => {
+    let stopped = false;
+    async function poll() {
+      const { data } = await supabase
+        .from("sesi_penilaian" as any)
+        .select("id, peserta_id, mazmur_id, status")
+        .eq("status", "active")
+        .order("started_at", { ascending: false })
+        .limit(1);
+      if (stopped) return;
+      const rows = (data as any[] | null) ?? [];
+      const row = rows[0] as { id: string; peserta_id: string; mazmur_id: string | null } | undefined;
+      setActiveSession(row ? { id: row.id, peserta_id: row.peserta_id, mazmur_id: row.mazmur_id } : null);
+    }
+    poll();
+    const id = setInterval(poll, 3000);
+    return () => { stopped = true; clearInterval(id); };
+  }, []);
+  // Auto-terapkan sesi aktif untuk non-admin (juri): kunci peserta & mazmur mengikuti pilihan Operator
+  useEffect(() => {
+    if (!activeSession) return;
+    if (isAdmin) return;
+    if (editMode) return;
+    setPesertaId(prev => prev === activeSession.peserta_id ? prev : activeSession.peserta_id);
+    if (activeSession.mazmur_id) {
+      setMazmurId(prev => prev === activeSession.mazmur_id ? prev : activeSession.mazmur_id!);
+    }
+  }, [activeSession, isAdmin, editMode]);
+  const lockPesertaMazmur = !!activeSession && !isAdmin && !editMode;
+
 
 
 
@@ -1732,6 +1788,7 @@ function PenilaianTab() {
               <Label>Peserta</Label>
               <Select
                 value={pesertaId}
+                disabled={lockPesertaMazmur}
                 onValueChange={(val) => {
                   if (editMode) { setPesertaId(val); return; }
                   const kriteriaIds = new Set(kriteria.map(k => k.id));
@@ -1751,7 +1808,7 @@ function PenilaianTab() {
                   setPesertaId(val);
                 }}
               >
-                <SelectTrigger><SelectValue placeholder={juriId ? "Pilih peserta" : "—"} /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={lockPesertaMazmur ? "Ditentukan Operator Lomba" : (juriId ? "Pilih peserta" : "—")} /></SelectTrigger>
                 <SelectContent>
                   {(() => {
                     const kriteriaIds = new Set(kriteria.map(k => k.id));
@@ -1786,9 +1843,10 @@ function PenilaianTab() {
           <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_180px] gap-4 mb-8">
             <div>
               <Label>Bacaan Mazmur</Label>
-              <Select value={mazmurId} onValueChange={setMazmurId}>
+              <Select value={mazmurId} onValueChange={setMazmurId} disabled={lockPesertaMazmur}>
                 <SelectTrigger>
-                  <SelectValue placeholder={mazmur.length === 0 ? "Belum ada bacaan — tambahkan di tab Mazmur" : "Pilih bacaan mazmur"} />
+                  <SelectValue placeholder={lockPesertaMazmur ? "Ditentukan Operator Lomba" : (mazmur.length === 0 ? "Belum ada bacaan — tambahkan di tab Mazmur" : "Pilih bacaan mazmur")} />
+
                 </SelectTrigger>
                 <SelectContent>
                   {mazmur.map(m => (

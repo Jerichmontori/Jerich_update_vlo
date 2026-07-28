@@ -146,6 +146,48 @@ export type Database = {
         }
         Relationships: []
       }
+      operator_audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          ip_address: string | null
+          mazmur_id: string | null
+          metadata: Json | null
+          peserta_id: string | null
+          role: string | null
+          session_id: string | null
+          user_id: string | null
+          user_nama: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          mazmur_id?: string | null
+          metadata?: Json | null
+          peserta_id?: string | null
+          role?: string | null
+          session_id?: string | null
+          user_id?: string | null
+          user_nama?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          mazmur_id?: string | null
+          metadata?: Json | null
+          peserta_id?: string | null
+          role?: string | null
+          session_id?: string | null
+          user_id?: string | null
+          user_nama?: string | null
+        }
+        Relationships: []
+      }
       penilaian: {
         Row: {
           created_at: string
@@ -330,6 +372,60 @@ export type Database = {
           },
         ]
       }
+      sesi_penilaian: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          ended_at: string | null
+          id: string
+          kategori: string | null
+          mazmur_id: string | null
+          peserta_id: string
+          started_at: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          ended_at?: string | null
+          id?: string
+          kategori?: string | null
+          mazmur_id?: string | null
+          peserta_id: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          ended_at?: string | null
+          id?: string
+          kategori?: string | null
+          mazmur_id?: string | null
+          peserta_id?: string
+          started_at?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sesi_penilaian_mazmur_id_fkey"
+            columns: ["mazmur_id"]
+            isOneToOne: false
+            referencedRelation: "mazmur"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sesi_penilaian_peserta_id_fkey"
+            columns: ["peserta_id"]
+            isOneToOne: false
+            referencedRelation: "peserta"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -429,6 +525,7 @@ export type Database = {
         }
       }
       admin_reset_all_penilaian: { Args: never; Returns: undefined }
+      akhiri_sesi: { Args: { _id: string }; Returns: undefined }
       get_ranking: {
         Args: never
         Returns: {
@@ -448,9 +545,17 @@ export type Database = {
         }
         Returns: boolean
       }
+      mulai_sesi: {
+        Args: { _mazmur: string; _peserta: string }
+        Returns: string
+      }
+      ubah_mazmur_sesi: {
+        Args: { _id: string; _mazmur: string }
+        Returns: undefined
+      }
     }
     Enums: {
-      app_role: "admin" | "juri" | "viewer"
+      app_role: "admin" | "juri" | "viewer" | "panitia"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -578,7 +683,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "juri", "viewer"],
+      app_role: ["admin", "juri", "viewer", "panitia"],
     },
   },
 } as const
