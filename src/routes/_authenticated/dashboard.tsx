@@ -1152,6 +1152,10 @@ function PenilaianTab() {
   const [catatanValues, setCatatanValues] = useState<number[]>(() => CATATAN_ASPEK.map(() => 3));
   const [catatanClearText, setCatatanClearText] = useState<boolean>(false);
   const [perhatianChecks, setPerhatianChecks] = useState<boolean[][]>(() => PERHATIAN_ASPEK.map(() => []));
+  // Snapshot nilai Perhatian saat dialog dibuka (dipakai saat mode Perbaikan Perhatian
+  // untuk mengunci baris non-pemicu agar tidak berubah, apapun yang terjadi di UI).
+  const perhatianBaselineRef = useRef<boolean[][] | null>(null);
+  const PERHATIAN_VAR_TRIGGER_IDX = new Set([1, 3, 4]);
   const [saving, setSaving] = useState(false);
   // Aturan #3 — nama juri otomatis dari user yang login (juri tidak bisa memilih juri lain)
   const [myJuriId, setMyJuriId] = useState<string>("");
@@ -1637,8 +1641,11 @@ function PenilaianTab() {
           return filled;
         });
         setPerhatianChecks(restored);
+        perhatianBaselineRef.current = restored.map(r => [...r]);
       } else {
-        setPerhatianChecks(PERHATIAN_ASPEK.map((_, i) => i === 0 ? [false] : Array(selectedMazmur.jumlah_ayat).fill(false)));
+        const empty = PERHATIAN_ASPEK.map((_, i) => i === 0 ? [false] : Array(selectedMazmur.jumlah_ayat).fill(false));
+        setPerhatianChecks(empty);
+        perhatianBaselineRef.current = isPerbaikan ? empty.map(r => [...r]) : null;
       }
     }
     setOpenKriteria(k);
@@ -1693,17 +1700,27 @@ function PenilaianTab() {
     : Math.round(((perhatianTotal - perhatianChecked) / perhatianTotal) * 100 * 100) / 100;
 
   async function savePerhatian() {
+    // Guard: bila mode Perbaikan Perhatian aktif, paksa baris non-pemicu (selain 1/3/4)
+    // kembali ke baseline saat dialog dibuka — jadi hanya 3 parameter pemicu VAR yang benar-benar bisa diubah.
+    const perbaikanAktifNow = !!(pesertaId && perbaikanPerhatianIds.has(pesertaId));
+    const baseline = perhatianBaselineRef.current;
+    const effective = (perbaikanAktifNow && baseline)
+      ? perhatianChecks.map((row, i) => PERHATIAN_VAR_TRIGGER_IDX.has(i) ? row : (baseline[i] ? [...baseline[i]] : row))
+      : perhatianChecks;
+    const totalAll = effective.reduce((s, row) => s + row.length, 0);
+    const checkedAll = effective.reduce((s, row) => s + row.filter(Boolean).length, 0);
+    const nilaiAll = totalAll === 0 ? 0 : Math.round(((totalAll - checkedAll) / totalAll) * 100 * 100) / 100;
     const detail: PenilaianDetail = {
       type: "perhatian",
-      membacaPerikop: (perhatianChecks[0]?.[0] as unknown as boolean) ?? null,
+      membacaPerikop: (effective[0]?.[0] as unknown as boolean) ?? null,
       aspek: PERHATIAN_ASPEK.slice(1).map((nama, idx) => {
-        const row = perhatianChecks[idx + 1] ?? [];
+        const row = effective[idx + 1] ?? [];
         const ditandai: number[] = [];
         row.forEach((c, ai) => { if (c) ditandai.push(ai + 1); });
         return { nama, ayat: row, ditandai };
       }),
     };
-    await saveNilai(perhatianNilai, detail);
+    await saveNilai(nilaiAll, detail);
   }
 
 
@@ -2378,7 +2395,7 @@ function PenilaianTab() {
                         })}
                       </div>
                     ) : (
-                      <div className="grid grid-cols-5 sm:grid-cols-8 gap-2">
+                      <div className={["grid grid-cols-5 sm:grid-cols-8 gap-2", locked ? "pointer-events-none" : ""].join(" ")}>
                         {row.map((checked, ayatIdx) => (
                           <label
                             key={ayatIdx}
@@ -2395,13 +2412,14 @@ function PenilaianTab() {
                               className="sr-only"
                               checked={checked}
                               disabled={locked}
-                              onChange={() =>
+                              onChange={() => {
+                                if (locked) return;
                                 setPerhatianChecks(prev =>
                                   prev.map((r, idx) =>
                                     idx === i ? r.map((c, ai) => (ai === ayatIdx ? !c : c)) : r
                                   )
-                                )
-                              }
+                                );
+                              }}
                             />
                             Ayat {ayatIdx + 1}
                           </label>
