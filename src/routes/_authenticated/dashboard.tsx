@@ -1608,6 +1608,9 @@ function PenilaianTab() {
     if (!juriId) return toast.error("Pilih juri terlebih dahulu");
     if (!pesertaId) return toast.error("Pilih peserta terlebih dahulu");
     const key = kriteriaKey(k.nama);
+    if (pesertaId && perbaikanPerhatianIds.has(pesertaId) && key !== "perhatian") {
+      return toast.warning("Mode Perbaikan Perhatian aktif — hanya kriteria Perhatian yang dapat diubah.");
+    }
     if (key === "catatan") {
       setCatatanValues(CATATAN_ASPEK.map(() => 3));
       setCatatanClearText(false);
