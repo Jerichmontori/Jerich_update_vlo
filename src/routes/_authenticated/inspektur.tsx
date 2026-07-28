@@ -145,7 +145,6 @@ function InspekturPage() {
     setDetailPeserta(row);
     setDetailData(null);
     setCatatan("");
-    setKeputusan("");
     setDetailOpen(true);
     const { data, error } = await supabase.rpc("inspektur_var_detail" as any, { _peserta: row.peserta_id });
     if (error) { toast.error(error.message); return; }
@@ -154,40 +153,47 @@ function InspekturPage() {
 
   async function simpanCatatan() {
     if (!detailPeserta) return;
-    if (!catatan.trim() && !keputusan) {
-      toast.error("Isi catatan atau pilih keputusan");
+    if (!catatan.trim()) {
+      toast.error("Isi catatan terlebih dahulu");
       return;
     }
     setSavingCatatan(true);
     try {
-      const hasActiveVar = !!(detailData && detailData.var_session);
-      const keputusanFinal = keputusan || "catatan_saja";
-      if (hasActiveVar) {
-        const { error } = await supabase.rpc("inspektur_selesaikan_var" as any, {
-          _peserta: detailPeserta.peserta_id,
-          _catatan: catatan.trim() || null,
-          _keputusan: keputusanFinal,
-        });
-        if (error) throw error;
-        toast.success("Potensi VAR diselesaikan · catatan tersimpan");
-      } else {
-        const { error } = await supabase.rpc("inspektur_catat" as any, {
-          _peserta: detailPeserta.peserta_id,
-          _catatan: catatan.trim() || null,
-          _keputusan: keputusanFinal,
-        });
-        if (error) throw error;
-        toast.success("Catatan inspektur tersimpan");
-      }
+      const { error } = await supabase.rpc("inspektur_catat" as any, {
+        _peserta: detailPeserta.peserta_id,
+        _catatan: catatan.trim(),
+        _keputusan: "catatan_saja",
+      });
+      if (error) throw error;
+      toast.success("Catatan inspektur tersimpan");
       setDetailOpen(false);
       loadAll();
-
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal menyimpan");
     } finally {
       setSavingCatatan(false);
     }
   }
+
+  async function terapkanPerubahan() {
+    if (!detailPeserta) return;
+    setTerapkanLoading(true);
+    try {
+      const { error } = await supabase.rpc("inspektur_terapkan_perbaikan" as any, {
+        _peserta: detailPeserta.peserta_id,
+        _catatan: catatan.trim() || null,
+      });
+      if (error) throw error;
+      toast.success("Pilihan juri diterapkan · nilai peserta ditetapkan Final");
+      setDetailOpen(false);
+      loadAll();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menerapkan perubahan");
+    } finally {
+      setTerapkanLoading(false);
+    }
+  }
+
 
   async function signOut() {
     await supabase.auth.signOut();
