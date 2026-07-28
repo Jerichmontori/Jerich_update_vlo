@@ -1408,6 +1408,12 @@ function PenilaianTab() {
     for (const r of rows) {
       if (!juriMazmur.has(r.juri_id)) juriMazmur.set(r.juri_id, r.mazmur_id ?? null);
     }
+    // Hanya laporkan jika jumlah inputan penilaian antar juri SAMA (dan > 0).
+    const involvedJuri = Array.from(juriMazmur.keys());
+    if (involvedJuri.length < 2) return null;
+    const counts = await fetchJuriCounts(pesertaIdCheck, involvedJuri);
+    if (!allCountsEqualAndPositive(counts)) return null;
+
     const distinctMazmur = new Set(Array.from(juriMazmur.values()).map(v => v ?? "-"));
     let mazmurReport: DiscrepancyReport["mazmur"] = null;
     if (distinctMazmur.size > 1) {
