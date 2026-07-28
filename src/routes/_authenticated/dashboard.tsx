@@ -1776,7 +1776,7 @@ function PenilaianTab() {
             </p>
           </div>
           <DialogFooter>
-            <Button onClick={perbaikiPenilaianSaya} className="gap-1 w-full sm:w-auto">
+            <Button onClick={() => perbaikiPenilaianSaya()} className="gap-1 w-full sm:w-auto">
               <Check className="size-4" /> OK, Lakukan Perubahan
             </Button>
           </DialogFooter>
