@@ -1830,18 +1830,14 @@ function PenilaianTab() {
           <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_180px] gap-4 mb-8">
             <div>
               <Label>Bacaan Mazmur</Label>
-              <Select value={mazmurId} onValueChange={setMazmurId} disabled={lockPesertaMazmur}>
-                <SelectTrigger>
-                  <SelectValue placeholder={lockPesertaMazmur ? "Ditentukan Operator Lomba" : (mazmur.length === 0 ? "Belum ada bacaan — tambahkan di tab Mazmur" : "Pilih bacaan mazmur")} />
-
-                </SelectTrigger>
-                <SelectContent>
-                  {mazmur.map(m => (
-                    <SelectItem key={m.id} value={m.id}>{m.bacaan}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <Input
+                readOnly
+                value={mazmur.find(m => m.id === mazmurId)?.bacaan || ""}
+                placeholder={lockPesertaMazmur ? "Ditentukan Operator Lomba" : "Menunggu sesi dari Operator Lomba"}
+                className="bg-muted/50"
+              />
             </div>
+
             <div>
               <Label>Kriteria Peserta</Label>
               <Input readOnly value={peserta.find(p => p.id === pesertaId)?.kategori || ""} placeholder="Otomatis dari kategori peserta" className="bg-muted/50" />
