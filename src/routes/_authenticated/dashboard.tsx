@@ -3090,6 +3090,14 @@ function RincianNilaiTab() {
 
     let y = meta ? 96 : 82;
 
+    const nilaiAkhir = nilaiAkhirMap[p.id];
+    if (nilaiAkhir != null) {
+      doc.setFontSize(12); doc.setTextColor(120, 30, 45);
+      doc.text(`Nilai Akhir: ${Number(nilaiAkhir).toFixed(3)}`, 40, y);
+      doc.setTextColor(0);
+      y += 18;
+    }
+
     const juriDenganNilai = juri.filter((j) => penilaian.some((n) => n.peserta_id === p.id && n.juri_id === j.id));
     if (juriDenganNilai.length === 0) {
       doc.setFontSize(11); doc.setTextColor(120);
