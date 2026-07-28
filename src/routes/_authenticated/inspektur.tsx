@@ -219,9 +219,6 @@ function InspekturPage() {
     }
   }
 
-  async function bukaPerbaikanPerhatian(pesertaId: string, nama: string) {
-    openConfirmBukaPerbaikan(pesertaId, nama, null, "row");
-  }
 
   if (allowed === null) return null;
   if (!allowed) return null;
