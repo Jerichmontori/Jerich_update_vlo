@@ -1267,14 +1267,23 @@ function PenilaianTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submittedFor, totalJuriApproved]);
 
-  // Deteksi perbedaan input antar juri yang SUDAH menilai (dipakai saat overlay menunggu).
-  // Membandingkan peserta_id & mazmur_id terakhir per juri.
+  // Deteksi perbedaan input antar juri yang SUDAH MENGIRIM (submission) untuk peserta terkait.
+  // Hanya membandingkan juri yang benar-benar sudah klik "Kirim" — bukan yang masih mengisi.
   async function checkPendingDiscrepancy(currentPesertaId: string): Promise<DiscrepancyReport | null> {
-    const { data: rows } = await supabase
-      .from("penilaian")
-      .select("juri_id, peserta_id, mazmur_id, created_at")
+    const { data: subs } = await supabase
+      .from("penilaian_submission" as any)
+      .select("juri_id, peserta_id, created_at")
       .order("created_at", { ascending: false });
-    if (!rows || rows.length === 0) return null;
+    const submissionRows = ((subs ?? []) as any[]) as Array<{ juri_id: string; peserta_id: string; created_at: string }>;
+    if (submissionRows.length < 2) return null;
+
+    // Submission TERBARU per juri
+    const latestSub = new Map<string, string>(); // juri_id -> peserta_id
+    for (const r of submissionRows) {
+      if (!latestSub.has(r.juri_id)) latestSub.set(r.juri_id, r.peserta_id);
+    }
+    if (latestSub.size < 2) return null;
+
     const { data: juriRows } = await supabase.from("juri_public" as any).select("id, nama");
     const juriMap = new Map<string, string>();
     ((juriRows ?? []) as unknown as { id: string; nama: string }[]).forEach(j => juriMap.set(j.id, j.nama));
@@ -1283,31 +1292,39 @@ function PenilaianTab() {
     const pesertaMap = new Map<string, string>();
     peserta.forEach(p => pesertaMap.set(p.id, `#${p.nomor_urut} ${p.nama}`));
 
-    // Ambil pilihan TERAKHIR (peserta & mazmur) per juri
-    const latest = new Map<string, { peserta_id: string; mazmur_id: string | null }>();
-    for (const r of rows as any[]) {
-      if (!latest.has(r.juri_id)) latest.set(r.juri_id, { peserta_id: r.peserta_id, mazmur_id: r.mazmur_id ?? null });
-    }
-    if (latest.size < 2) return null;
-
-    const pesertaSet = new Set(Array.from(latest.values()).map(v => v.peserta_id));
+    // 1) Perbedaan peserta: dilaporkan hanya jika ada juri yang submission terbarunya
+    //    untuk currentPesertaId DAN ada juri lain yang submission terbarunya untuk peserta berbeda.
     let pesertaReport: DiscrepancyReport["peserta"] = null;
-    if (pesertaSet.size > 1) {
-      pesertaReport = Array.from(latest.entries()).map(([jid, v]) => ({
+    const distinctPeserta = new Set(Array.from(latestSub.values()));
+    if (distinctPeserta.size > 1 && distinctPeserta.has(currentPesertaId)) {
+      pesertaReport = Array.from(latestSub.entries()).map(([jid, pid]) => ({
         juriNama: juriMap.get(jid) ?? "—",
-        pesertaLabel: pesertaMap.get(v.peserta_id) ?? "—",
+        pesertaLabel: pesertaMap.get(pid) ?? "—",
       }));
     }
 
-    // Bandingkan mazmur juri yang menilai peserta yang sama (current)
-    const juriSamePeserta = Array.from(latest.entries()).filter(([, v]) => v.peserta_id === currentPesertaId);
-    const distinctMazmur = new Set(juriSamePeserta.map(([, v]) => v.mazmur_id ?? "-"));
+    // 2) Perbedaan mazmur: hanya di antara juri yang SUBMISSION-nya untuk currentPesertaId.
+    const juriSamePeserta = Array.from(latestSub.entries())
+      .filter(([, pid]) => pid === currentPesertaId)
+      .map(([jid]) => jid);
     let mazmurReport: DiscrepancyReport["mazmur"] = null;
-    if (distinctMazmur.size > 1) {
-      mazmurReport = juriSamePeserta.map(([jid, v]) => ({
-        juriNama: juriMap.get(jid) ?? "—",
-        mazmurLabel: v.mazmur_id ? (mazmurMap.get(v.mazmur_id) ?? "—") : "(kosong)",
-      }));
+    if (juriSamePeserta.length >= 2) {
+      const { data: penRows } = await supabase
+        .from("penilaian")
+        .select("juri_id, mazmur_id")
+        .eq("peserta_id", currentPesertaId)
+        .in("juri_id", juriSamePeserta);
+      const juriMazmur = new Map<string, string | null>();
+      for (const r of (penRows ?? []) as any[]) {
+        if (!juriMazmur.has(r.juri_id)) juriMazmur.set(r.juri_id, r.mazmur_id ?? null);
+      }
+      const distinctMazmur = new Set(Array.from(juriMazmur.values()).map(v => v ?? "-"));
+      if (distinctMazmur.size > 1) {
+        mazmurReport = Array.from(juriMazmur.entries()).map(([jid, mid]) => ({
+          juriNama: juriMap.get(jid) ?? "—",
+          mazmurLabel: mid ? (mazmurMap.get(mid) ?? "—") : "(kosong)",
+        }));
+      }
     }
 
     if (!pesertaReport && !mazmurReport) return null;
