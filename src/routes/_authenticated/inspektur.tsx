@@ -354,6 +354,67 @@ function InspekturPage() {
                   </div>
                 )}
 
+                {detailData.var_session && Array.isArray(detailData.penilaian) && (() => {
+                  const KOMP_IDX: Record<string, number> = { salah_kata: 0, menambah_kata: 2, mengurangi_kata: 3 };
+                  const komps: string[] = Array.isArray(detailData.var_session.komponen_berbeda)
+                    ? detailData.var_session.komponen_berbeda : [];
+                  const perhatian = (detailData.penilaian as any[]).filter(
+                    (p) => typeof p.kriteria === "string" && p.kriteria.toLowerCase().includes("perhatian"),
+                  );
+                  const juris = Array.from(
+                    new Map(perhatian.map((p) => [p.juri_id, p.juri_nama ?? p.juri_id])).entries(),
+                  );
+                  if (komps.length === 0 || juris.length === 0) return null;
+                  const fmt = (marks: any): string => {
+                    if (!Array.isArray(marks) || marks.length === 0) return "—";
+                    return marks.map((m: any) => (typeof m === "object" ? (m.ayat ?? JSON.stringify(m)) : m)).join(", ");
+                  };
+                  return (
+                    <div className="rounded-lg border-2 border-amber-500/50 bg-amber-50 p-3">
+                      <div className="text-sm font-semibold text-amber-800 mb-2 flex items-center gap-1">
+                        <AlertTriangle className="size-4" /> Pemicu VAR — Perbedaan jawaban antar juri
+                      </div>
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Juri</TableHead>
+                              {komps.map((k) => (
+                                <TableHead key={k}>{KOMP_LABEL[k] ?? k} <span className="text-[10px] text-muted-foreground">(ayat)</span></TableHead>
+                              ))}
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {juris.map(([jid, jnama]) => {
+                              const row = perhatian.find((p) => p.juri_id === jid);
+                              const aspek = row?.detail?.aspek ?? [];
+                              return (
+                                <TableRow key={jid as string}>
+                                  <TableCell className="font-medium">{jnama as string}</TableCell>
+                                  {komps.map((k) => {
+                                    const idx = KOMP_IDX[k];
+                                    const marks = aspek?.[idx]?.ditandai;
+                                    const val = fmt(marks);
+                                    return (
+                                      <TableCell key={k} className={val === "—" ? "text-muted-foreground" : "font-mono text-rose-700"}>
+                                        {val}
+                                      </TableCell>
+                                    );
+                                  })}
+                                </TableRow>
+                              );
+                            })}
+                          </TableBody>
+                        </Table>
+                      </div>
+                      <p className="text-[11px] text-amber-800/80 mt-2">
+                        Sel yang berbeda antar juri pada kolom di atas adalah pemicu Potensi VAR untuk komponen bersangkutan.
+                      </p>
+                    </div>
+                  );
+                })()}
+
+
                 {detailData.penilaian && Array.isArray(detailData.penilaian) && (
                   <div>
                     <div className="text-sm font-semibold mb-2">Nilai per Juri</div>
