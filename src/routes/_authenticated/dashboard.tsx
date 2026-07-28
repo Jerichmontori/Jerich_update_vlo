@@ -475,7 +475,7 @@ function JuriTab() {
     }
   }
 
-  async function ubahRole(id: string, role: "admin" | "juri") {
+  async function ubahRole(id: string, role: "admin" | "juri" | "panitia") {
     try {
       const { setJuriRole } = await import("@/lib/juri-users.functions");
       await setJuriRole({ data: { juriId: id, role } });
@@ -485,6 +485,7 @@ function JuriTab() {
       toast.error(err instanceof Error ? err.message : "Gagal mengubah role");
     }
   }
+
 
   function openReset(j: Juri) {
     setResetTarget(j);
