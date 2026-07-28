@@ -1261,6 +1261,17 @@ function PenilaianTab() {
     const id = setInterval(poll, 3000);
     return () => { stopped = true; clearInterval(id); };
   }, []);
+  const perbaikanPerhatianIds = new Set(varAktifList.filter(v => v.status === "perbaikan_perhatian").map(v => v.peserta_id));
+  useEffect(() => {
+    if (perbaikanPerhatianIds.size === 0) return;
+    setMySubmittedIds(prev => {
+      let changed = false;
+      const next = new Set(prev);
+      perbaikanPerhatianIds.forEach(id => { if (next.delete(id)) changed = true; });
+      return changed ? next : prev;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [varAktifList]);
   const KOMP_LABEL: Record<string, string> = {
     salah_kata: "Salah kata",
     menambah_kata: "Menambah kata",
