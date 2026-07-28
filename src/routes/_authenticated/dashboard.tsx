@@ -1125,6 +1125,38 @@ function PenilaianTab() {
   };
   const [perhatianDiscrepancy, setPerhatianDiscrepancy] = useState<PerhatianDiscrepancyReport | null>(null);
 
+  // Sesi aktif dari Panitia/Operator Lomba — juri tidak boleh memilih peserta/mazmur secara manual
+  const [activeSession, setActiveSession] = useState<{ id: string; peserta_id: string; mazmur_id: string | null } | null>(null);
+  useEffect(() => {
+    let stopped = false;
+    async function poll() {
+      const { data } = await supabase
+        .from("sesi_penilaian" as any)
+        .select("id, peserta_id, mazmur_id, status")
+        .eq("status", "active")
+        .order("started_at", { ascending: false })
+        .limit(1);
+      if (stopped) return;
+      const row = (data && data[0]) || null;
+      setActiveSession(row ? { id: row.id, peserta_id: row.peserta_id, mazmur_id: row.mazmur_id } : null);
+    }
+    poll();
+    const id = setInterval(poll, 3000);
+    return () => { stopped = true; clearInterval(id); };
+  }, []);
+  // Auto-terapkan sesi aktif untuk non-admin (juri): kunci peserta & mazmur mengikuti pilihan Operator
+  useEffect(() => {
+    if (!activeSession) return;
+    if (isAdmin) return;
+    if (editMode) return;
+    setPesertaId(prev => prev === activeSession.peserta_id ? prev : activeSession.peserta_id);
+    if (activeSession.mazmur_id) {
+      setMazmurId(prev => prev === activeSession.mazmur_id ? prev : activeSession.mazmur_id!);
+    }
+  }, [activeSession, isAdmin, editMode]);
+  const lockPesertaMazmur = !!activeSession && !isAdmin && !editMode;
+
+
 
 
 
