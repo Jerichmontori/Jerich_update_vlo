@@ -1291,25 +1291,16 @@ function PenilaianTab() {
 
   async function perbaikiPenilaianSaya() {
     if (!discrepancy) return;
-    const juriTarget = juriId;
     const pesertaTarget = discrepancy.pesertaId;
-    if (!juriTarget) { setDiscrepancy(null); return; }
-    // Hapus penilaian juri ini untuk peserta tsb agar bisa dinilai ulang
-    const { error } = await supabase
-      .from("penilaian")
-      .delete()
-      .eq("peserta_id", pesertaTarget)
-      .eq("juri_id", juriTarget);
-    if (error) { toast.error(error.message); return; }
-    toast.warning("✦ Silakan menilai ulang", {
-      description: "Form penilaian peserta terakhir kembali aktif. Silakan input ulang sesuai kesepakatan.",
+    toast.warning("✦ Lakukan perubahan", {
+      description: "Silakan perbaiki pilihan Peserta atau Bacaan Mazmur, lalu klik Kirim. Nilai kriteria Anda tetap disimpan.",
     });
     setDiscrepancy(null);
     setSubmittedFor(null);
     setJudgesDoneForPeserta(0);
-    setPesertaId(pesertaTarget); // aktifkan peserta terakhir yang dinilai
+    setEditMode({ oldPesertaId: pesertaTarget });
+    setPesertaId(pesertaTarget);
     setOpenKriteria(null);
-    loadAll();
   }
 
 
