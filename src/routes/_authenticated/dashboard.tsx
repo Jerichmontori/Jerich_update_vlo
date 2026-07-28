@@ -1104,10 +1104,12 @@ function kriteriaKey(nama: string): keyof typeof GRADE_DESCRIPTIONS | "catatan" 
 function CriteriaPillButton({
   label,
   active,
+  disabled,
   onClick,
 }: {
   label: string;
   active: boolean;
+  disabled?: boolean;
   onClick: () => void;
 }) {
   return (
