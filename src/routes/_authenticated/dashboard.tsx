@@ -1116,11 +1116,13 @@ function CriteriaPillButton({
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
+      aria-disabled={disabled}
       className={[
         "group relative w-full rounded-[2rem] border-[2px] border-primary/40 px-6 py-8 sm:py-10",
         "text-center font-serif transition-all duration-200 ease-out",
         "focus:outline-none focus-visible:ring-4 focus-visible:ring-accent/50",
-        "translate-y-0 hover:-translate-y-1 active:translate-y-1",
+        disabled ? "opacity-40 cursor-not-allowed grayscale" : "translate-y-0 hover:-translate-y-1 active:translate-y-1",
         active
           ? "bg-gradient-to-b from-accent/90 to-accent text-accent-foreground border-primary/70 shadow-[0_8px_0_0_hsl(var(--primary)/0.6),0_16px_24px_-6px_hsl(var(--primary)/0.35)] active:shadow-[0_3px_0_0_hsl(var(--primary)/0.6),0_6px_10px_-2px_hsl(var(--primary)/0.3)]"
           : "bg-gradient-to-b from-card to-secondary/60 text-foreground shadow-[0_6px_0_0_hsl(var(--primary)/0.35),0_12px_20px_-6px_hsl(var(--primary)/0.25)] hover:shadow-[0_10px_0_0_hsl(var(--primary)/0.45),0_18px_28px_-6px_hsl(var(--primary)/0.35)] active:shadow-[0_3px_0_0_hsl(var(--primary)/0.35),0_6px_10px_-2px_hsl(var(--primary)/0.25)]",
