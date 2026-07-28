@@ -1484,6 +1484,49 @@ function PenilaianTab() {
                     <span className="font-semibold text-foreground">{totalJuriApproved}</span>
                     <span className="text-muted-foreground"> juri telah mengirim.</span>
                   </p>
+
+                  {pendingDiscrepancy && (
+                    <div className="mt-4 rounded-xl border-2 border-destructive/50 bg-destructive/5 p-4 text-left">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-destructive font-serif text-base font-semibold">✦ Ada perbedaan inputan antar juri</span>
+                      </div>
+                      {pendingDiscrepancy.peserta && (
+                        <div className="mb-3">
+                          <div className="text-xs font-semibold text-muted-foreground mb-1">Perbedaan Nama Peserta</div>
+                          <ul className="space-y-1 text-sm">
+                            {pendingDiscrepancy.peserta.map((p, i) => (
+                              <li key={i} className="flex justify-between gap-2">
+                                <span className="text-muted-foreground">{p.juriNama}</span>
+                                <span className="font-medium text-right">{p.pesertaLabel}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      {pendingDiscrepancy.mazmur && (
+                        <div className="mb-3">
+                          <div className="text-xs font-semibold text-muted-foreground mb-1">Perbedaan Bacaan Mazmur</div>
+                          <ul className="space-y-1 text-sm">
+                            {pendingDiscrepancy.mazmur.map((m, i) => (
+                              <li key={i} className="flex justify-between gap-2">
+                                <span className="text-muted-foreground">{m.juriNama}</span>
+                                <span className="font-medium text-right">{m.mazmurLabel}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      <p className="text-xs text-muted-foreground mb-3">
+                        Nilai kriteria Anda tetap tersimpan. Hanya <b>Peserta</b> dan <b>Bacaan Mazmur</b> yang dapat diubah.
+                      </p>
+                      <Button
+                        onClick={() => perbaikiPenilaianSaya(pendingDiscrepancy.pesertaId)}
+                        className="gap-1 w-full"
+                      >
+                        <Check className="size-4" /> Lakukan Perubahan
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             );
