@@ -20,7 +20,7 @@ export const Route = createFileRoute("/ranking")({
   component: RankingPublic,
 });
 
-type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: string | null; total_skor: number; rata_rata: number; jumlah_juri: number };
+type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: string | null; total_skor: number; rata_rata: number; jumlah_juri: number; nilai_akhir: number | null };
 type Peserta = { id: string; kategori: string | null };
 
 const ALL = "__all__";
