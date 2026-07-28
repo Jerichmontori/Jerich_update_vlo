@@ -1641,8 +1641,11 @@ function PenilaianTab() {
           return filled;
         });
         setPerhatianChecks(restored);
+        perhatianBaselineRef.current = restored.map(r => [...r]);
       } else {
-        setPerhatianChecks(PERHATIAN_ASPEK.map((_, i) => i === 0 ? [false] : Array(selectedMazmur.jumlah_ayat).fill(false)));
+        const empty = PERHATIAN_ASPEK.map((_, i) => i === 0 ? [false] : Array(selectedMazmur.jumlah_ayat).fill(false));
+        setPerhatianChecks(empty);
+        perhatianBaselineRef.current = isPerbaikan ? empty.map(r => [...r]) : null;
       }
     }
     setOpenKriteria(k);
