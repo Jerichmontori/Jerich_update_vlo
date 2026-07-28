@@ -1621,7 +1621,25 @@ function PenilaianTab() {
     }
     if (key === "perhatian") {
       if (!selectedMazmur) return toast.error("Pilih bacaan mazmur terlebih dahulu");
-      setPerhatianChecks(PERHATIAN_ASPEK.map((_, i) => i === 0 ? [false] : Array(selectedMazmur.jumlah_ayat).fill(false)));
+      const isPerbaikan = !!(pesertaId && perbaikanPerhatianIds.has(pesertaId));
+      const prevRow = penilaian.find(x => x.juri_id === juriId && x.peserta_id === pesertaId && x.kriteria_id === k.id);
+      const prevDetail: any = prevRow?.detail ?? null;
+      if (isPerbaikan && prevDetail && prevDetail.type === "perhatian") {
+        const restored: boolean[][] = PERHATIAN_ASPEK.map((_, i) => {
+          if (i === 0) return [Boolean(prevDetail.membacaPerikop)];
+          const aspek = prevDetail.aspek?.[i - 1];
+          const arr: boolean[] | undefined = Array.isArray(aspek?.ayat) ? aspek.ayat : undefined;
+          if (arr && arr.length === selectedMazmur.jumlah_ayat) return [...arr];
+          const filled = Array(selectedMazmur.jumlah_ayat).fill(false);
+          (aspek?.ditandai ?? []).forEach((n: number) => {
+            if (n >= 1 && n <= filled.length) filled[n - 1] = true;
+          });
+          return filled;
+        });
+        setPerhatianChecks(restored);
+      } else {
+        setPerhatianChecks(PERHATIAN_ASPEK.map((_, i) => i === 0 ? [false] : Array(selectedMazmur.jumlah_ayat).fill(false)));
+      }
     }
     setOpenKriteria(k);
   }
