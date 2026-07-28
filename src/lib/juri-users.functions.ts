@@ -136,7 +136,7 @@ export const setJuriRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { juriId: string; role: Role }) => {
     if (!data?.juriId) throw new Error("juriId wajib");
-    if (!["admin", "juri", "panitia"].includes(data?.role)) throw new Error("Role tidak valid");
+    if (!ALL_ROLES.includes(data?.role)) throw new Error("Role tidak valid");
     return data;
   })
   .handler(async ({ data, context }) => {
