@@ -187,10 +187,10 @@ function OperatorPage() {
 
   async function akhiriSesi() {
     if (!sesi) return;
-    if (!confirm("Akhiri sesi penilaian saat ini?")) return;
     setBusy(true);
     const { error } = await supabase.rpc("akhiri_sesi" as any, { _id: sesi.id });
     setBusy(false);
+    setConfirmAkhiriOpen(false);
     if (error) return toast.error(error.message);
     toast.success("Sesi diakhiri");
     setSelectedPeserta("");
