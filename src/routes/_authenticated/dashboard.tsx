@@ -1456,6 +1456,7 @@ function PenilaianTab() {
               <Select
                 value={pesertaId}
                 onValueChange={(val) => {
+                  if (editMode) { setPesertaId(val); return; }
                   const kriteriaIds = new Set(kriteria.map(k => k.id));
                   const scoredKrit = new Set(
                     penilaian
