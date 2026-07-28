@@ -29,7 +29,7 @@ type PenilaianDetail =
   | { type: "catatan"; clearText: boolean; aspek: { nama: string; nilai: number; skipped?: boolean }[] }
   | { type: "perhatian"; membacaPerikop: boolean | null; aspek: { nama: string; ayat: boolean[]; ditandai: number[] }[] }
   | null;
-type Penilaian = { id: string; peserta_id: string; juri_id: string; kriteria_id: string; nilai: number; mazmur_id: string | null; detail?: PenilaianDetail };
+type Penilaian = { id: string; peserta_id: string; juri_id: string; kriteria_id: string; nilai: number; mazmur_id: string | null; detail?: PenilaianDetail; created_at?: string };
 type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: string | null; total_skor: number; rata_rata: number; jumlah_juri: number };
 type Kategori = { id: string; kategori: string | null; batas_atas: number; batas_bawah: number; kriteria_penilaian: string | null; kriteria_peserta: string | null; bobot: number; nilai_tengah: number; nilai_standart: number };
 
