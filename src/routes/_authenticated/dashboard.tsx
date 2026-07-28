@@ -1076,6 +1076,13 @@ function PenilaianTab() {
       const done = row ? Number(row.jumlah_juri) : 0;
       setJudgesDoneForPeserta(done);
       if (totalJuriApproved > 0 && done >= totalJuriApproved) {
+        stopped = true;
+        // Aturan #1 & #2 — periksa perbedaan mazmur & perhatian (Q2, Q4, Q5)
+        const report = await checkDiscrepancy(submittedFor);
+        if (report) {
+          setDiscrepancy(report);
+          return; // biarkan overlay tetap, tunggu keputusan dari dialog
+        }
         toast.success("✦ Semua juri sudah menilai", {
           description: "Silahkan melakukan penilaian peserta selanjutnya.",
         });
@@ -1084,7 +1091,6 @@ function PenilaianTab() {
         setMazmurId("");
         setOpenKriteria(null);
         setJudgesDoneForPeserta(0);
-        stopped = true;
         loadAll();
       }
     }
@@ -1093,6 +1099,95 @@ function PenilaianTab() {
     return () => { stopped = true; clearInterval(id); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submittedFor, totalJuriApproved]);
+
+  // Bandingkan mazmur & perhatian (Q2, Q4, Q5) antar juri untuk peserta tsb.
+  async function checkDiscrepancy(pesertaIdCheck: string): Promise<DiscrepancyReport | null> {
+    const { data: rows } = await supabase
+      .from("penilaian")
+      .select("juri_id, mazmur_id, kriteria_id, detail")
+      .eq("peserta_id", pesertaIdCheck);
+    if (!rows || rows.length === 0) return null;
+    const { data: juriRows } = await supabase.from("juri_public" as any).select("id, nama");
+    const juriMap = new Map<string, string>();
+    ((juriRows ?? []) as unknown as { id: string; nama: string }[]).forEach(j => juriMap.set(j.id, j.nama));
+    const mazmurMap = new Map<string, string>();
+    mazmur.forEach(m => mazmurMap.set(m.id, m.bacaan));
+
+    // Mazmur per juri (ambil salah satu baris; setiap juri seharusnya konsisten)
+    const juriMazmur = new Map<string, string | null>();
+    for (const r of rows) {
+      if (!juriMazmur.has(r.juri_id)) juriMazmur.set(r.juri_id, r.mazmur_id ?? null);
+    }
+    const distinctMazmur = new Set(Array.from(juriMazmur.values()).map(v => v ?? "-"));
+    let mazmurReport: DiscrepancyReport["mazmur"] = null;
+    if (distinctMazmur.size > 1) {
+      mazmurReport = Array.from(juriMazmur.entries()).map(([jid, mid]) => ({
+        juriNama: juriMap.get(jid) ?? "—",
+        mazmurLabel: mid ? (mazmurMap.get(mid) ?? "—") : "(kosong)",
+      }));
+    }
+
+    // Perhatian — bandingkan pertanyaan 2, 4, 5 (aspek index 0, 2, 3 di detail.aspek)
+    const perhatianKrit = kriteria.find(k => kriteriaKey(k.nama) === "perhatian");
+    const perhatianReport: DiscrepancyReport["perhatian"] = [];
+    if (perhatianKrit) {
+      const perJuri = new Map<string, any>();
+      for (const r of rows) {
+        if (r.kriteria_id === perhatianKrit.id) perJuri.set(r.juri_id, r.detail);
+      }
+      const targetIdx = [0, 2, 3]; // Q2, Q4, Q5
+      const targetLabels = ["Salah kata", "Menambah kata", "Mengurangi kata"];
+      for (let ti = 0; ti < targetIdx.length; ti++) {
+        const idx = targetIdx[ti];
+        const entries: { juriNama: string; ditandai: number[] }[] = [];
+        for (const [jid, det] of perJuri.entries()) {
+          const aspek = (det?.aspek ?? [])[idx];
+          const ditandai: number[] = Array.isArray(aspek?.ditandai) ? aspek.ditandai : [];
+          entries.push({ juriNama: juriMap.get(jid) ?? "—", ditandai });
+        }
+        // Bandingkan sebagai set ayat
+        const sig = new Set(entries.map(e => JSON.stringify([...e.ditandai].sort((a, b) => a - b))));
+        if (sig.size > 1) {
+          perhatianReport.push({ questionLabel: `${idx + 2}. ${targetLabels[ti]}`, entries });
+        }
+      }
+    }
+
+    if (!mazmurReport && perhatianReport.length === 0) return null;
+    return { pesertaId: pesertaIdCheck, mazmur: mazmurReport, perhatian: perhatianReport };
+  }
+
+  async function perbaikiPenilaianSaya() {
+    if (!discrepancy) return;
+    const juriTarget = juriId;
+    if (!juriTarget) { setDiscrepancy(null); return; }
+    // Hapus penilaian juri ini untuk peserta tsb agar bisa dinilai ulang
+    const { error } = await supabase
+      .from("penilaian")
+      .delete()
+      .eq("peserta_id", discrepancy.pesertaId)
+      .eq("juri_id", juriTarget);
+    if (error) { toast.error(error.message); return; }
+    toast.warning("✦ Silakan menilai ulang", {
+      description: "Penilaian Anda dihapus untuk peserta ini. Silakan input ulang sesuai kesepakatan.",
+    });
+    setDiscrepancy(null);
+    setSubmittedFor(null);
+    setJudgesDoneForPeserta(0);
+    // pesertaId & mazmurId dipertahankan
+    loadAll();
+  }
+
+  function abaikanPerbedaan() {
+    setDiscrepancy(null);
+    setSubmittedFor(null);
+    setPesertaId("");
+    setMazmurId("");
+    setOpenKriteria(null);
+    setJudgesDoneForPeserta(0);
+    loadAll();
+  }
+
 
 
   const canJudge = peserta.length > 0 && juri.length > 0 && kriteria.length > 0;
