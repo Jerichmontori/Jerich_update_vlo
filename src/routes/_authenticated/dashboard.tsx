@@ -1116,6 +1116,13 @@ function PenilaianTab() {
   // Perbedaan inputan yang muncul SAAT overlay "menunggu" (sebelum semua juri selesai)
   const [pendingDiscrepancy, setPendingDiscrepancy] = useState<DiscrepancyReport | null>(null);
 
+  type PerhatianDiscrepancyReport = {
+    pesertaId: string;
+    pesertaNama: string;
+    items: { pertanyaan: string; rows: { juriNama: string; ayat: number[] }[] }[];
+  };
+  const [perhatianDiscrepancy, setPerhatianDiscrepancy] = useState<PerhatianDiscrepancyReport | null>(null);
+
 
 
 
