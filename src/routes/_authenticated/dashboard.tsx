@@ -1142,12 +1142,66 @@ function PenilaianTab() {
       supabase.from("penilaian").select("*"),
     ]);
     if (p.error || j.error || k.error || m.error || n.error) return toast.error("Gagal memuat data");
-    setPeserta(p.data ?? []);
+    const pesertaList = p.data ?? [];
+    const juriList = ((j.data ?? []) as unknown as Juri[]).filter(x => x.approved && x.role === "juri");
+    const kriteriaList = k.data ?? [];
+    const mazmurList = (m.data ?? []) as Mazmur[];
+    const penilaianList = (n.data ?? []) as Penilaian[];
+    setPeserta(pesertaList);
     // Admin tidak merangkap sebagai juri — hanya tampilkan yang role="juri" & sudah disetujui
-    setJuri(((j.data ?? []) as unknown as Juri[]).filter(x => x.approved && x.role === "juri"));
-    setKriteria(k.data ?? []);
-    setMazmur((m.data ?? []) as Mazmur[]);
-    setPenilaian((n.data ?? []) as Penilaian[]);
+    setJuri(juriList);
+    setKriteria(kriteriaList);
+    setMazmur(mazmurList);
+    setPenilaian(penilaianList);
+
+    // Restore state setelah refresh: jika juri sudah menilai semua kriteria untuk seorang peserta
+    // tapi belum semua juri selesai, tampilkan overlay "menunggu". Jika sudah semua juri selesai
+    // dan ada perbedaan input, tampilkan dialog perbedaan.
+    const activeJuriId = admin ? (juriId || "") : (prof?.juri_id || "");
+    if (activeJuriId && kriteriaList.length > 0 && !editMode) {
+      const kriteriaIds = new Set(kriteriaList.map((x: any) => x.id));
+      const byPeserta: Record<string, { done: Set<string>; latest: string }> = {};
+      penilaianList.forEach(pn => {
+        if (pn.juri_id !== activeJuriId) return;
+        if (!kriteriaIds.has(pn.kriteria_id)) return;
+        const cur = byPeserta[pn.peserta_id] ??= { done: new Set(), latest: pn.created_at };
+        cur.done.add(pn.kriteria_id);
+        if (pn.created_at > cur.latest) cur.latest = pn.created_at;
+      });
+      const fullyScored = Object.entries(byPeserta)
+        .filter(([, v]) => v.done.size >= kriteriaIds.size)
+        .sort((a, b) => (a[1].latest < b[1].latest ? 1 : -1));
+
+      if (fullyScored.length > 0) {
+        const { data: rankData } = await supabase.rpc("get_ranking" as any);
+        const rank = (rankData ?? []) as unknown as Ranking[];
+        const total = juriList.length;
+        // Peserta paling baru yang masih pending juri lain
+        const pending = fullyScored.find(([pid]) => {
+          const r = rank.find(x => x.peserta_id === pid);
+          const done = r ? Number(r.jumlah_juri) : 0;
+          return total > 0 && done < total;
+        });
+        if (pending) {
+          const [pid] = pending;
+          const myRow = penilaianList.find(x => x.juri_id === activeJuriId && x.peserta_id === pid && x.mazmur_id);
+          setSubmittedFor(pid);
+          setPesertaId(pid);
+          if (myRow?.mazmur_id) setMazmurId(myRow.mazmur_id);
+        } else {
+          // Semua juri sudah selesai untuk peserta terakhir yang saya nilai — cek perbedaan.
+          const [pid] = fullyScored[0];
+          const myRow = penilaianList.find(x => x.juri_id === activeJuriId && x.peserta_id === pid && x.mazmur_id);
+          setPesertaId(pid);
+          if (myRow?.mazmur_id) setMazmurId(myRow.mazmur_id);
+          const report = await checkDiscrepancyWith(pid, mazmurList, pesertaList);
+          if (report) {
+            setDiscrepancy(report);
+            setSubmittedFor(null);
+          }
+        }
+      }
+    }
   }
   useEffect(() => { loadAll(); }, []);
 
