@@ -3019,19 +3019,21 @@ function RincianNilaiTab() {
   const [penilaian, setPenilaian] = useState<Penilaian[]>([]);
   const [kategoriRows, setKategoriRows] = useState<Kategori[]>([]);
   const [mazmur, setMazmur] = useState<Mazmur[]>([]);
+  const [nilaiAkhirMap, setNilaiAkhirMap] = useState<Record<string, number | null>>({});
   const [loading, setLoading] = useState(true);
   const [kategoriFilter, setKategoriFilter] = useState<string>(LIHAT_ALL);
   const [pesertaFilter, setPesertaFilter] = useState<string>(LIHAT_ALL);
 
   async function load() {
     setLoading(true);
-    const [p, j, k, n, kt, m] = await Promise.all([
+    const [p, j, k, n, kt, m, rank] = await Promise.all([
       supabase.from("peserta").select("*").order("nomor_urut"),
       supabase.from("juri_public" as any).select("*").order("created_at"),
       supabase.from("kriteria").select("*").order("created_at"),
       supabase.from("penilaian").select("*"),
       supabase.from("kategori").select("*").order("created_at"),
       supabase.from("mazmur").select("*"),
+      supabase.rpc("get_ranking" as any),
     ]);
     setLoading(false);
     for (const r of [p, j, k, n, kt, m]) if ((r as any).error) return toast.error((r as any).error.message);
@@ -3041,6 +3043,9 @@ function RincianNilaiTab() {
     setPenilaian((n.data ?? []) as Penilaian[]);
     setKategoriRows((kt.data ?? []) as Kategori[]);
     setMazmur((m.data ?? []) as Mazmur[]);
+    const map: Record<string, number | null> = {};
+    ((rank.data ?? []) as any[]).forEach((r) => { map[r.peserta_id] = r.nilai_akhir != null ? Number(r.nilai_akhir) : null; });
+    setNilaiAkhirMap(map);
   }
   useEffect(() => {
     load();
