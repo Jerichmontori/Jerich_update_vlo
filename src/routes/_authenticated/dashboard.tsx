@@ -1833,11 +1833,15 @@ function PenilaianTab() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mb-8 pb-4">
             {kriteria.map(k => {
               const val = currentNilai(k.id);
+              const key = kriteriaKey(k.nama);
+              const perbaikanAktif = !!pesertaId && perbaikanPerhatianIds.has(pesertaId);
+              const isDisabled = perbaikanAktif && key !== "perhatian";
               return (
                 <div key={k.id} className="relative">
                   <CriteriaPillButton
                     label={k.nama}
                     active={val !== null}
+                    disabled={isDisabled}
                     onClick={() => openDialog(k)}
                   />
                 </div>
