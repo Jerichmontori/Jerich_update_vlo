@@ -149,15 +149,28 @@ function InspekturPage() {
     }
     setSavingCatatan(true);
     try {
-      const { error } = await supabase.rpc("inspektur_catat" as any, {
-        _peserta: detailPeserta.peserta_id,
-        _catatan: catatan.trim() || null,
-        _keputusan: keputusan || null,
-      });
-      if (error) throw error;
-      toast.success("Catatan inspektur tersimpan");
+      const hasActiveVar = !!(detailData && detailData.var_session);
+      const keputusanFinal = keputusan || "catatan_saja";
+      if (hasActiveVar) {
+        const { error } = await supabase.rpc("inspektur_selesaikan_var" as any, {
+          _peserta: detailPeserta.peserta_id,
+          _catatan: catatan.trim() || null,
+          _keputusan: keputusanFinal,
+        });
+        if (error) throw error;
+        toast.success("Potensi VAR diselesaikan · catatan tersimpan");
+      } else {
+        const { error } = await supabase.rpc("inspektur_catat" as any, {
+          _peserta: detailPeserta.peserta_id,
+          _catatan: catatan.trim() || null,
+          _keputusan: keputusanFinal,
+        });
+        if (error) throw error;
+        toast.success("Catatan inspektur tersimpan");
+      }
       setDetailOpen(false);
       loadAll();
+
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal menyimpan");
     } finally {
