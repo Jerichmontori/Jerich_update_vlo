@@ -1888,6 +1888,26 @@ function PenilaianTab() {
 
             return (
               <>
+                {varAktifList.length > 0 && (
+                  <div className="rounded-2xl border-2 border-rose-500/60 bg-rose-500/10 p-4 mb-4 animate-pulse">
+                    <div className="flex items-center gap-2 font-serif text-lg text-rose-700">
+                      <AlertTriangle className="size-5" /> ⚠ POTENSI VAR — Menunggu Keputusan Inspektur
+                    </div>
+                    <ul className="mt-2 space-y-1 text-sm text-rose-900">
+                      {varAktifList.map((v) => (
+                        <li key={v.peserta_id}>
+                          <b>{v.peserta_nama || "—"}</b> · Perbedaan pada:{" "}
+                          <span className="font-semibold">
+                            {v.komponen.map((k) => KOMP_LABEL[k] ?? k).join(", ") || "—"}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-2 text-xs text-rose-800/80">
+                      Inspektur Pertandingan akan meninjau dan memberi catatan/keputusan. Anda tidak perlu mengubah penilaian yang sudah dikirim.
+                    </p>
+                  </div>
+                )}
                 {editMode && (
                   <div className="rounded-2xl border-2 border-destructive/40 bg-destructive/5 p-4 mb-4">
                     <div className="font-serif text-lg text-destructive">✦ Mode Perubahan</div>
@@ -1896,6 +1916,7 @@ function PenilaianTab() {
                     </p>
                   </div>
                 )}
+
                 <div className="rounded-2xl border-2 border-accent/40 bg-gradient-to-br from-card to-secondary/40 p-5 sm:p-6 mb-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="text-sm text-muted-foreground">
