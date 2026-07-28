@@ -1338,6 +1338,16 @@ function PenilaianTab() {
   async function perbaikiPenilaianSaya(pesertaOverride?: string) {
     const pesertaTarget = pesertaOverride ?? discrepancy?.pesertaId;
     if (!pesertaTarget) return;
+    // Hapus submission juri saat ini untuk peserta terkait supaya status "sudah kirim" tereset
+    // dan overlay bisa aktif kembali setelah Kirim Perubahan.
+    const activeJuri = isAdmin ? juriId : (myJuriId || "");
+    if (activeJuri) {
+      await supabase
+        .from("penilaian_submission" as any)
+        .delete()
+        .eq("juri_id", activeJuri)
+        .eq("peserta_id", pesertaTarget);
+    }
     toast.warning("✦ Lakukan perubahan", {
       description: "Silakan perbaiki pilihan Peserta atau Bacaan Mazmur, lalu klik Kirim. Nilai kriteria Anda tetap disimpan.",
     });
