@@ -35,6 +35,7 @@ function OperatorPage() {
   const [juriTotal, setJuriTotal] = useState<number>(0);
   const [juriDone, setJuriDone] = useState<number>(0);
   const [busy, setBusy] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ nama: string; email: string; role: string } | null>(null);
 
   // Role gate
   useEffect(() => {
@@ -48,7 +49,13 @@ function OperatorPage() {
       ]);
       const ok = !!isPan || !!isAdm;
       setAllowed(ok);
-      if (!ok) window.location.href = "/dashboard";
+      if (!ok) { window.location.href = "/dashboard"; return; }
+      const { data: prof } = await supabase.from("profiles").select("nama").eq("id", uid).maybeSingle();
+      setCurrentUser({
+        nama: prof?.nama ?? (u.user?.email?.split("@")[0] ?? "Pengguna"),
+        email: u.user?.email ?? "",
+        role: isAdm ? "Admin" : "Panitia",
+      });
     })();
   }, []);
 
@@ -197,6 +204,21 @@ function OperatorPage() {
     () => (sesi && sesi.mazmur_id ? mazmur.find(m => m.id === sesi.mazmur_id) : null),
     [sesi, mazmur]
   );
+  const pesertaTerpilih = useMemo(
+    () => peserta.find(p => p.id === selectedPeserta) ?? null,
+    [peserta, selectedPeserta]
+  );
+  const mazmurFiltered = useMemo(() => {
+    const kat = pesertaTerpilih?.kategori?.trim().toLowerCase();
+    if (!kat) return mazmur;
+    return mazmur.filter(m => (m.kategori ?? "").trim().toLowerCase() === kat);
+  }, [mazmur, pesertaTerpilih]);
+  // Kosongkan pilihan mazmur bila tak sesuai kategori peserta terpilih
+  useEffect(() => {
+    if (sesi) return;
+    if (!selectedMazmur) return;
+    if (!mazmurFiltered.some(m => m.id === selectedMazmur)) setSelectedMazmur("");
+  }, [mazmurFiltered, selectedMazmur, sesi]);
   const statusPenilaian: "Belum Dimulai" | "Sedang Berlangsung" | "Selesai" =
     !sesi ? "Belum Dimulai" : juriDone >= juriTotal && juriTotal > 0 ? "Selesai" : "Sedang Berlangsung";
 
@@ -214,6 +236,14 @@ function OperatorPage() {
           <div className="min-w-0 flex-1">
             <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">Panitia</p>
             <h1 className="text-2xl font-serif font-semibold">Operator Lomba</h1>
+          </div>
+          <div className="text-right text-sm mr-2 hidden sm:block">
+            {currentUser && (
+              <>
+                <div className="font-semibold leading-tight">{currentUser.nama}</div>
+                <div className="text-xs text-muted-foreground">{currentUser.role}{currentUser.email ? ` · ${currentUser.email}` : ""}</div>
+              </>
+            )}
           </div>
           <Button variant="outline" onClick={() => (window.location.href = "/dashboard")}>Ke Dashboard</Button>
         </div>
@@ -293,14 +323,24 @@ function OperatorPage() {
               </div>
               <div>
                 <div className="text-sm font-medium mb-1">Bacaan Mazmur</div>
-                <Select value={selectedMazmur} onValueChange={setSelectedMazmur}>
-                  <SelectTrigger><SelectValue placeholder="Pilih bacaan mazmur" /></SelectTrigger>
+                <Select value={selectedMazmur} onValueChange={(v) => { setSelectedMazmur(v); logAudit("pilih_mazmur", { mazmur_id: v }); }} disabled={!selectedPeserta && !sesi}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={!selectedPeserta && !sesi ? "Pilih peserta terlebih dahulu" : "Pilih bacaan mazmur"} />
+                  </SelectTrigger>
                   <SelectContent>
-                    {mazmur.map(m => (
-                      <SelectItem key={m.id} value={m.id}>{m.bacaan}</SelectItem>
+                    {mazmurFiltered.length === 0 && (
+                      <div className="px-3 py-2 text-sm text-muted-foreground">
+                        Tidak ada Bacaan Mazmur untuk kategori {pesertaTerpilih?.kategori || "ini"}.
+                      </div>
+                    )}
+                    {mazmurFiltered.map(m => (
+                      <SelectItem key={m.id} value={m.id}>{m.bacaan}{m.kategori ? ` — ${m.kategori}` : ""}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {pesertaTerpilih?.kategori && (
+                  <div className="text-xs text-muted-foreground mt-1">Kategori: {pesertaTerpilih.kategori}</div>
+                )}
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
