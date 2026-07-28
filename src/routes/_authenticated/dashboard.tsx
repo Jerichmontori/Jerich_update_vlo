@@ -439,6 +439,9 @@ function PesertaTab() {
 /* JURI */
 function JuriTab() {
   const [items, setItems] = useState<Juri[]>([]);
+  const [resetTarget, setResetTarget] = useState<Juri | null>(null);
+  const [resetPw, setResetPw] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
 
   async function load() {
     const { data, error } = await supabase.rpc("admin_list_juri" as any);
@@ -481,6 +484,41 @@ function JuriTab() {
       toast.error(err instanceof Error ? err.message : "Gagal mengubah role");
     }
   }
+
+  function openReset(j: Juri) {
+    setResetTarget(j);
+    setResetPw("");
+  }
+
+  function generatePw() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+    let out = "";
+    const arr = new Uint32Array(12);
+    (globalThis.crypto || window.crypto).getRandomValues(arr);
+    for (let i = 0; i < arr.length; i++) out += chars[arr[i] % chars.length];
+    setResetPw(out);
+  }
+
+  async function submitReset() {
+    if (!resetTarget) return;
+    if (resetPw.length < 8) {
+      toast.error("Password minimal 8 karakter");
+      return;
+    }
+    setResetLoading(true);
+    try {
+      const { resetJuriPassword } = await import("@/lib/juri-users.functions");
+      await resetJuriPassword({ data: { juriId: resetTarget.id, password: resetPw } });
+      toast.success(`Password ${resetTarget.nama} berhasil direset`);
+      setResetTarget(null);
+      setResetPw("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal reset password");
+    } finally {
+      setResetLoading(false);
+    }
+  }
+
   return (
     <SectionCard title="Dewan Juri" description="Daftar pendaftar juri dari halaman beranda. Setujui akun agar dapat login.">
       {/* Mobile: card list */}
