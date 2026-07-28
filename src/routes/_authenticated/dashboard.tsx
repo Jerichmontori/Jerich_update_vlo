@@ -1701,13 +1701,10 @@ function PenilaianTab() {
                   )}
                 </div>
               ))}
-              <DialogFooter className="pt-2">
-                <Button variant="outline" onClick={() => setOpenKriteria(null)}>Batal</Button>
-                <Button onClick={saveCatatan} disabled={saving} className="gap-1">
-                  <Check className="size-4" />
-                  {saving ? "Menyimpan..." : "Simpan Catatan"}
-                </Button>
-              </DialogFooter>
+              <p className="text-xs text-muted-foreground pt-2">
+                Perubahan disimpan otomatis saat dialog ditutup.
+              </p>
+
             </div>
           )}
 
