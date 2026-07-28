@@ -378,7 +378,7 @@ function OperatorPage() {
                   <Button onClick={ubahMazmur} variant="outline" disabled={busy} className="gap-2">
                     <RefreshCw className="size-4" /> Ubah Bacaan Mazmur
                   </Button>
-                  <Button onClick={akhiriSesi} variant="destructive" disabled={busy} className="gap-2">
+                  <Button onClick={() => setConfirmAkhiriOpen(true)} variant="destructive" disabled={busy} className="gap-2">
                     <Square className="size-4" /> Akhiri Penilaian
                   </Button>
                 </>
