@@ -698,13 +698,15 @@ export type Database = {
       inspektur_list_var: {
         Args: never
         Returns: {
+          bacaan: string
           detected_at: string
           juri_berbeda: number
           kategori: string
-          mazmur_variants: Json
+          komponen_berbeda: Json
           nama: string
           nomor_urut: number
           peserta_id: string
+          status: string
         }[]
       }
       inspektur_monitor: {
@@ -731,6 +733,10 @@ export type Database = {
           total_peserta: number
           total_var: number
         }[]
+      }
+      inspektur_selesaikan_var: {
+        Args: { _catatan: string; _keputusan: string; _peserta: string }
+        Returns: string
       }
       inspektur_var_detail: { Args: { _peserta: string }; Returns: Json }
       mulai_klarifikasi_var: { Args: { _peserta: string }; Returns: string }

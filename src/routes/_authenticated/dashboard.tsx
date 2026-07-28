@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
-import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight, LayoutDashboard, CheckCircle2, XCircle, FileText, KeyRound } from "lucide-react";
+import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight, LayoutDashboard, CheckCircle2, XCircle, FileText, KeyRound, AlertTriangle } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -1225,6 +1225,36 @@ function PenilaianTab() {
   }, [activeSession, isAdmin, editMode, submittedFor]);
   const lockPesertaMazmur = !!activeSession && !isAdmin && !editMode;
 
+  // Aturan #2 — Potensi VAR terbuka: banner untuk semua juri; diselesaikan oleh Inspektur
+  type VarAktifRow = { peserta_id: string; peserta_nama: string; komponen: string[]; status: string };
+  const [varAktifList, setVarAktifList] = useState<VarAktifRow[]>([]);
+  useEffect(() => {
+    let stopped = false;
+    async function poll() {
+      const { data } = await supabase
+        .from("var_clarification_session" as any)
+        .select("peserta_id, komponen_berbeda, status, peserta:peserta_id(nama, nomor_urut)")
+        .neq("status", "final");
+      if (stopped) return;
+      const rows = ((data as any[]) ?? []).map((r) => ({
+        peserta_id: r.peserta_id,
+        peserta_nama: r.peserta ? `${r.peserta.nomor_urut ?? ""}. ${r.peserta.nama ?? ""}`.trim().replace(/^\.\s*/, "") : "",
+        komponen: Array.isArray(r.komponen_berbeda) ? (r.komponen_berbeda as string[]) : [],
+        status: r.status,
+      })) as VarAktifRow[];
+      setVarAktifList(rows);
+    }
+    poll();
+    const id = setInterval(poll, 3000);
+    return () => { stopped = true; clearInterval(id); };
+  }, []);
+  const KOMP_LABEL: Record<string, string> = {
+    salah_kata: "Salah kata",
+    menambah_kata: "Menambah kata",
+    mengurangi_kata: "Mengurangi kata",
+  };
+
+
 
 
 
@@ -1858,6 +1888,26 @@ function PenilaianTab() {
 
             return (
               <>
+                {varAktifList.length > 0 && (
+                  <div className="rounded-2xl border-2 border-rose-500/60 bg-rose-500/10 p-4 mb-4 animate-pulse">
+                    <div className="flex items-center gap-2 font-serif text-lg text-rose-700">
+                      <AlertTriangle className="size-5" /> ⚠ POTENSI VAR — Menunggu Keputusan Inspektur
+                    </div>
+                    <ul className="mt-2 space-y-1 text-sm text-rose-900">
+                      {varAktifList.map((v) => (
+                        <li key={v.peserta_id}>
+                          <b>{v.peserta_nama || "—"}</b> · Perbedaan pada:{" "}
+                          <span className="font-semibold">
+                            {v.komponen.map((k) => KOMP_LABEL[k] ?? k).join(", ") || "—"}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-2 text-xs text-rose-800/80">
+                      Inspektur Pertandingan akan meninjau dan memberi catatan/keputusan. Anda tidak perlu mengubah penilaian yang sudah dikirim.
+                    </p>
+                  </div>
+                )}
                 {editMode && (
                   <div className="rounded-2xl border-2 border-destructive/40 bg-destructive/5 p-4 mb-4">
                     <div className="font-serif text-lg text-destructive">✦ Mode Perubahan</div>
@@ -1866,6 +1916,7 @@ function PenilaianTab() {
                     </p>
                   </div>
                 )}
+
                 <div className="rounded-2xl border-2 border-accent/40 bg-gradient-to-br from-card to-secondary/40 p-5 sm:p-6 mb-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="text-sm text-muted-foreground">
@@ -1882,12 +1933,19 @@ function PenilaianTab() {
                     <Button
                       size="lg"
                       onClick={requestKirim}
-                      disabled={saving || (!editMode && scored.length === 0)}
+                      disabled={
+                        saving ||
+                        (!editMode && scored.length === 0) ||
+                        (!editMode && !!submittedFor && submittedFor === pesertaId)
+                      }
                       className="gap-2 min-w-[160px]"
                     >
                       <Check className="size-4" />
-                      {editMode ? "Kirim Perubahan" : "Kirim"}
+                      {(!editMode && !!submittedFor && submittedFor === pesertaId)
+                        ? "Sudah Dikirim"
+                        : editMode ? "Kirim Perubahan" : "Kirim"}
                     </Button>
+
                   </div>
                 </div>
 

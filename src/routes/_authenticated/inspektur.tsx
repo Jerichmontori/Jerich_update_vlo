@@ -46,10 +46,19 @@ type VarRow = {
   nomor_urut: number;
   nama: string;
   kategori: string | null;
-  mazmur_variants: any;
+  komponen_berbeda: string[] | null;
+  status: string;
+  bacaan: string | null;
   juri_berbeda: number;
   detected_at: string;
 };
+
+const KOMP_LABEL: Record<string, string> = {
+  salah_kata: "Salah kata",
+  menambah_kata: "Menambah kata",
+  mengurangi_kata: "Mengurangi kata",
+};
+
 
 function statusVariant(s: string): { label: string; className: string } {
   switch (s) {
@@ -140,15 +149,28 @@ function InspekturPage() {
     }
     setSavingCatatan(true);
     try {
-      const { error } = await supabase.rpc("inspektur_catat" as any, {
-        _peserta: detailPeserta.peserta_id,
-        _catatan: catatan.trim() || null,
-        _keputusan: keputusan || null,
-      });
-      if (error) throw error;
-      toast.success("Catatan inspektur tersimpan");
+      const hasActiveVar = !!(detailData && detailData.var_session);
+      const keputusanFinal = keputusan || "catatan_saja";
+      if (hasActiveVar) {
+        const { error } = await supabase.rpc("inspektur_selesaikan_var" as any, {
+          _peserta: detailPeserta.peserta_id,
+          _catatan: catatan.trim() || null,
+          _keputusan: keputusanFinal,
+        });
+        if (error) throw error;
+        toast.success("Potensi VAR diselesaikan · catatan tersimpan");
+      } else {
+        const { error } = await supabase.rpc("inspektur_catat" as any, {
+          _peserta: detailPeserta.peserta_id,
+          _catatan: catatan.trim() || null,
+          _keputusan: keputusanFinal,
+        });
+        if (error) throw error;
+        toast.success("Catatan inspektur tersimpan");
+      }
       setDetailOpen(false);
       loadAll();
+
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal menyimpan");
     } finally {
@@ -255,7 +277,7 @@ function InspekturPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><AlertTriangle className="size-5 text-rose-500" /> Daftar Potensi VAR</CardTitle>
-            <CardDescription>Peserta dengan perbedaan input Bacaan Mazmur antar juri.</CardDescription>
+            <CardDescription>Peserta dengan perbedaan input Perhatian antar juri (Salah/Menambah/Mengurangi kata).</CardDescription>
           </CardHeader>
           <CardContent className="overflow-x-auto">
             <Table>
@@ -264,8 +286,8 @@ function InspekturPage() {
                   <TableHead>No.</TableHead>
                   <TableHead>Nama</TableHead>
                   <TableHead>Kategori</TableHead>
-                  <TableHead>Varian Mazmur</TableHead>
-                  <TableHead>Juri Berbeda</TableHead>
+                  <TableHead>Bacaan</TableHead>
+                  <TableHead>Komponen Berbeda</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
@@ -278,8 +300,15 @@ function InspekturPage() {
                     <TableCell>{r.nomor_urut}</TableCell>
                     <TableCell className="font-medium">{r.nama}</TableCell>
                     <TableCell className="text-muted-foreground">{r.kategori || "—"}</TableCell>
-                    <TableCell className="text-xs">{Array.isArray(r.mazmur_variants) ? (r.mazmur_variants as any[]).map((x: any) => x.bacaan ?? x).join(" · ") : "—"}</TableCell>
-                    <TableCell>{r.juri_berbeda}</TableCell>
+                    <TableCell className="text-muted-foreground text-xs">{r.bacaan || "—"}</TableCell>
+                    <TableCell className="text-xs">
+                      {Array.isArray(r.komponen_berbeda) && r.komponen_berbeda.length > 0
+                        ? r.komponen_berbeda.map((k) => (
+                            <Badge key={k} className="mr-1 bg-rose-600 text-white">{KOMP_LABEL[k] ?? k}</Badge>
+                          ))
+                        : "—"}
+                    </TableCell>
+
                     <TableCell className="text-right">
                       <Button size="sm" variant="outline" onClick={() => openDetail(monitor.find(m => m.peserta_id === r.peserta_id) ?? { peserta_id: r.peserta_id, nomor_urut: r.nomor_urut, nama: r.nama, kategori: r.kategori, bacaan: null, status: "Potensi VAR", juri_done: 0, juri_total: 0 })}>
                         <Eye className="size-4 mr-1" /> Detail
@@ -304,16 +333,27 @@ function InspekturPage() {
             {!detailData && <div className="text-sm text-muted-foreground">Memuat…</div>}
             {detailData && (
               <>
-                {detailData.mazmur_variants && Array.isArray(detailData.mazmur_variants) && detailData.mazmur_variants.length > 1 && (
-                  <div className="rounded-lg border border-rose-500/40 bg-rose-500/5 p-3">
-                    <div className="text-sm font-semibold text-rose-600 mb-1">Perbedaan Bacaan Mazmur</div>
-                    <ul className="text-sm list-disc pl-5">
-                      {detailData.mazmur_variants.map((v: any, i: number) => (
-                        <li key={i}>{v.bacaan ?? JSON.stringify(v)}</li>
-                      ))}
-                    </ul>
+                {detailData.var_session && (
+                  <div className="rounded-lg border-2 border-rose-500/60 bg-rose-500/10 p-3">
+                    <div className="text-sm font-semibold text-rose-700 mb-1 flex items-center gap-1">
+                      <AlertTriangle className="size-4" /> Potensi VAR — menunggu keputusan Inspektur
+                    </div>
+                    <div className="text-xs text-rose-900 mb-2">
+                      Bacaan: <b>{detailData.var_session.bacaan ?? "—"}</b>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {Array.isArray(detailData.var_session.komponen_berbeda) && detailData.var_session.komponen_berbeda.length > 0
+                        ? (detailData.var_session.komponen_berbeda as string[]).map((k) => (
+                            <Badge key={k} className="bg-rose-600 text-white">{KOMP_LABEL[k] ?? k}</Badge>
+                          ))
+                        : <span className="text-xs text-muted-foreground">Tidak ada komponen tercatat.</span>}
+                    </div>
+                    <p className="text-[11px] text-rose-800/80 mt-2">
+                      Tulis catatan/rekomendasi lalu pilih keputusan (Setujui / Tolak / Catatan Saja). Menyimpan akan menutup Potensi VAR.
+                    </p>
                   </div>
                 )}
+
                 {detailData.penilaian && Array.isArray(detailData.penilaian) && (
                   <div>
                     <div className="text-sm font-semibold mb-2">Nilai per Juri</div>
