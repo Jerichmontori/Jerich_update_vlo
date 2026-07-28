@@ -38,6 +38,7 @@ function OperatorPage() {
   const [submissionCounts, setSubmissionCounts] = useState<Record<string, number>>({});
   const [busy, setBusy] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ nama: string; email: string; role: string } | null>(null);
+  const [confirmAkhiriOpen, setConfirmAkhiriOpen] = useState(false);
 
 
   // Role gate
