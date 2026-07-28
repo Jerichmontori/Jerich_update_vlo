@@ -3213,8 +3213,7 @@ function ResetAllPenilaianButton() {
     if (!window.confirm("Reset SEMUA nilai peserta dari seluruh juri?\n\nSemua data penilaian akan dihapus permanen dan tidak dapat dikembalikan.")) return;
     if (!window.confirm("Konfirmasi sekali lagi: hapus SEMUA penilaian sekarang?")) return;
     setBusy(true);
-    await supabase.from("penilaian_submission" as any).delete().not("id", "is", null);
-    const { error } = await supabase.from("penilaian").delete().not("id", "is", null);
+    const { error } = await supabase.rpc("admin_reset_all_penilaian" as any);
     setBusy(false);
     if (error) return toast.error("Gagal reset: " + error.message);
     toast.success("✦ Semua penilaian telah direset", { description: "Data nilai peserta dari seluruh juri telah dihapus." });
