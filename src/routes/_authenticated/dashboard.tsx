@@ -3091,7 +3091,13 @@ function RincianNilaiTab() {
     setKategoriRows((kt.data ?? []) as Kategori[]);
     setMazmur((m.data ?? []) as Mazmur[]);
   }
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    const t = setInterval(() => { load(); }, 5000);
+    const onFocus = () => load();
+    window.addEventListener("focus", onFocus);
+    return () => { clearInterval(t); window.removeEventListener("focus", onFocus); };
+  }, []);
 
   const kategoriList = useMemo(() => {
     const s = new Set<string>();
