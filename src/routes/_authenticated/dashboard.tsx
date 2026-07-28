@@ -1354,6 +1354,80 @@ function PenilaianTab() {
     return checkDiscrepancyWith(pesertaIdCheck, mazmur, peserta);
   }
 
+  // Pemeriksaan #3 — Perbedaan pilihan pada form Perhatian, khusus Q2, Q4, Q5.
+  // Q1 = Tidak Membaca Perikop (membacaPerikop) → tidak dicek.
+  // Q2 = Salah kata → aspek[0]
+  // Q4 = Menambah kata → aspek[2]
+  // Q5 = Mengurangi kata → aspek[3]
+  async function checkPerhatianDiscrepancy(pesertaIdCheck: string): Promise<PerhatianDiscrepancyReport | null> {
+    const perhatianKriteria = kriteria.find(k => kriteriaKey(k.nama) === "perhatian");
+    if (!perhatianKriteria) return null;
+    const { data: rows } = await supabase
+      .from("penilaian")
+      .select("juri_id, detail")
+      .eq("peserta_id", pesertaIdCheck)
+      .eq("kriteria_id", perhatianKriteria.id);
+    if (!rows || rows.length < 2) return null;
+    const { data: juriRows } = await supabase.from("juri_public" as any).select("id, nama");
+    const juriMap = new Map<string, string>();
+    ((juriRows ?? []) as unknown as { id: string; nama: string }[]).forEach(j => juriMap.set(j.id, j.nama));
+
+    const targetIdx = [
+      { idx: 0, label: "Q2 — Salah kata" },
+      { idx: 2, label: "Q4 — Menambah kata" },
+      { idx: 3, label: "Q5 — Mengurangi kata" },
+    ];
+    const items: PerhatianDiscrepancyReport["items"] = [];
+    for (const t of targetIdx) {
+      const perJuri: { juriNama: string; ayat: number[] }[] = [];
+      for (const r of rows as any[]) {
+        const d = r.detail;
+        if (!d || d.type !== "perhatian") continue;
+        const aspek = d.aspek?.[t.idx];
+        const ayat: number[] = Array.isArray(aspek?.ditandai) ? [...aspek.ditandai].sort((a, b) => a - b) : [];
+        perJuri.push({ juriNama: juriMap.get(r.juri_id) ?? "—", ayat });
+      }
+      const sig = new Set(perJuri.map(x => x.ayat.join(",")));
+      if (sig.size > 1) items.push({ pertanyaan: t.label, rows: perJuri });
+    }
+    if (items.length === 0) return null;
+    const pesertaNama = peserta.find(p => p.id === pesertaIdCheck)?.nama ?? "—";
+    return { pesertaId: pesertaIdCheck, pesertaNama, items };
+  }
+
+  async function perbaikiPerhatianSaya() {
+    const target = perhatianDiscrepancy?.pesertaId;
+    if (!target) return;
+    const activeJuri = isAdmin ? juriId : (myJuriId || "");
+    const perhatianKriteria = kriteria.find(k => kriteriaKey(k.nama) === "perhatian");
+    if (activeJuri && perhatianKriteria) {
+      // Hapus HANYA baris kriteria Perhatian juri ini + submission,
+      // supaya juri wajib mengisi ulang Perhatian lalu Kirim lagi.
+      await supabase
+        .from("penilaian")
+        .delete()
+        .eq("juri_id", activeJuri)
+        .eq("peserta_id", target)
+        .eq("kriteria_id", perhatianKriteria.id);
+      await supabase
+        .from("penilaian_submission" as any)
+        .delete()
+        .eq("juri_id", activeJuri)
+        .eq("peserta_id", target);
+    }
+    toast.warning("✦ Lakukan perubahan Perhatian", {
+      description: "Silakan buka kembali form Perhatian, perbaiki pilihan, lalu klik Kirim.",
+    });
+    setPerhatianDiscrepancy(null);
+    setPendingDiscrepancy(null);
+    setSubmittedFor(null);
+    setJudgesDoneForPeserta(0);
+    setPesertaId(target);
+    setOpenKriteria(null);
+    await loadAll();
+  }
+
+
 
   async function perbaikiPenilaianSaya(pesertaOverride?: string) {
     const pesertaTarget = pesertaOverride ?? discrepancy?.pesertaId;
