@@ -1,7 +1,8 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
-type Role = "admin" | "juri" | "panitia";
+type Role = "admin" | "juri" | "panitia" | "inspektur" | "ketua_juri";
+const ALL_ROLES: Role[] = ["admin", "juri", "panitia", "inspektur", "ketua_juri"];
 
 type CreateInput = {
   nama: string;
@@ -28,7 +29,7 @@ export const createJuriUser = createServerFn({ method: "POST" })
       throw new Error("nama, email, password, role wajib diisi");
     }
     if (data.password.length < 8) throw new Error("Password minimal 8 karakter");
-    if (!["admin", "juri", "panitia"].includes(data.role)) throw new Error("Role tidak valid");
+    if (!ALL_ROLES.includes(data.role)) throw new Error("Role tidak valid");
     return data;
   })
   .handler(async ({ data, context }) => {
@@ -135,7 +136,7 @@ export const setJuriRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { juriId: string; role: Role }) => {
     if (!data?.juriId) throw new Error("juriId wajib");
-    if (!["admin", "juri", "panitia"].includes(data?.role)) throw new Error("Role tidak valid");
+    if (!ALL_ROLES.includes(data?.role)) throw new Error("Role tidak valid");
     return data;
   })
   .handler(async ({ data, context }) => {
@@ -157,7 +158,7 @@ export const setJuriRole = createServerFn({ method: "POST" })
 
     // Sync user_roles when the account is already approved
     if (juri.user_id && juri.approved) {
-      const allRoles: Role[] = ["admin", "juri", "panitia"];
+      const allRoles: Role[] = ALL_ROLES;
       const others = allRoles.filter((r) => r !== data.role);
       await supabaseAdmin
         .from("user_roles")
