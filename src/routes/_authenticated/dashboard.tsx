@@ -1101,6 +1101,9 @@ function PenilaianTab() {
   const [judgesDoneForPeserta, setJudgesDoneForPeserta] = useState<number>(0);
   // Aturan #6 — konfirmasi kirim
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // Mode edit: dipicu setelah user menekan OK di dialog perbedaan.
+  // Hanya field peserta & mazmur yang aktif; nilai kriteria yang sudah ada TIDAK direset.
+  const [editMode, setEditMode] = useState<{ oldPesertaId: string } | null>(null);
   // Aturan — deteksi perbedaan input antar juri (nama peserta & bacaan mazmur)
   type DiscrepancyReport = {
     pesertaId: string;
