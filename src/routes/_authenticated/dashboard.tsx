@@ -129,7 +129,19 @@ function App() {
 }
 
 function Header() {
-  
+  const [canOperate, setCanOperate] = useState(false);
+  useEffect(() => {
+    (async () => {
+      const { data: userData } = await supabase.auth.getUser();
+      const uid = userData.user?.id;
+      if (!uid) return;
+      const [{ data: isPan }, { data: isAdm }] = await Promise.all([
+        supabase.rpc("has_role", { _user_id: uid, _role: "panitia" as any }),
+        supabase.rpc("has_role", { _user_id: uid, _role: "admin" as any }),
+      ]);
+      setCanOperate(!!isPan || !!isAdm);
+    })();
+  }, []);
   async function signOut() {
     await supabase.auth.signOut();
     window.location.href = "/auth";
@@ -147,11 +159,19 @@ function Header() {
             <p className="text-sm text-muted-foreground mt-1">Kelola peserta, juri, kriteria, dan lihat ranking secara langsung.</p>
           </div>
         </div>
-        <Button variant="outline" onClick={signOut} className="shrink-0">Keluar</Button>
+        <div className="flex items-center gap-2 shrink-0">
+          {canOperate && (
+            <Button variant="secondary" onClick={() => (window.location.href = "/operator")}>
+              Operator Lomba
+            </Button>
+          )}
+          <Button variant="outline" onClick={signOut}>Keluar</Button>
+        </div>
       </div>
     </header>
   );
 }
+
 
 /* PESERTA */
 function PesertaTab() {
