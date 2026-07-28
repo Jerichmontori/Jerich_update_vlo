@@ -1526,6 +1526,61 @@ function PenilaianTab() {
         </div>
       )}
 
+      {/* Aturan #1 & #2 — dialog perbedaan input antar juri */}
+      <Dialog open={!!discrepancy} onOpenChange={(v) => { if (!v) setDiscrepancy(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-serif text-xl text-destructive">
+              ✦ Potensi Var — Ada Perbedaan Input Juri
+            </DialogTitle>
+            <DialogDescription>
+              Ditemukan perbedaan data antar juri untuk peserta yang sama. Silakan periksa perbedaan berikut.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="max-h-[55dvh] overflow-y-auto space-y-3 text-sm">
+            {discrepancy?.mazmur && (
+              <div className="rounded-lg border-2 border-destructive/40 bg-destructive/5 p-3">
+                <div className="font-semibold mb-2">Perbedaan Bacaan Mazmur</div>
+                <ul className="space-y-1">
+                  {discrepancy.mazmur.map((m, i) => (
+                    <li key={i} className="flex justify-between gap-2">
+                      <span className="text-muted-foreground">{m.juriNama}</span>
+                      <span className="font-medium text-right">{m.mazmurLabel}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {discrepancy?.perhatian.map((p, pi) => (
+              <div key={pi} className="rounded-lg border-2 border-accent/50 bg-accent/5 p-3">
+                <div className="font-semibold mb-2">Perhatian — Pertanyaan {p.questionLabel}</div>
+                <ul className="space-y-1">
+                  {p.entries.map((e, ei) => (
+                    <li key={ei} className="flex justify-between gap-2">
+                      <span className="text-muted-foreground">{e.juriNama}</span>
+                      <span className="font-medium text-right">
+                        {e.ditandai.length ? `Ayat ${e.ditandai.join(", ")}` : "(tidak ada)"}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+            <p className="text-xs text-muted-foreground pt-2">
+              Apakah Anda ingin menilai ulang peserta ini agar sesuai dengan juri lain?
+            </p>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={abaikanPerbedaan}>Tidak, lanjutkan</Button>
+            <Button onClick={perbaikiPenilaianSaya} className="gap-1">
+              <Check className="size-4" /> Ya, nilai ulang
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
+
 
       <Dialog
         open={!!openKriteria}
