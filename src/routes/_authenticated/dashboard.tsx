@@ -1943,12 +1943,12 @@ function PenilaianTab() {
                       disabled={
                         saving ||
                         (!editMode && scored.length === 0) ||
-                        (!editMode && !!submittedFor && submittedFor === pesertaId)
+                        (!editMode && !!pesertaId && mySubmittedIds.has(pesertaId))
                       }
                       className="gap-2 min-w-[160px]"
                     >
                       <Check className="size-4" />
-                      {(!editMode && !!submittedFor && submittedFor === pesertaId)
+                      {(!editMode && !!pesertaId && mySubmittedIds.has(pesertaId))
                         ? "Sudah Dikirim"
                         : editMode ? "Kirim Perubahan" : "Kirim"}
                     </Button>
