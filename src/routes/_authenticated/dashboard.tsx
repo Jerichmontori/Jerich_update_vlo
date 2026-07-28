@@ -1197,14 +1197,15 @@ function PenilaianTab() {
         } else {
           // Semua juri sudah selesai untuk peserta terakhir yang saya nilai — cek perbedaan.
           const [pid] = fullyScored[0];
-          const myRow = penilaianList.find(x => x.juri_id === activeJuriId && x.peserta_id === pid && x.mazmur_id);
-          setPesertaId(pid);
-          if (myRow?.mazmur_id) setMazmurId(myRow.mazmur_id);
           const report = await checkDiscrepancyWith(pid, mazmurList, pesertaList);
           if (report) {
+            const myRow = penilaianList.find(x => x.juri_id === activeJuriId && x.peserta_id === pid && x.mazmur_id);
+            setPesertaId(pid);
+            if (myRow?.mazmur_id) setMazmurId(myRow.mazmur_id);
             setDiscrepancy(report);
             setSubmittedFor(null);
           }
+          // Jika tidak ada perbedaan, biarkan pilihan peserta kosong agar juri lanjut ke peserta berikutnya.
         }
       }
     }
