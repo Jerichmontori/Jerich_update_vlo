@@ -1308,6 +1308,11 @@ function PenilaianTab() {
     // Restore state setelah refresh berbasis SUBMISSION (bukan kriteria terisi).
     // Juri dianggap "sudah menilai" hanya jika sudah menekan Kirim (ada baris di penilaian_submission).
     const activeJuriId = admin ? (juriId || "") : (profJuriId || "");
+    if (activeJuriId) {
+      setMySubmittedIds(new Set(submissionList.filter(sb => sb.juri_id === activeJuriId).map(sb => sb.peserta_id)));
+    } else {
+      setMySubmittedIds(new Set());
+    }
     if (activeJuriId && !editMode && restoreSubmissionState) {
       const mine = submissionList
         .filter(sb => sb.juri_id === activeJuriId)
