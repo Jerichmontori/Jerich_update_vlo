@@ -158,7 +158,7 @@ export const setJuriRole = createServerFn({ method: "POST" })
 
     // Sync user_roles when the account is already approved
     if (juri.user_id && juri.approved) {
-      const allRoles: Role[] = ["admin", "juri", "panitia"];
+      const allRoles: Role[] = ALL_ROLES;
       const others = allRoles.filter((r) => r !== data.role);
       await supabaseAdmin
         .from("user_roles")
