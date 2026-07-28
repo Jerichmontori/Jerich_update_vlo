@@ -309,11 +309,25 @@ function InspekturPage() {
                         : "—"}
                     </TableCell>
 
-                    <TableCell className="text-right">
+                    <TableCell className="text-right space-x-2 whitespace-nowrap">
+                      <Button
+                        size="sm"
+                        className="bg-amber-600 hover:bg-amber-700 text-white"
+                        onClick={async () => {
+                          if (!confirm(`Buka kembali form Perhatian untuk ${r.nama}? Semua juri akan diminta menilai ulang komponen Perhatian. Nilai kriteria lain tetap tersimpan.`)) return;
+                          const { error } = await supabase.rpc("inspektur_buka_perhatian" as any, { _peserta: r.peserta_id, _catatan: null });
+                          if (error) { toast.error(error.message); return; }
+                          toast.success("Form Perhatian dibuka kembali untuk semua juri");
+                          loadAll();
+                        }}
+                      >
+                        <AlertTriangle className="size-4 mr-1" /> Buka Perbaikan Perhatian
+                      </Button>
                       <Button size="sm" variant="outline" onClick={() => openDetail(monitor.find(m => m.peserta_id === r.peserta_id) ?? { peserta_id: r.peserta_id, nomor_urut: r.nomor_urut, nama: r.nama, kategori: r.kategori, bacaan: null, status: "Potensi VAR", juri_done: 0, juri_total: 0 })}>
                         <Eye className="size-4 mr-1" /> Detail
                       </Button>
                     </TableCell>
+
                   </TableRow>
                 ))}
               </TableBody>
