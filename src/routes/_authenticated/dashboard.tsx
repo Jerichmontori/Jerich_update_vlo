@@ -1586,8 +1586,14 @@ function PenilaianTab() {
         open={!!openKriteria}
         onOpenChange={(v) => {
           if (saving) return; // jangan tutup saat sedang menyimpan
-          if (!v) setOpenKriteria(null);
+          if (!v) {
+            // Aturan #3 — auto-save untuk catatan & perhatian saat dialog ditutup
+            if (activeKey === "catatan") { saveCatatan(); return; }
+            if (activeKey === "perhatian") { savePerhatian(); return; }
+            setOpenKriteria(null);
+          }
         }}
+
       >
         <DialogContent
           className="max-w-2xl w-[95vw] max-h-[90dvh] p-4 sm:p-6 flex flex-col overflow-hidden"
