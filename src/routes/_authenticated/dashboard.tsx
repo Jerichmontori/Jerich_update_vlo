@@ -1588,18 +1588,27 @@ function PenilaianTab() {
         </div>
       )}
 
-      {/* Aturan #1 & #2 — dialog perbedaan input antar juri */}
-      <Dialog open={!!discrepancy} onOpenChange={(v) => { if (!v) setDiscrepancy(null); }}>
-        <DialogContent className="max-w-lg">
+      {/* Dialog perbedaan input antar juri — nama peserta & bacaan mazmur */}
+      <Dialog open={!!discrepancy} onOpenChange={() => { /* wajib konfirmasi OK */ }}>
+        <DialogContent
+          className="max-w-lg"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+          onEscapeKeyDown={(e) => e.preventDefault()}
+        >
           <DialogHeader>
             <DialogTitle className="font-serif text-xl text-destructive">
-              ✦ Potensi Var — Ada Perbedaan Input Juri
+              ✦ Perbedaan Data Antar Juri
             </DialogTitle>
             <DialogDescription>
-              Ditemukan perbedaan data antar juri untuk peserta yang sama. Silakan periksa perbedaan berikut.
+              Semua juri telah mengirim penilaian, namun ditemukan perbedaan input. Form penilaian dikunci sampai Anda menekan <b>OK</b>.
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[55dvh] overflow-y-auto space-y-3 text-sm">
+            <div className="rounded-lg border-2 border-primary/30 bg-primary/5 p-3">
+              <div className="font-semibold mb-1">Peserta</div>
+              <div className="font-serif text-lg">{discrepancy?.pesertaNama}</div>
+            </div>
             {discrepancy?.mazmur && (
               <div className="rounded-lg border-2 border-destructive/40 bg-destructive/5 p-3">
                 <div className="font-semibold mb-2">Perbedaan Bacaan Mazmur</div>
@@ -1613,33 +1622,18 @@ function PenilaianTab() {
                 </ul>
               </div>
             )}
-            {discrepancy?.perhatian.map((p, pi) => (
-              <div key={pi} className="rounded-lg border-2 border-accent/50 bg-accent/5 p-3">
-                <div className="font-semibold mb-2">Perhatian — Pertanyaan {p.questionLabel}</div>
-                <ul className="space-y-1">
-                  {p.entries.map((e, ei) => (
-                    <li key={ei} className="flex justify-between gap-2">
-                      <span className="text-muted-foreground">{e.juriNama}</span>
-                      <span className="font-medium text-right">
-                        {e.ditandai.length ? `Ayat ${e.ditandai.join(", ")}` : "(tidak ada)"}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
             <p className="text-xs text-muted-foreground pt-2">
-              Apakah Anda ingin menilai ulang peserta ini agar sesuai dengan juri lain?
+              Klik <b>OK</b> untuk mengaktifkan kembali penilaian peserta ini. Penilaian Anda untuk peserta tersebut akan dihapus agar dapat diinput ulang sesuai kesepakatan.
             </p>
           </div>
-          <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={abaikanPerbedaan}>Tidak, lanjutkan</Button>
-            <Button onClick={perbaikiPenilaianSaya} className="gap-1">
-              <Check className="size-4" /> Ya, nilai ulang
+          <DialogFooter>
+            <Button onClick={perbaikiPenilaianSaya} className="gap-1 w-full sm:w-auto">
+              <Check className="size-4" /> OK
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
 
 
 
