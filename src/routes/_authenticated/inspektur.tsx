@@ -172,7 +172,9 @@ function InspekturPage() {
       toast.error(message);
       return;
     }
-    setDetailData(data);
+    // Override nilai_akhir dengan perhitungan non-linear terbaru (3 desimal)
+    const { data: nilai } = await supabase.rpc("hitung_nilai_akhir" as any, { _peserta: row.peserta_id });
+    setDetailData({ ...(data as any), nilai_akhir: nilai ?? (data as any)?.nilai_akhir });
   }
 
   async function simpanCatatan() {
@@ -529,7 +531,7 @@ function InspekturPage() {
                 {detailData.nilai_akhir != null && (
                   <div className="rounded-lg border bg-accent/10 p-3">
                     <div className="text-xs text-muted-foreground">Nilai Akhir</div>
-                    <div className="text-2xl font-serif font-semibold">{Number(detailData.nilai_akhir).toFixed(2)}</div>
+                    <div className="text-2xl font-serif font-semibold">{Number(detailData.nilai_akhir).toFixed(3)}</div>
                   </div>
                 )}
               </>

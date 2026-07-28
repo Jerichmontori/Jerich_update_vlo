@@ -3019,19 +3019,21 @@ function RincianNilaiTab() {
   const [penilaian, setPenilaian] = useState<Penilaian[]>([]);
   const [kategoriRows, setKategoriRows] = useState<Kategori[]>([]);
   const [mazmur, setMazmur] = useState<Mazmur[]>([]);
+  const [nilaiAkhirMap, setNilaiAkhirMap] = useState<Record<string, number | null>>({});
   const [loading, setLoading] = useState(true);
   const [kategoriFilter, setKategoriFilter] = useState<string>(LIHAT_ALL);
   const [pesertaFilter, setPesertaFilter] = useState<string>(LIHAT_ALL);
 
   async function load() {
     setLoading(true);
-    const [p, j, k, n, kt, m] = await Promise.all([
+    const [p, j, k, n, kt, m, rank] = await Promise.all([
       supabase.from("peserta").select("*").order("nomor_urut"),
       supabase.from("juri_public" as any).select("*").order("created_at"),
       supabase.from("kriteria").select("*").order("created_at"),
       supabase.from("penilaian").select("*"),
       supabase.from("kategori").select("*").order("created_at"),
       supabase.from("mazmur").select("*"),
+      supabase.rpc("get_ranking" as any),
     ]);
     setLoading(false);
     for (const r of [p, j, k, n, kt, m]) if ((r as any).error) return toast.error((r as any).error.message);
@@ -3041,6 +3043,9 @@ function RincianNilaiTab() {
     setPenilaian((n.data ?? []) as Penilaian[]);
     setKategoriRows((kt.data ?? []) as Kategori[]);
     setMazmur((m.data ?? []) as Mazmur[]);
+    const map: Record<string, number | null> = {};
+    ((rank.data ?? []) as any[]).forEach((r) => { map[r.peserta_id] = r.nilai_akhir != null ? Number(r.nilai_akhir) : null; });
+    setNilaiAkhirMap(map);
   }
   useEffect(() => {
     load();
@@ -3084,6 +3089,14 @@ function RincianNilaiTab() {
     doc.setTextColor(0);
 
     let y = meta ? 96 : 82;
+
+    const nilaiAkhir = nilaiAkhirMap[p.id];
+    if (nilaiAkhir != null) {
+      doc.setFontSize(12); doc.setTextColor(120, 30, 45);
+      doc.text(`Nilai Akhir: ${Number(nilaiAkhir).toFixed(3)}`, 40, y);
+      doc.setTextColor(0);
+      y += 18;
+    }
 
     const juriDenganNilai = juri.filter((j) => penilaian.some((n) => n.peserta_id === p.id && n.juri_id === j.id));
     if (juriDenganNilai.length === 0) {
@@ -3238,9 +3251,17 @@ function RincianNilaiTab() {
                     {[p.kategori && `Kategori: ${p.kategori}`, p.asal && `Asal: ${p.asal}`, p.sesi && `Sesi: ${p.sesi}`].filter(Boolean).join(" • ") || "—"}
                   </div>
                 </div>
-                <Button size="sm" variant="outline" onClick={() => downloadSatu(p)} className="gap-2">
-                  <Download className="size-4" /> Unduh PDF
-                </Button>
+                <div className="flex items-center gap-3">
+                  {nilaiAkhirMap[p.id] != null && (
+                    <div className="rounded-md border border-primary/30 bg-primary/10 px-3 py-1.5 text-right">
+                      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Nilai Akhir</div>
+                      <div className="font-serif font-semibold text-primary text-lg leading-none">{Number(nilaiAkhirMap[p.id]).toFixed(3)}</div>
+                    </div>
+                  )}
+                  <Button size="sm" variant="outline" onClick={() => downloadSatu(p)} className="gap-2">
+                    <Download className="size-4" /> Unduh PDF
+                  </Button>
+                </div>
               </div>
               {juriDenganNilai.length === 0 ? (
                 <div className="text-sm text-muted-foreground italic">Belum ada penilaian.</div>
