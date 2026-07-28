@@ -308,14 +308,24 @@ function OperatorPage() {
               </div>
               <div>
                 <div className="text-sm font-medium mb-1">Bacaan Mazmur</div>
-                <Select value={selectedMazmur} onValueChange={setSelectedMazmur}>
-                  <SelectTrigger><SelectValue placeholder="Pilih bacaan mazmur" /></SelectTrigger>
+                <Select value={selectedMazmur} onValueChange={(v) => { setSelectedMazmur(v); logAudit("pilih_mazmur", { mazmur_id: v }); }} disabled={!selectedPeserta && !sesi}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={!selectedPeserta && !sesi ? "Pilih peserta terlebih dahulu" : "Pilih bacaan mazmur"} />
+                  </SelectTrigger>
                   <SelectContent>
-                    {mazmur.map(m => (
-                      <SelectItem key={m.id} value={m.id}>{m.bacaan}</SelectItem>
+                    {mazmurFiltered.length === 0 && (
+                      <div className="px-3 py-2 text-sm text-muted-foreground">
+                        Tidak ada Bacaan Mazmur untuk kategori {pesertaTerpilih?.kategori || "ini"}.
+                      </div>
+                    )}
+                    {mazmurFiltered.map(m => (
+                      <SelectItem key={m.id} value={m.id}>{m.bacaan}{m.kategori ? ` — ${m.kategori}` : ""}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
+                {pesertaTerpilih?.kategori && (
+                  <div className="text-xs text-muted-foreground mt-1">Kategori: {pesertaTerpilih.kategori}</div>
+                )}
               </div>
             </div>
             <div className="flex flex-wrap gap-2">
