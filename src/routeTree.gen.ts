@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedOperatorRouteImport } from './routes/_authenticated/operator'
+import { Route as AuthenticatedInspekturRouteImport } from './routes/_authenticated/inspektur'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as ApiPublicBootstrapAdminRouteImport } from './routes/api/public/bootstrap-admin'
 
@@ -53,6 +54,11 @@ const AuthenticatedOperatorRoute = AuthenticatedOperatorRouteImport.update({
   path: '/operator',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedInspekturRoute = AuthenticatedInspekturRouteImport.update({
+  id: '/inspektur',
+  path: '/inspektur',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/posisi': typeof PosisiRoute
   '/ranking': typeof RankingRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/inspektur': typeof AuthenticatedInspekturRoute
   '/operator': typeof AuthenticatedOperatorRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
 }
@@ -81,6 +88,7 @@ export interface FileRoutesByTo {
   '/posisi': typeof PosisiRoute
   '/ranking': typeof RankingRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/inspektur': typeof AuthenticatedInspekturRoute
   '/operator': typeof AuthenticatedOperatorRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
 }
@@ -93,6 +101,7 @@ export interface FileRoutesById {
   '/posisi': typeof PosisiRoute
   '/ranking': typeof RankingRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/inspektur': typeof AuthenticatedInspekturRoute
   '/_authenticated/operator': typeof AuthenticatedOperatorRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
 }
@@ -105,6 +114,7 @@ export interface FileRouteTypes {
     | '/posisi'
     | '/ranking'
     | '/dashboard'
+    | '/inspektur'
     | '/operator'
     | '/api/public/bootstrap-admin'
   fileRoutesByTo: FileRoutesByTo
@@ -115,6 +125,7 @@ export interface FileRouteTypes {
     | '/posisi'
     | '/ranking'
     | '/dashboard'
+    | '/inspektur'
     | '/operator'
     | '/api/public/bootstrap-admin'
   id:
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '/posisi'
     | '/ranking'
     | '/_authenticated/dashboard'
+    | '/_authenticated/inspektur'
     | '/_authenticated/operator'
     | '/api/public/bootstrap-admin'
   fileRoutesById: FileRoutesById
@@ -191,6 +203,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOperatorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/inspektur': {
+      id: '/_authenticated/inspektur'
+      path: '/inspektur'
+      fullPath: '/inspektur'
+      preLoaderRoute: typeof AuthenticatedInspekturRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -210,11 +229,13 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedInspekturRoute: typeof AuthenticatedInspekturRoute
   AuthenticatedOperatorRoute: typeof AuthenticatedOperatorRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedInspekturRoute: AuthenticatedInspekturRoute,
   AuthenticatedOperatorRoute: AuthenticatedOperatorRoute,
 }
 
@@ -233,3 +254,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
