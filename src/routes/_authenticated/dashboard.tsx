@@ -1574,12 +1574,34 @@ function PenilaianTab() {
 
             function requestKirim() {
               if (!juriId || !pesertaId) return toast.error("Pilih juri dan peserta");
+              if (editMode) {
+                if (!mazmurId) return toast.error("Pilih bacaan mazmur");
+                setConfirmOpen(true);
+                return;
+              }
               if (scored.length === 0) return toast.error("Belum ada nilai yang diberikan");
               setConfirmOpen(true);
             }
 
             async function doKirim() {
               setConfirmOpen(false);
+              if (editMode) {
+                // Update penilaian juri ini utk peserta lama → peserta baru & mazmur baru.
+                const { error } = await supabase
+                  .from("penilaian")
+                  .update({ peserta_id: pesertaId, mazmur_id: mazmurId || null } as any)
+                  .eq("juri_id", juriId)
+                  .eq("peserta_id", editMode.oldPesertaId);
+                if (error) { toast.error(error.message); return; }
+                toast.success("✦ Perubahan tersimpan", {
+                  description: `Penilaian diperbarui untuk ${currentPesertaLabel}.`,
+                });
+                setEditMode(null);
+                setSubmittedFor(pesertaId);
+                setOpenKriteria(null);
+                await loadAll();
+                return;
+              }
               toast.success("✦ Penilaian dikirim", {
                 description: `Penilaian untuk ${currentPesertaLabel} tersimpan.`,
               });
