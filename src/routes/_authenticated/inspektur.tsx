@@ -363,7 +363,7 @@ function InspekturPage() {
                       <Button
                         size="sm"
                         className="bg-amber-600 hover:bg-amber-700 text-white"
-                        onClick={() => bukaPerbaikanPerhatian(r.peserta_id, r.nama)}
+                        onClick={() => openConfirmBukaPerbaikan(r.peserta_id, r.nama, null, "row")}
                       >
                         <AlertTriangle className="size-4 mr-1" /> Buka Perbaikan
                       </Button>
