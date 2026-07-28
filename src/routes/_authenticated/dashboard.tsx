@@ -1155,6 +1155,8 @@ function PenilaianTab() {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   // Aturan #7 — kunci form setelah kirim, buka lagi setelah semua juri selesai
   const [submittedFor, setSubmittedFor] = useState<string | null>(null);
+  // Semua peserta yang PERNAH saya kirim (persist antar refresh) — mencegah kirim ulang
+  const [mySubmittedIds, setMySubmittedIds] = useState<Set<string>>(new Set());
   const [judgesDoneForPeserta, setJudgesDoneForPeserta] = useState<number>(0);
   const pollingInFlightRef = useRef(false);
   const resolvingCompletionRef = useRef<string | null>(null);
