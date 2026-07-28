@@ -1115,8 +1115,8 @@ function PenilaianTab() {
   const [pesertaId, setPesertaId] = useState<string>("");
   const [mazmurId, setMazmurId] = useState<string>("");
   const [openKriteria, setOpenKriteria] = useState<Kriteria | null>(null);
-  const [catatanValues, setCatatanValues] = useState<number[]>(() => CATATAN_ASPEK.map(() => 3));
-  const [catatanClearText, setCatatanClearText] = useState<boolean>(false);
+  const [catatanValues, setCatatanValues] = useState<(number | null)[]>(() => CATATAN_ASPEK.map(() => null));
+  const [catatanClearText, setCatatanClearText] = useState<boolean | null>(null);
   const [perhatianChecks, setPerhatianChecks] = useState<boolean[][]>(() => PERHATIAN_ASPEK.map(() => []));
   // Snapshot nilai Perhatian saat dialog dibuka (dipakai saat mode Perbaikan Perhatian
   // untuk mengunci baris non-pemicu agar tidak berubah, apapun yang terjadi di UI).
