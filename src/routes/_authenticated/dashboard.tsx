@@ -1250,7 +1250,11 @@ function PenilaianTab() {
   }, [submittedFor, totalJuriApproved]);
 
   // Bandingkan bacaan mazmur antar juri untuk peserta tsb.
-  async function checkDiscrepancy(pesertaIdCheck: string): Promise<DiscrepancyReport | null> {
+  async function checkDiscrepancyWith(
+    pesertaIdCheck: string,
+    mazmurArr: Mazmur[],
+    pesertaArr: Peserta[]
+  ): Promise<DiscrepancyReport | null> {
     const { data: rows } = await supabase
       .from("penilaian")
       .select("juri_id, mazmur_id")
@@ -1260,9 +1264,8 @@ function PenilaianTab() {
     const juriMap = new Map<string, string>();
     ((juriRows ?? []) as unknown as { id: string; nama: string }[]).forEach(j => juriMap.set(j.id, j.nama));
     const mazmurMap = new Map<string, string>();
-    mazmur.forEach(m => mazmurMap.set(m.id, m.bacaan));
+    mazmurArr.forEach(m => mazmurMap.set(m.id, m.bacaan));
 
-    // Mazmur per juri (setiap juri seharusnya konsisten pada satu bacaan)
     const juriMazmur = new Map<string, string | null>();
     for (const r of rows) {
       if (!juriMazmur.has(r.juri_id)) juriMazmur.set(r.juri_id, r.mazmur_id ?? null);
@@ -1277,8 +1280,12 @@ function PenilaianTab() {
     }
 
     if (!mazmurReport) return null;
-    const pesertaNama = peserta.find(p => p.id === pesertaIdCheck)?.nama ?? "—";
+    const pesertaNama = pesertaArr.find(p => p.id === pesertaIdCheck)?.nama ?? "—";
     return { pesertaId: pesertaIdCheck, pesertaNama, mazmur: mazmurReport };
+  }
+
+  async function checkDiscrepancy(pesertaIdCheck: string): Promise<DiscrepancyReport | null> {
+    return checkDiscrepancyWith(pesertaIdCheck, mazmur, peserta);
   }
 
 
