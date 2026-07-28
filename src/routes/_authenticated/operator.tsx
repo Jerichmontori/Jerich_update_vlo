@@ -329,10 +329,17 @@ function OperatorPage() {
                 <Select value={selectedPeserta} onValueChange={(v) => { setSelectedPeserta(v); logAudit("pilih_peserta", { peserta_id: v }); }} disabled={!!sesi}>
                   <SelectTrigger><SelectValue placeholder="Pilih peserta" /></SelectTrigger>
                   <SelectContent>
-                    {peserta.map(p => (
-                      <SelectItem key={p.id} value={p.id}>{p.nomor_urut}. {p.nama}{p.asal ? ` — ${p.asal}` : ""}</SelectItem>
-                    ))}
+                    {peserta.map(p => {
+                      const done = submissionCounts[p.id] ?? 0;
+                      const sudah = juriTotal > 0 && done >= juriTotal;
+                      return (
+                        <SelectItem key={p.id} value={p.id} disabled={sudah}>
+                          {p.nomor_urut}. {p.nama}{p.asal ? ` — ${p.asal}` : ""}{sudah ? "  ✓ sudah dinilai" : ""}
+                        </SelectItem>
+                      );
+                    })}
                   </SelectContent>
+
                 </Select>
               </div>
               <div>
