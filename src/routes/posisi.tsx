@@ -53,13 +53,15 @@ function PosisiPublic() {
   const grouped = useMemo(() => {
     const enrichedAll: Row[] = peserta.map((p) => {
       const r = rankMap[p.id];
-      const total = Number(r?.total_skor ?? 0);
+      const nilai = r?.nilai_akhir != null ? Number(r.nilai_akhir) : null;
+      const jumlah = Number(r?.jumlah_juri ?? 0);
       return {
         ...p,
-        total_skor: total,
+        total_skor: Number(r?.total_skor ?? 0),
         rata_rata: Number(r?.rata_rata ?? 0),
-        jumlah_juri: Number(r?.jumlah_juri ?? 0),
-        scored: !!r && total > 0,
+        jumlah_juri: jumlah,
+        nilai_akhir: nilai,
+        scored: nilai != null && jumlah > 0,
       };
     });
     const scoredSorted = enrichedAll
@@ -68,9 +70,11 @@ function PosisiPublic() {
     const chunks: { key: string; label: string; range: string; list: Row[] }[] = [];
     for (let i = 0; i < scoredSorted.length; i += 10) {
       const slice = scoredSorted.slice(i, i + 10);
-      const ranked = [...slice].sort((a, b) =>
-        b.total_skor !== a.total_skor ? b.total_skor - a.total_skor : a.nomor_urut - b.nomor_urut
-      );
+      const ranked = [...slice].sort((a, b) => {
+        const av = Number(a.nilai_akhir ?? 0);
+        const bv = Number(b.nilai_akhir ?? 0);
+        return bv !== av ? bv - av : a.nomor_urut - b.nomor_urut;
+      });
       const first = slice[0]?.nomor_urut ?? i + 1;
       const last = slice[slice.length - 1]?.nomor_urut ?? i + slice.length;
       const idx = Math.floor(i / 10) + 1;
