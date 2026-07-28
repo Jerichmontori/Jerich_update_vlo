@@ -1233,17 +1233,28 @@ function PenilaianTab() {
   useEffect(() => {
     let stopped = false;
     async function poll() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("var_clarification_session" as any)
-        .select("peserta_id, komponen_berbeda, status, peserta:peserta_id(nama, nomor_urut)")
+        .select("peserta_id, komponen_berbeda, status")
         .neq("status", "final");
       if (stopped) return;
-      const rows = ((data as any[]) ?? []).map((r) => ({
-        peserta_id: r.peserta_id,
-        peserta_nama: r.peserta ? `${r.peserta.nomor_urut ?? ""}. ${r.peserta.nama ?? ""}`.trim().replace(/^\.\s*/, "") : "",
-        komponen: Array.isArray(r.komponen_berbeda) ? (r.komponen_berbeda as string[]) : [],
-        status: r.status,
-      })) as VarAktifRow[];
+      if (error) { console.error("var poll", error); return; }
+      const rawRows = ((data as any[]) ?? []);
+      const pids = Array.from(new Set(rawRows.map(r => r.peserta_id)));
+      let pesertaMap = new Map<string, { nama: string; nomor_urut: number }>();
+      if (pids.length > 0) {
+        const { data: pdata } = await supabase.from("peserta").select("id, nama, nomor_urut").in("id", pids);
+        (pdata ?? []).forEach((p: any) => pesertaMap.set(p.id, { nama: p.nama, nomor_urut: p.nomor_urut }));
+      }
+      const rows = rawRows.map((r) => {
+        const p = pesertaMap.get(r.peserta_id);
+        return {
+          peserta_id: r.peserta_id,
+          peserta_nama: p ? `${p.nomor_urut}. ${p.nama}` : "",
+          komponen: Array.isArray(r.komponen_berbeda) ? (r.komponen_berbeda as string[]) : [],
+          status: r.status,
+        } as VarAktifRow;
+      });
       setVarAktifList(rows);
     }
     poll();
