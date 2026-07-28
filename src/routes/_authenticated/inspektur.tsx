@@ -16,6 +16,10 @@ export const Route = createFileRoute("/_authenticated/inspektur")({
     meta: [
       { title: "Inspektur Pertandingan · Sistem Penjurian" },
       { name: "description", content: "Pengawas independen: monitoring peserta, juri, dan Potensi VAR secara real-time." },
+      { property: "og:title", content: "Inspektur Pertandingan · Sistem Penjurian" },
+      { property: "og:description", content: "Pengawas independen: monitoring peserta, juri, dan Potensi VAR secara real-time." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
 });
@@ -63,6 +67,7 @@ const KOMP_LABEL: Record<string, string> = {
 function statusVariant(s: string): { label: string; className: string } {
   switch (s) {
     case "Final": return { label: "Final", className: "bg-emerald-600 text-white" };
+    case "Perbaikan Perhatian": return { label: "Perbaikan Perhatian", className: "bg-amber-600 text-white" };
     case "Sedang Dinilai": return { label: "Sedang Dinilai", className: "bg-amber-500 text-white" };
     case "Menunggu Juri": return { label: "Menunggu Juri", className: "bg-sky-600 text-white" };
     case "Potensi VAR": return { label: "Potensi VAR", className: "bg-rose-600 text-white" };
@@ -113,6 +118,9 @@ function InspekturPage() {
         supabase.rpc("inspektur_monitor" as any),
         supabase.rpc("inspektur_list_var" as any),
       ]);
+      if (r.error) throw r.error;
+      if (m.error) throw m.error;
+      if (v.error) throw v.error;
       if (r.data && (r.data as any[])[0]) setRingkasan((r.data as any[])[0] as Ringkasan);
       setMonitor(((m.data as any[]) ?? []) as MonitorRow[]);
       setVars(((v.data as any[]) ?? []) as VarRow[]);
@@ -181,6 +189,14 @@ function InspekturPage() {
   async function signOut() {
     await supabase.auth.signOut();
     window.location.href = "/auth";
+  }
+
+  async function bukaPerbaikanPerhatian(pesertaId: string, nama: string) {
+    if (!confirm(`Buka kembali form Perhatian untuk ${nama}? Semua juri akan diminta menilai ulang komponen Perhatian. Nilai kriteria lain tetap tersimpan.`)) return;
+    const { error } = await supabase.rpc("inspektur_buka_perhatian" as any, { _peserta: pesertaId, _catatan: null });
+    if (error) { toast.error(error.message); return; }
+    toast.success("Form Perhatian dibuka kembali untuk semua juri");
+    loadAll();
   }
 
   if (allowed === null) return null;
@@ -252,6 +268,7 @@ function InspekturPage() {
                 )}
                 {monitor.map((r) => {
                   const v = statusVariant(r.status);
+                  const hasActiveVar = r.status === "Potensi VAR" || r.status === "Perbaikan Perhatian" || vars.some((vr) => vr.peserta_id === r.peserta_id);
                   return (
                     <TableRow key={r.peserta_id}>
                       <TableCell className="font-medium">{r.nomor_urut}</TableCell>
@@ -260,7 +277,16 @@ function InspekturPage() {
                       <TableCell className="text-muted-foreground">{r.bacaan || "—"}</TableCell>
                       <TableCell>{r.juri_done} / {r.juri_total} juri</TableCell>
                       <TableCell><Badge className={v.className}>{v.label}</Badge></TableCell>
-                      <TableCell className="text-right">
+                      <TableCell className="text-right space-x-2 whitespace-nowrap">
+                        {hasActiveVar && (
+                          <Button
+                            size="sm"
+                            className="bg-amber-600 hover:bg-amber-700 text-white"
+                            onClick={() => bukaPerbaikanPerhatian(r.peserta_id, r.nama)}
+                          >
+                            <AlertTriangle className="size-4 mr-1" /> Buka Perbaikan
+                          </Button>
+                        )}
                         <Button size="sm" variant="outline" onClick={() => openDetail(r)}>
                           <Eye className="size-4 mr-1" /> Detail
                         </Button>
@@ -313,15 +339,9 @@ function InspekturPage() {
                       <Button
                         size="sm"
                         className="bg-amber-600 hover:bg-amber-700 text-white"
-                        onClick={async () => {
-                          if (!confirm(`Buka kembali form Perhatian untuk ${r.nama}? Semua juri akan diminta menilai ulang komponen Perhatian. Nilai kriteria lain tetap tersimpan.`)) return;
-                          const { error } = await supabase.rpc("inspektur_buka_perhatian" as any, { _peserta: r.peserta_id, _catatan: null });
-                          if (error) { toast.error(error.message); return; }
-                          toast.success("Form Perhatian dibuka kembali untuk semua juri");
-                          loadAll();
-                        }}
+                        onClick={() => bukaPerbaikanPerhatian(r.peserta_id, r.nama)}
                       >
-                        <AlertTriangle className="size-4 mr-1" /> Buka Perbaikan Perhatian
+                        <AlertTriangle className="size-4 mr-1" /> Buka Perbaikan
                       </Button>
                       <Button size="sm" variant="outline" onClick={() => openDetail(monitor.find(m => m.peserta_id === r.peserta_id) ?? { peserta_id: r.peserta_id, nomor_urut: r.nomor_urut, nama: r.nama, kategori: r.kategori, bacaan: null, status: "Potensi VAR", juri_done: 0, juri_total: 0 })}>
                         <Eye className="size-4 mr-1" /> Detail
