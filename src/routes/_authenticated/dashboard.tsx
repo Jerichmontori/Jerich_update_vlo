@@ -1446,6 +1446,10 @@ function PenilaianTab() {
       .eq("peserta_id", pesertaIdCheck)
       .eq("kriteria_id", perhatianKriteria.id);
     if (!rows || rows.length < 2) return null;
+    // Perbedaan Perhatian hanya diakui bila jumlah inputan seluruh juri untuk peserta SAMA.
+    const involvedJuri = Array.from(new Set((rows as any[]).map(r => r.juri_id)));
+    const counts = await fetchJuriCounts(pesertaIdCheck, involvedJuri);
+    if (!allCountsEqualAndPositive(counts)) return null;
     const { data: juriRows } = await supabase.from("juri_public" as any).select("id, nama");
     const juriMap = new Map<string, string>();
     ((juriRows ?? []) as unknown as { id: string; nama: string }[]).forEach(j => juriMap.set(j.id, j.nama));
