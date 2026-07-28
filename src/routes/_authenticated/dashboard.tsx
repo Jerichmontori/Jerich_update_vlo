@@ -1316,6 +1316,7 @@ function PenilaianTab() {
   }
 
   function openDialog(k: Kriteria) {
+    if (editMode) return toast.warning("Mode perubahan aktif — hanya Peserta & Bacaan Mazmur yang dapat diubah.");
     if (!juriId) return toast.error("Pilih juri terlebih dahulu");
     if (!pesertaId) return toast.error("Pilih peserta terlebih dahulu");
     const key = kriteriaKey(k.nama);
