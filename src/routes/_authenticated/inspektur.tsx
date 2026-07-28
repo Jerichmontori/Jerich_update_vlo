@@ -46,10 +46,19 @@ type VarRow = {
   nomor_urut: number;
   nama: string;
   kategori: string | null;
-  mazmur_variants: any;
+  komponen_berbeda: string[] | null;
+  status: string;
+  bacaan: string | null;
   juri_berbeda: number;
   detected_at: string;
 };
+
+const KOMP_LABEL: Record<string, string> = {
+  salah_kata: "Salah kata",
+  menambah_kata: "Menambah kata",
+  mengurangi_kata: "Mengurangi kata",
+};
+
 
 function statusVariant(s: string): { label: string; className: string } {
   switch (s) {
