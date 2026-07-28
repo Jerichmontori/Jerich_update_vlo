@@ -1621,7 +1621,25 @@ function PenilaianTab() {
     }
     if (key === "perhatian") {
       if (!selectedMazmur) return toast.error("Pilih bacaan mazmur terlebih dahulu");
-      setPerhatianChecks(PERHATIAN_ASPEK.map((_, i) => i === 0 ? [false] : Array(selectedMazmur.jumlah_ayat).fill(false)));
+      const isPerbaikan = !!(pesertaId && perbaikanPerhatianIds.has(pesertaId));
+      const prevRow = penilaian.find(x => x.juri_id === juriId && x.peserta_id === pesertaId && x.kriteria_id === k.id);
+      const prevDetail: any = prevRow?.detail ?? null;
+      if (isPerbaikan && prevDetail && prevDetail.type === "perhatian") {
+        const restored: boolean[][] = PERHATIAN_ASPEK.map((_, i) => {
+          if (i === 0) return [Boolean(prevDetail.membacaPerikop)];
+          const aspek = prevDetail.aspek?.[i - 1];
+          const arr: boolean[] | undefined = Array.isArray(aspek?.ayat) ? aspek.ayat : undefined;
+          if (arr && arr.length === selectedMazmur.jumlah_ayat) return [...arr];
+          const filled = Array(selectedMazmur.jumlah_ayat).fill(false);
+          (aspek?.ditandai ?? []).forEach((n: number) => {
+            if (n >= 1 && n <= filled.length) filled[n - 1] = true;
+          });
+          return filled;
+        });
+        setPerhatianChecks(restored);
+      } else {
+        setPerhatianChecks(PERHATIAN_ASPEK.map((_, i) => i === 0 ? [false] : Array(selectedMazmur.jumlah_ayat).fill(false)));
+      }
     }
     setOpenKriteria(k);
   }
@@ -2288,13 +2306,47 @@ function PenilaianTab() {
             </div>
           )}
 
-          {activeKey === "perhatian" && (
+          {activeKey === "perhatian" && (() => {
+            const perbaikanAktifDlg = !!(pesertaId && perbaikanPerhatianIds.has(pesertaId));
+            const VAR_TRIGGER_IDX = new Set([1, 3, 4]);
+            return (
             <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
+              {perbaikanAktifDlg && (
+                <div className="rounded-lg border-2 border-amber-400/70 bg-amber-50 dark:bg-amber-950/30 p-3 text-sm">
+                  <div className="font-semibold text-amber-900 dark:text-amber-200 flex items-center gap-2">
+                    <AlertTriangle className="size-4" /> Mode Perbaikan Perhatian
+                  </div>
+                  <div className="text-amber-800 dark:text-amber-200/90 mt-1">
+                    Hanya <b>Salah kata</b>, <b>Menambah kata</b>, dan <b>Mengurangi kata</b> yang dapat diubah. Pilihan lain dikunci dan menampilkan jawaban Anda sebelumnya.
+                  </div>
+                </div>
+              )}
               {PERHATIAN_ASPEK.map((aspek, i) => {
                 const row = perhatianChecks[i] ?? [];
+                const locked = perbaikanAktifDlg && !VAR_TRIGGER_IDX.has(i);
+                const isTrigger = perbaikanAktifDlg && VAR_TRIGGER_IDX.has(i);
                 return (
-                  <div key={aspek} className="rounded-lg border bg-card p-3">
-                    <div className="text-sm font-medium mb-2">{i + 1}. {aspek}</div>
+                  <div
+                    key={aspek}
+                    className={[
+                      "rounded-lg border p-3",
+                      locked ? "bg-muted/40 opacity-70" : "bg-card",
+                      isTrigger ? "border-destructive/60 ring-1 ring-destructive/40 bg-destructive/5" : "",
+                    ].join(" ")}
+                  >
+                    <div className="text-sm font-medium mb-2 flex items-center justify-between gap-2">
+                      <span>{i + 1}. {aspek}</span>
+                      {isTrigger && (
+                        <span className="text-[10px] font-semibold rounded-full bg-destructive text-destructive-foreground px-2 py-0.5">
+                          ⚠ Pemicu VAR — dapat diubah
+                        </span>
+                      )}
+                      {locked && (
+                        <span className="text-[10px] font-semibold rounded-full bg-muted text-muted-foreground px-2 py-0.5">
+                          Terkunci
+                        </span>
+                      )}
+                    </div>
                     {i === 0 ? (
                       <div className="grid grid-cols-2 gap-2">
                         {[
@@ -2306,6 +2358,7 @@ function PenilaianTab() {
                             <button
                               key={opt.label}
                               type="button"
+                              disabled={locked}
                               onClick={() =>
                                 setPerhatianChecks(prev => prev.map((r, idx) => idx === 0 ? [opt.val] : r))
                               }
@@ -2316,6 +2369,7 @@ function PenilaianTab() {
                                       ? "border-destructive bg-destructive text-destructive-foreground"
                                       : "border-accent bg-accent text-accent-foreground")
                                   : "border-primary/20 bg-background hover:border-accent/60",
+                                locked ? "cursor-not-allowed opacity-70 hover:border-primary/20" : "",
                               ].join(" ")}
                             >
                               {opt.label}
@@ -2329,16 +2383,18 @@ function PenilaianTab() {
                           <label
                             key={ayatIdx}
                             className={[
-                              "cursor-pointer select-none rounded-md border-2 px-2 py-1.5 text-xs font-semibold text-center leading-tight transition",
+                              "select-none rounded-md border-2 px-2 py-1.5 text-xs font-semibold text-center leading-tight transition",
                               checked
                                 ? "border-destructive bg-destructive text-destructive-foreground"
-                                : "border-primary/20 bg-background hover:border-accent/60",
+                                : "border-primary/20 bg-background",
+                              locked ? "cursor-not-allowed" : "cursor-pointer hover:border-accent/60",
                             ].join(" ")}
                           >
                             <input
                               type="checkbox"
                               className="sr-only"
                               checked={checked}
+                              disabled={locked}
                               onChange={() =>
                                 setPerhatianChecks(prev =>
                                   prev.map((r, idx) =>
@@ -2361,7 +2417,8 @@ function PenilaianTab() {
               </p>
 
             </div>
-          )}
+            );
+          })()}
 
 
           {!activeKey && openKriteria && (
