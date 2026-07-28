@@ -1100,6 +1100,8 @@ function PenilaianTab() {
   // Aturan #7 — kunci form setelah kirim, buka lagi setelah semua juri selesai
   const [submittedFor, setSubmittedFor] = useState<string | null>(null);
   const [judgesDoneForPeserta, setJudgesDoneForPeserta] = useState<number>(0);
+  const pollingInFlightRef = useRef(false);
+  const resolvingCompletionRef = useRef<string | null>(null);
   // Aturan #6 — konfirmasi kirim
   const [confirmOpen, setConfirmOpen] = useState(false);
   // Mode edit: dipicu setelah user menekan OK di dialog perbedaan.
@@ -1126,7 +1128,8 @@ function PenilaianTab() {
 
 
 
-  async function loadAll() {
+  async function loadAll(options: { restoreSubmissionState?: boolean } = {}) {
+    const restoreSubmissionState = options.restoreSubmissionState ?? true;
     const { data: userData } = await supabase.auth.getUser();
     const uid = userData.user?.id ?? null;
     let admin = false;
@@ -1172,27 +1175,26 @@ function PenilaianTab() {
     // Restore state setelah refresh berbasis SUBMISSION (bukan kriteria terisi).
     // Juri dianggap "sudah menilai" hanya jika sudah menekan Kirim (ada baris di penilaian_submission).
     const activeJuriId = admin ? (juriId || "") : (profJuriId || "");
-    if (activeJuriId && !editMode) {
+    if (activeJuriId && !editMode && restoreSubmissionState) {
       const mine = submissionList
         .filter(sb => sb.juri_id === activeJuriId)
         .sort((a, b) => (a.created_at < b.created_at ? 1 : -1));
 
       if (mine.length > 0) {
         const totalJuri = juriList.length;
-        // Peserta paling baru yang saya kirim tapi belum semua juri kirim
-        const pending = mine.find(sb => {
-          const done = submissionList.filter(x => x.peserta_id === sb.peserta_id).length;
-          return totalJuri > 0 && done < totalJuri;
-        });
-        if (pending) {
-          const pid = pending.peserta_id;
+        // Hanya pulihkan peserta TERAKHIR yang saya kirim.
+        // Jangan lompat ke submission lama yang belum selesai karena itu membuat overlay berkedip setelah peserta terbaru selesai.
+        const latest = mine[0];
+        const latestDone = submissionList.filter(x => x.peserta_id === latest.peserta_id).length;
+        if (totalJuri > 0 && latestDone < totalJuri) {
+          const pid = latest.peserta_id;
           const myRow = penilaianList.find(x => x.juri_id === activeJuriId && x.peserta_id === pid && x.mazmur_id);
           setSubmittedFor(pid);
           setPesertaId(pid);
           if (myRow?.mazmur_id) setMazmurId(myRow.mazmur_id);
         } else {
-          // Semua juri sudah kirim untuk peserta terakhir yang saya nilai — cek perbedaan.
-          const pid = mine[0].peserta_id;
+          // Semua juri sudah kirim untuk peserta terakhir yang saya nilai — cek perbedaan sekali saat halaman dipulihkan.
+          const pid = latest.peserta_id;
           const report = await checkDiscrepancyWith(pid, mazmurList, pesertaList);
           if (report) {
             const myRow = penilaianList.find(x => x.juri_id === activeJuriId && x.peserta_id === pid && x.mazmur_id);
@@ -1212,38 +1214,47 @@ function PenilaianTab() {
   // Aturan #7 — polling jumlah juri yang sudah menilai peserta terkunci
   useEffect(() => {
     if (!submittedFor) return;
+    const lockedPesertaId = submittedFor;
+    resolvingCompletionRef.current = null;
     let stopped = false;
     async function tick() {
+      if (pollingInFlightRef.current) return;
+      pollingInFlightRef.current = true;
+      try {
       const { data } = await supabase.rpc("get_ranking" as any);
       if (stopped) return;
       const rows = (data ?? []) as unknown as Ranking[];
-      const row = rows.find(r => r.peserta_id === submittedFor);
+      const row = rows.find(r => r.peserta_id === lockedPesertaId);
       const done = row ? Number(row.jumlah_juri) : 0;
       setJudgesDoneForPeserta(done);
 
       // Deteksi perbedaan input SELAMA menunggu (peserta/mazmur berbeda antar juri)
-      const pending = await checkPendingDiscrepancy(submittedFor!);
+      const pending = await checkPendingDiscrepancy(lockedPesertaId);
       if (!stopped) setPendingDiscrepancy(pending);
 
       if (totalJuriApproved > 0 && done >= totalJuriApproved) {
+        const resolutionKey = `${lockedPesertaId}:${done}:${totalJuriApproved}`;
+        if (resolvingCompletionRef.current === resolutionKey) return;
+        resolvingCompletionRef.current = resolutionKey;
+
         // Urutan pemeriksaan:
         // 1) Semua juri sudah klik Kirim (terpenuhi di sini).
         // 2) Perbedaan pilihan Peserta / Bacaan Mazmur.
-        const report = await checkDiscrepancy(submittedFor!);
+        const report = await checkDiscrepancy(lockedPesertaId);
         if (report) {
           stopped = true;
           setDiscrepancy(report);
-          setSubmittedFor(null);
+          setSubmittedFor(current => current === lockedPesertaId ? null : current);
           setPendingDiscrepancy(null);
           setJudgesDoneForPeserta(0);
           return;
         }
         // 3) Perbedaan parameter di form Perhatian (Q2, Q4, Q5).
-        const perhatianReport = await checkPerhatianDiscrepancy(submittedFor!);
+        const perhatianReport = await checkPerhatianDiscrepancy(lockedPesertaId);
         if (perhatianReport) {
           stopped = true;
           setPerhatianDiscrepancy(perhatianReport);
-          setSubmittedFor(null);
+          setSubmittedFor(current => current === lockedPesertaId ? null : current);
           setPendingDiscrepancy(null);
           setJudgesDoneForPeserta(0);
           return;
@@ -1252,13 +1263,16 @@ function PenilaianTab() {
         toast.success("✦ Semua juri sudah menilai", {
           description: "Silahkan melakukan penilaian peserta selanjutnya.",
         });
-        setSubmittedFor(null);
+        setSubmittedFor(current => current === lockedPesertaId ? null : current);
         setPendingDiscrepancy(null);
         setPesertaId("");
         setMazmurId("");
         setOpenKriteria(null);
         setJudgesDoneForPeserta(0);
-        loadAll();
+        loadAll({ restoreSubmissionState: false });
+      }
+      } finally {
+        pollingInFlightRef.current = false;
       }
     }
     tick();
@@ -1816,10 +1830,11 @@ function PenilaianTab() {
                 toast.success("✦ Perubahan tersimpan", {
                   description: `Penilaian diperbarui untuk ${currentPesertaLabel}.`,
                 });
+                resolvingCompletionRef.current = null;
                 setEditMode(null);
                 setSubmittedFor(pesertaId);
                 setOpenKriteria(null);
-                await loadAll();
+                await loadAll({ restoreSubmissionState: false });
                 return;
               }
               // Catat submission juri untuk peserta ini — ini penanda "sudah mengirim".
@@ -1830,9 +1845,10 @@ function PenilaianTab() {
               toast.success("✦ Penilaian dikirim", {
                 description: `Penilaian untuk ${currentPesertaLabel} tersimpan.`,
               });
+              resolvingCompletionRef.current = null;
               setSubmittedFor(pesertaId);
               setOpenKriteria(null);
-              await loadAll();
+              await loadAll({ restoreSubmissionState: false });
             }
 
             return (
