@@ -61,7 +61,7 @@ function RankingPublic() {
     const list = kategori === ALL
       ? rows
       : rows.filter((r) => (kategoriMap[r.peserta_id] ?? "") === kategori);
-    return [...list].sort((a, b) => Number(b.total_skor) - Number(a.total_skor));
+    return [...list].sort((a, b) => Number(b.nilai_akhir ?? 0) - Number(a.nilai_akhir ?? 0));
   }, [rows, kategori, kategoriMap]);
 
   const medals = ["🥇", "🥈", "🥉"];
