@@ -116,6 +116,12 @@ function InspekturPage() {
   const loadAll = useCallback(async () => {
     setLoading(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        setAllowed(false);
+        window.location.href = "/auth";
+        return;
+      }
       const [r, m, v] = await Promise.all([
         supabase.rpc("inspektur_ringkasan" as any),
         supabase.rpc("inspektur_monitor" as any),
@@ -128,7 +134,12 @@ function InspekturPage() {
       setMonitor(((m.data as any[]) ?? []) as MonitorRow[]);
       setVars(((v.data as any[]) ?? []) as VarRow[]);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Gagal memuat data");
+      const message = err instanceof Error ? err.message : "Gagal memuat data";
+      if (message.toLowerCase().includes("permission denied") || message.toLowerCase().includes("forbidden")) {
+        toast.error("Sesi/role Inspektur belum valid. Silakan masuk ulang.");
+      } else {
+        toast.error(message);
+      }
     } finally {
       setLoading(false);
     }
@@ -146,8 +157,21 @@ function InspekturPage() {
     setDetailData(null);
     setCatatan("");
     setDetailOpen(true);
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      toast.error("Sesi login berakhir. Silakan masuk ulang.");
+      setDetailOpen(false);
+      window.location.href = "/auth";
+      return;
+    }
     const { data, error } = await supabase.rpc("inspektur_var_detail" as any, { _peserta: row.peserta_id });
-    if (error) { toast.error(error.message); return; }
+    if (error) {
+      const message = error.message.toLowerCase().includes("permission denied") || error.message.toLowerCase().includes("forbidden")
+        ? "Sesi/role Inspektur belum valid. Silakan masuk ulang."
+        : error.message;
+      toast.error(message);
+      return;
+    }
     setDetailData(data);
   }
 
