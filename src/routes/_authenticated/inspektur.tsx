@@ -478,7 +478,7 @@ function InspekturPage() {
           <DialogFooter className="flex-wrap gap-2">
             {detailData?.var_session && (
               <Button
-                variant="secondary"
+                className="bg-amber-600 hover:bg-amber-700 text-white"
                 onClick={async () => {
                   if (!detailPeserta) return;
                   if (!confirm("Buka kembali form Perhatian bagi semua juri untuk peserta ini? Nilai kriteria lain tetap tersimpan.")) return;
@@ -492,12 +492,13 @@ function InspekturPage() {
                   loadAll();
                 }}
               >
-                Buka Perbaikan Perhatian
+                <AlertTriangle className="size-4 mr-1" /> Buka Perbaikan Perhatian
               </Button>
             )}
             <Button variant="outline" onClick={() => setDetailOpen(false)}>Tutup</Button>
             <Button onClick={simpanCatatan} disabled={savingCatatan}>{savingCatatan ? "Menyimpan…" : "Simpan Catatan"}</Button>
           </DialogFooter>
+
         </DialogContent>
       </Dialog>
     </div>
