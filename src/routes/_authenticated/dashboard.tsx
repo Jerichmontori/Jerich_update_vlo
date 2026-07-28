@@ -1078,7 +1078,7 @@ function PenilaianTab() {
       if (totalJuriApproved > 0 && done >= totalJuriApproved) {
         stopped = true;
         // Aturan #1 & #2 — periksa perbedaan mazmur & perhatian (Q2, Q4, Q5)
-        const report = await checkDiscrepancy(submittedFor);
+        const report = await checkDiscrepancy(submittedFor!);
         if (report) {
           setDiscrepancy(report);
           return; // biarkan overlay tetap, tunggu keputusan dari dialog
