@@ -1016,6 +1016,14 @@ function PenilaianTab() {
   const [judgesDoneForPeserta, setJudgesDoneForPeserta] = useState<number>(0);
   // Aturan #6 — konfirmasi kirim
   const [confirmOpen, setConfirmOpen] = useState(false);
+  // Aturan #1 & #2 — deteksi perbedaan input antar juri
+  type DiscrepancyReport = {
+    pesertaId: string;
+    mazmur: { juriNama: string; mazmurLabel: string }[] | null;
+    perhatian: { questionLabel: string; entries: { juriNama: string; ditandai: number[] }[] }[];
+  };
+  const [discrepancy, setDiscrepancy] = useState<DiscrepancyReport | null>(null);
+
 
 
   async function loadAll() {
