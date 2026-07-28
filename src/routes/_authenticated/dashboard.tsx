@@ -1630,7 +1630,7 @@ function PenilaianTab() {
         setPerhatianChecks(restored);
         perhatianBaselineRef.current = restored.map(r => [...r]);
       } else {
-        const empty = PERHATIAN_ASPEK.map((_, i) => i === 0 ? [false] : Array(selectedMazmur.jumlah_ayat).fill(false));
+        const empty = PERHATIAN_ASPEK.map((_, i) => i === 0 ? [] : Array(selectedMazmur.jumlah_ayat).fill(false));
         setPerhatianChecks(empty);
         perhatianBaselineRef.current = isPerbaikan ? empty.map(r => [...r]) : null;
       }
