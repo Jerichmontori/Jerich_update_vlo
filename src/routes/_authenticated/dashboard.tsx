@@ -1159,16 +1159,17 @@ function PenilaianTab() {
     // Restore state setelah refresh: jika juri sudah menilai semua kriteria untuk seorang peserta
     // tapi belum semua juri selesai, tampilkan overlay "menunggu". Jika sudah semua juri selesai
     // dan ada perbedaan input, tampilkan dialog perbedaan.
-    const activeJuriId = admin ? (juriId || "") : (prof?.juri_id || "");
+    const activeJuriId = admin ? (juriId || "") : (profJuriId || "");
     if (activeJuriId && kriteriaList.length > 0 && !editMode) {
       const kriteriaIds = new Set(kriteriaList.map((x: any) => x.id));
       const byPeserta: Record<string, { done: Set<string>; latest: string }> = {};
       penilaianList.forEach(pn => {
         if (pn.juri_id !== activeJuriId) return;
         if (!kriteriaIds.has(pn.kriteria_id)) return;
-        const cur = byPeserta[pn.peserta_id] ??= { done: new Set(), latest: pn.created_at };
+        const ts = pn.created_at ?? "";
+        const cur = byPeserta[pn.peserta_id] ??= { done: new Set<string>(), latest: ts };
         cur.done.add(pn.kriteria_id);
-        if (pn.created_at > cur.latest) cur.latest = pn.created_at;
+        if (ts > cur.latest) cur.latest = ts;
       });
       const fullyScored = Object.entries(byPeserta)
         .filter(([, v]) => v.done.size >= kriteriaIds.size)
