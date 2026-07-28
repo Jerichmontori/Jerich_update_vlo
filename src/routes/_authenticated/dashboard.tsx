@@ -34,43 +34,9 @@ type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: str
 type Kategori = { id: string; kategori: string | null; batas_atas: number; batas_bawah: number; kriteria_penilaian: string | null; kriteria_peserta: string | null; bobot: number; nilai_tengah: number; nilai_standart: number };
 
 function App() {
-  // Aturan #4 — juri hanya boleh login di satu device.
-  // Setiap login menulis device_session_id baru ke profiles.active_session_id.
-  // Device lama yang menyimpan id berbeda akan otomatis di-signout.
-  useEffect(() => {
-    let stopped = false;
-    async function check() {
-      try {
-        const { data: userData } = await supabase.auth.getUser();
-        const uid = userData.user?.id;
-        if (!uid) return;
-        const { data: prof } = await supabase
-          .from("profiles")
-          .select("active_session_id")
-          .eq("id", uid)
-          .maybeSingle();
-        const local = localStorage.getItem("device_session_id");
-        // Jika kolom belum pernah ditulis, catat sesi ini agar login berikutnya bisa membandingkan.
-        if (prof && !prof.active_session_id && local) {
-          await supabase.from("profiles").update({ active_session_id: local }).eq("id", uid);
-          return;
-        }
-        if (prof?.active_session_id && local && prof.active_session_id !== local) {
-          if (stopped) return;
-          toast.error("Akun Anda login di perangkat lain. Sesi ini akan dikeluarkan.");
-          await supabase.auth.signOut();
-          window.location.href = "/auth";
-        }
-      } catch {
-        // abaikan — cek berikutnya akan mencoba lagi
-      }
-    }
-    check();
-    const id = setInterval(check, 15000);
-    const onFocus = () => check();
-    window.addEventListener("focus", onFocus);
-    return () => { stopped = true; clearInterval(id); window.removeEventListener("focus", onFocus); };
-  }, []);
+  // Single-device enforcement dijalankan di layout `_authenticated/route.tsx`
+  // agar berlaku untuk semua halaman (dashboard, operator, inspektur).
+
 
 
   return (
