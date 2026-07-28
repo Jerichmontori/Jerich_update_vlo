@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
-import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight, LayoutDashboard, CheckCircle2, XCircle, FileText } from "lucide-react";
+import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight, LayoutDashboard, CheckCircle2, XCircle, FileText, KeyRound } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -439,6 +439,9 @@ function PesertaTab() {
 /* JURI */
 function JuriTab() {
   const [items, setItems] = useState<Juri[]>([]);
+  const [resetTarget, setResetTarget] = useState<Juri | null>(null);
+  const [resetPw, setResetPw] = useState("");
+  const [resetLoading, setResetLoading] = useState(false);
 
   async function load() {
     const { data, error } = await supabase.rpc("admin_list_juri" as any);
@@ -481,6 +484,41 @@ function JuriTab() {
       toast.error(err instanceof Error ? err.message : "Gagal mengubah role");
     }
   }
+
+  function openReset(j: Juri) {
+    setResetTarget(j);
+    setResetPw("");
+  }
+
+  function generatePw() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789";
+    let out = "";
+    const arr = new Uint32Array(12);
+    (globalThis.crypto || window.crypto).getRandomValues(arr);
+    for (let i = 0; i < arr.length; i++) out += chars[arr[i] % chars.length];
+    setResetPw(out);
+  }
+
+  async function submitReset() {
+    if (!resetTarget) return;
+    if (resetPw.length < 8) {
+      toast.error("Password minimal 8 karakter");
+      return;
+    }
+    setResetLoading(true);
+    try {
+      const { resetJuriPassword } = await import("@/lib/juri-users.functions");
+      await resetJuriPassword({ data: { juriId: resetTarget.id, password: resetPw } });
+      toast.success(`Password ${resetTarget.nama} berhasil direset`);
+      setResetTarget(null);
+      setResetPw("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal reset password");
+    } finally {
+      setResetLoading(false);
+    }
+  }
+
   return (
     <SectionCard title="Dewan Juri" description="Daftar pendaftar juri dari halaman beranda. Setujui akun agar dapat login.">
       {/* Mobile: card list */}
@@ -514,6 +552,11 @@ function JuriTab() {
                 {!j.approved && (
                   <Button size="sm" variant="default" onClick={()=>approve(j.id)} className="gap-1">
                     <Check className="size-4" />Approve
+                  </Button>
+                )}
+                {j.approved && (
+                  <Button size="sm" variant="outline" onClick={()=>openReset(j)} className="gap-1">
+                    <KeyRound className="size-4" />Reset
                   </Button>
                 )}
                 <Button size="icon" variant="ghost" onClick={()=>hapus(j.id, j.nama)}>
@@ -567,6 +610,11 @@ function JuriTab() {
                         <Check className="size-4" />Approve
                       </Button>
                     )}
+                    {j.approved && (
+                      <Button size="sm" variant="outline" onClick={()=>openReset(j)} className="gap-1">
+                        <KeyRound className="size-4" />Reset Password
+                      </Button>
+                    )}
                     <Button size="icon" variant="ghost" onClick={()=>hapus(j.id, j.nama)}>
                       <Trash2 className="size-4 text-destructive" />
                     </Button>
@@ -577,6 +625,43 @@ function JuriTab() {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog open={!!resetTarget} onOpenChange={(o)=>{ if(!o){ setResetTarget(null); setResetPw(""); } }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-serif">✦ Reset Password Juri</DialogTitle>
+            <DialogDescription>
+              Buat password baru untuk <span className="font-semibold text-foreground">{resetTarget?.nama}</span>.
+              Sesi login aktif di perangkat manapun akan otomatis keluar.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="reset-pw">Password Baru (min. 8 karakter)</Label>
+              <div className="flex gap-2">
+                <Input
+                  id="reset-pw"
+                  type="text"
+                  value={resetPw}
+                  onChange={(e)=>setResetPw(e.target.value)}
+                  placeholder="Masukkan atau generate"
+                  autoComplete="new-password"
+                />
+                <Button type="button" variant="outline" onClick={generatePw}>Generate</Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Salin & sampaikan password ini ke juri secara aman — tidak akan bisa dilihat lagi setelah dialog ditutup.
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={()=>{ setResetTarget(null); setResetPw(""); }}>Batal</Button>
+            <Button onClick={submitReset} disabled={resetLoading || resetPw.length < 8}>
+              {resetLoading ? "Menyimpan…" : "Simpan Password Baru"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </SectionCard>
   );
 }
