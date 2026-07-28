@@ -130,16 +130,25 @@ function App() {
 
 function Header() {
   const [canOperate, setCanOperate] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ nama: string; email: string; role: string } | null>(null);
   useEffect(() => {
     (async () => {
       const { data: userData } = await supabase.auth.getUser();
       const uid = userData.user?.id;
       if (!uid) return;
-      const [{ data: isPan }, { data: isAdm }] = await Promise.all([
+      const [{ data: isPan }, { data: isAdm }, { data: isJuri }] = await Promise.all([
         supabase.rpc("has_role", { _user_id: uid, _role: "panitia" as any }),
         supabase.rpc("has_role", { _user_id: uid, _role: "admin" as any }),
+        supabase.rpc("has_role", { _user_id: uid, _role: "juri" as any }),
       ]);
       setCanOperate(!!isPan || !!isAdm);
+      const { data: prof } = await supabase.from("profiles").select("nama").eq("id", uid).maybeSingle();
+      const role = isAdm ? "Admin" : isPan ? "Panitia" : isJuri ? "Juri" : "Pengguna";
+      setCurrentUser({
+        nama: prof?.nama ?? (userData.user?.email?.split("@")[0] ?? "Pengguna"),
+        email: userData.user?.email ?? "",
+        role,
+      });
     })();
   }, []);
   async function signOut() {
