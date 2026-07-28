@@ -1933,15 +1933,17 @@ function PenilaianTab() {
               await loadAll({ restoreSubmissionState: false });
             }
 
+            const perbaikanRows = varAktifList.filter(v => v.status === "perbaikan_perhatian");
+            const varRows = varAktifList.filter(v => v.status !== "perbaikan_perhatian");
             return (
               <>
-                {varAktifList.length > 0 && (
+                {varRows.length > 0 && (
                   <div className="rounded-2xl border-2 border-rose-500/60 bg-rose-500/10 p-4 mb-4 animate-pulse">
                     <div className="flex items-center gap-2 font-serif text-lg text-rose-700">
                       <AlertTriangle className="size-5" /> ⚠ POTENSI VAR — Menunggu Keputusan Inspektur
                     </div>
                     <ul className="mt-2 space-y-1 text-sm text-rose-900">
-                      {varAktifList.map((v) => (
+                      {varRows.map((v) => (
                         <li key={v.peserta_id}>
                           <b>{v.peserta_nama || "—"}</b> · Perbedaan pada:{" "}
                           <span className="font-semibold">
@@ -1952,6 +1954,23 @@ function PenilaianTab() {
                     </ul>
                     <p className="mt-2 text-xs text-rose-800/80">
                       Inspektur Pertandingan akan meninjau dan memberi catatan/keputusan. Anda tidak perlu mengubah penilaian yang sudah dikirim.
+                    </p>
+                  </div>
+                )}
+                {perbaikanRows.length > 0 && (
+                  <div className="rounded-2xl border-2 border-amber-500/60 bg-amber-50 p-4 mb-4">
+                    <div className="flex items-center gap-2 font-serif text-lg text-amber-800">
+                      <AlertTriangle className="size-5" /> ✦ Perbaikan Perhatian Dibuka oleh Inspektur
+                    </div>
+                    <ul className="mt-2 space-y-1 text-sm text-amber-900">
+                      {perbaikanRows.map((v) => (
+                        <li key={v.peserta_id}>
+                          <b>{v.peserta_nama || "—"}</b> — silakan buka kembali kriteria <b>Perhatian</b>, samakan jawaban Anda dengan juri lain, lalu klik <b>Kirim</b>.
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-2 text-xs text-amber-800/80">
+                      Kriteria lain terkunci — hanya form Perhatian yang dapat diubah selama mode ini aktif.
                     </p>
                   </div>
                 )}
