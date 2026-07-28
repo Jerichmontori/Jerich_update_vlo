@@ -534,10 +534,11 @@ function JuriTab() {
                 <div className="font-semibold truncate">{j.nama}</div>
                 <div className="text-xs text-muted-foreground truncate">{j.jabatan || "—"}</div>
               </div>
-              <Select value={j.role ?? undefined} onValueChange={(v)=>ubahRole(j.id, v as "admin"|"juri")}>
-                <SelectTrigger className="h-8 w-[110px] shrink-0"><SelectValue placeholder="Role" /></SelectTrigger>
+              <Select value={j.role ?? undefined} onValueChange={(v)=>ubahRole(j.id, v as "admin"|"juri"|"panitia")}>
+                <SelectTrigger className="h-8 w-[130px] shrink-0"><SelectValue placeholder="Role" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="juri">Juri</SelectItem>
+                  <SelectItem value="panitia">Panitia</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
