@@ -88,6 +88,9 @@ function InspekturPage() {
   const [catatan, setCatatan] = useState("");
   const [keputusan, setKeputusan] = useState<"disetujui" | "ditolak" | "">("");
   const [savingCatatan, setSavingCatatan] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmTarget, setConfirmTarget] = useState<{ pesertaId: string; nama: string; catatan: string | null; source: "row" | "detail" } | null>(null);
+  const [confirmLoading, setConfirmLoading] = useState(false);
 
   useEffect(() => {
     (async () => {
