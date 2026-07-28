@@ -1115,8 +1115,8 @@ function PenilaianTab() {
   const [pesertaId, setPesertaId] = useState<string>("");
   const [mazmurId, setMazmurId] = useState<string>("");
   const [openKriteria, setOpenKriteria] = useState<Kriteria | null>(null);
-  const [catatanValues, setCatatanValues] = useState<number[]>(() => CATATAN_ASPEK.map(() => 3));
-  const [catatanClearText, setCatatanClearText] = useState<boolean>(false);
+  const [catatanValues, setCatatanValues] = useState<(number | null)[]>(() => CATATAN_ASPEK.map(() => null));
+  const [catatanClearText, setCatatanClearText] = useState<boolean | null>(null);
   const [perhatianChecks, setPerhatianChecks] = useState<boolean[][]>(() => PERHATIAN_ASPEK.map(() => []));
   // Snapshot nilai Perhatian saat dialog dibuka (dipakai saat mode Perbaikan Perhatian
   // untuk mengunci baris non-pemicu agar tidak berubah, apapun yang terjadi di UI).
@@ -1607,8 +1607,8 @@ function PenilaianTab() {
       return toast.warning("Mode Perbaikan Perhatian aktif — hanya kriteria Perhatian yang dapat diubah.");
     }
     if (key === "catatan") {
-      setCatatanValues(CATATAN_ASPEK.map(() => 3));
-      setCatatanClearText(false);
+      setCatatanValues(CATATAN_ASPEK.map(() => null));
+      setCatatanClearText(null);
     }
     if (key === "perhatian") {
       if (!selectedMazmur) return toast.error("Pilih bacaan mazmur terlebih dahulu");
@@ -1630,7 +1630,7 @@ function PenilaianTab() {
         setPerhatianChecks(restored);
         perhatianBaselineRef.current = restored.map(r => [...r]);
       } else {
-        const empty = PERHATIAN_ASPEK.map((_, i) => i === 0 ? [false] : Array(selectedMazmur.jumlah_ayat).fill(false));
+        const empty = PERHATIAN_ASPEK.map((_, i) => i === 0 ? [] : Array(selectedMazmur.jumlah_ayat).fill(false));
         setPerhatianChecks(empty);
         perhatianBaselineRef.current = isPerbaikan ? empty.map(r => [...r]) : null;
       }
@@ -1657,15 +1657,27 @@ function PenilaianTab() {
     if (error) return toast.error(error.message);
     toast.success(`Nilai ${openKriteria.nama} disimpan`);
     setOpenKriteria(null);
-    setCatatanValues(CATATAN_ASPEK.map(() => 3));
-    setCatatanClearText(false);
+    setCatatanValues(CATATAN_ASPEK.map(() => null));
+    setCatatanClearText(null);
     setPerhatianChecks([]);
     
     loadAll();
   }
 
   async function saveCatatan() {
-    const effective = catatanValues.map((v, i) => i === 0 && !catatanClearText ? 1 : v);
+    if (catatanClearText === null) {
+      return toast.warning("Pilih jawaban untuk 'Membaca teks yang jelas' terlebih dahulu.");
+    }
+    // Aspek 0 auto = 1 bila clearText=false (skipped); selain itu wajib dipilih 1-5.
+    for (let i = 0; i < catatanValues.length; i++) {
+      const skipped = i === 0 && !catatanClearText;
+      if (!skipped && (catatanValues[i] === null || catatanValues[i] === undefined)) {
+        return toast.warning("Lengkapi semua pilihan pada Catatan Juri terlebih dahulu.");
+      }
+    }
+    const effective: number[] = catatanValues.map((v, i) =>
+      i === 0 && !catatanClearText ? 1 : (v as number)
+    );
     const avg = effective.reduce((a, b) => a + b, 0) / effective.length;
     const nilai = Math.round(avg * 20 * 100) / 100; // scale 1-5 → 20-100
     const detail: PenilaianDetail = {
@@ -1687,6 +1699,10 @@ function PenilaianTab() {
     : Math.round(((perhatianTotal - perhatianChecked) / perhatianTotal) * 100 * 100) / 100;
 
   async function savePerhatian() {
+    // Wajibkan jawaban "Membaca Perikop" (Ya/Tidak) sebelum menyimpan.
+    if (perhatianChecks[0]?.[0] === undefined) {
+      return toast.warning("Pilih jawaban untuk 'Membaca Perikop' terlebih dahulu.");
+    }
     // Guard: bila mode Perbaikan Perhatian aktif, paksa baris non-pemicu (selain 1/3/4)
     // kembali ke baseline saat dialog dibuka — jadi hanya 3 parameter pemicu VAR yang benar-benar bisa diubah.
     const perbaikanAktifNow = !!(pesertaId && perbaikanPerhatianIds.has(pesertaId));
@@ -2292,7 +2308,7 @@ function PenilaianTab() {
                           { label: "Ya", val: true },
                           { label: "Tidak", val: false },
                         ].map(opt => {
-                          const active = (row[0] ?? false) === opt.val;
+                          const active = row[0] === opt.val;
                           return (
                             <button
                               key={opt.label}
