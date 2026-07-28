@@ -220,7 +220,7 @@ function OperatorPage() {
       </header>
 
       <main className="mx-auto max-w-6xl px-4 pb-16 space-y-6">
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="pb-2"><CardDescription>Peserta Aktif</CardDescription></CardHeader>
             <CardContent>
