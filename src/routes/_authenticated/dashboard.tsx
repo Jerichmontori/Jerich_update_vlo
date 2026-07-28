@@ -1389,6 +1389,27 @@ function PenilaianTab() {
       if (pollingInFlightRef.current) return;
       pollingInFlightRef.current = true;
       try {
+      // Jika Inspektur membuka "Perbaikan Perhatian", submission juri utk peserta ini
+      // dihapus dari DB. Bebaskan overlay agar juri bisa mengisi ulang Perhatian.
+      const activeJuriId = myJuriId || juriId;
+      if (activeJuriId) {
+        const { data: sub } = await supabase
+          .from("penilaian_submission" as any)
+          .select("id")
+          .eq("peserta_id", lockedPesertaId)
+          .eq("juri_id", activeJuriId)
+          .maybeSingle();
+        if (!sub) {
+          stopped = true;
+          toast.info("Inspektur membuka perbaikan Perhatian.", {
+            description: "Silakan perbarui jawaban pemicu VAR lalu kirim ulang.",
+          });
+          setSubmittedFor(current => current === lockedPesertaId ? null : current);
+          setPendingDiscrepancy(null);
+          setJudgesDoneForPeserta(0);
+          return;
+        }
+      }
       const { data } = await supabase.rpc("get_ranking" as any);
       if (stopped) return;
       const rows = (data ?? []) as unknown as Ranking[];
