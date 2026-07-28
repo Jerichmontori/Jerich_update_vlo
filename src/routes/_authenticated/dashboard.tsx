@@ -642,11 +642,13 @@ function JuriTab() {
                 <TableCell className="text-muted-foreground">{j.jabatan || "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{j.email || "—"}</TableCell>
                 <TableCell>
-                  <Select value={j.role ?? undefined} onValueChange={(v)=>ubahRole(j.id, v as "admin"|"juri"|"panitia")}>
-                    <SelectTrigger className="h-8 w-[130px]"><SelectValue placeholder="Role" /></SelectTrigger>
+                  <Select value={j.role ?? undefined} onValueChange={(v)=>ubahRole(j.id, v as any)}>
+                    <SelectTrigger className="h-8 w-[170px]"><SelectValue placeholder="Role" /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="juri">Juri</SelectItem>
                       <SelectItem value="panitia">Panitia</SelectItem>
+                      <SelectItem value="ketua_juri">Ketua Dewan Juri</SelectItem>
+                      <SelectItem value="inspektur">Inspektur Pertandingan</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
