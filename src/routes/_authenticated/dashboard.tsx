@@ -168,7 +168,13 @@ function Header() {
             <p className="text-sm text-muted-foreground mt-1">Kelola peserta, juri, kriteria, dan lihat ranking secara langsung.</p>
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-3 shrink-0">
+          {currentUser && (
+            <div className="text-right text-sm hidden sm:block">
+              <div className="font-semibold leading-tight">{currentUser.nama}</div>
+              <div className="text-xs text-muted-foreground">{currentUser.role}{currentUser.email ? ` · ${currentUser.email}` : ""}</div>
+            </div>
+          )}
           {canOperate && (
             <Button variant="secondary" onClick={() => (window.location.href = "/operator")}>
               Operator Lomba
