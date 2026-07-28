@@ -409,6 +409,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      admin_reset_all_penilaian: { Args: never; Returns: undefined }
       get_ranking: {
         Args: never
         Returns: {
