@@ -554,6 +554,11 @@ function JuriTab() {
                     <Check className="size-4" />Approve
                   </Button>
                 )}
+                {j.approved && (
+                  <Button size="sm" variant="outline" onClick={()=>openReset(j)} className="gap-1">
+                    <KeyRound className="size-4" />Reset
+                  </Button>
+                )}
                 <Button size="icon" variant="ghost" onClick={()=>hapus(j.id, j.nama)}>
                   <Trash2 className="size-4 text-destructive" />
                 </Button>
