@@ -1152,6 +1152,10 @@ function PenilaianTab() {
   const [catatanValues, setCatatanValues] = useState<number[]>(() => CATATAN_ASPEK.map(() => 3));
   const [catatanClearText, setCatatanClearText] = useState<boolean>(false);
   const [perhatianChecks, setPerhatianChecks] = useState<boolean[][]>(() => PERHATIAN_ASPEK.map(() => []));
+  // Snapshot nilai Perhatian saat dialog dibuka (dipakai saat mode Perbaikan Perhatian
+  // untuk mengunci baris non-pemicu agar tidak berubah, apapun yang terjadi di UI).
+  const perhatianBaselineRef = useRef<boolean[][] | null>(null);
+  const PERHATIAN_VAR_TRIGGER_IDX = new Set([1, 3, 4]);
   const [saving, setSaving] = useState(false);
   // Aturan #3 — nama juri otomatis dari user yang login (juri tidak bisa memilih juri lain)
   const [myJuriId, setMyJuriId] = useState<string>("");
