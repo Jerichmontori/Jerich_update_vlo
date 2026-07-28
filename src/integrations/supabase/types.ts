@@ -426,6 +426,27 @@ export type Database = {
           },
         ]
       }
+      system_config: {
+        Row: {
+          created_at: string
+          key: string
+          updated_at: string
+          value: Json
+        }
+        Insert: {
+          created_at?: string
+          key: string
+          updated_at?: string
+          value: Json
+        }
+        Update: {
+          created_at?: string
+          key?: string
+          updated_at?: string
+          value?: Json
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -444,6 +465,36 @@ export type Database = {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
           user_id?: string
+        }
+        Relationships: []
+      }
+      var_review: {
+        Row: {
+          catatan: string | null
+          created_at: string
+          id: string
+          inspektur_id: string
+          keputusan: string
+          peserta_id: string
+          session_id: string | null
+        }
+        Insert: {
+          catatan?: string | null
+          created_at?: string
+          id?: string
+          inspektur_id: string
+          keputusan?: string
+          peserta_id: string
+          session_id?: string | null
+        }
+        Update: {
+          catatan?: string | null
+          created_at?: string
+          id?: string
+          inspektur_id?: string
+          keputusan?: string
+          peserta_id?: string
+          session_id?: string | null
         }
         Relationships: []
       }
@@ -526,6 +577,7 @@ export type Database = {
       }
       admin_reset_all_penilaian: { Args: never; Returns: undefined }
       akhiri_sesi: { Args: { _id: string }; Returns: undefined }
+      all_juri_submitted: { Args: { _peserta: string }; Returns: boolean }
       get_ranking: {
         Args: never
         Returns: {
@@ -545,6 +597,48 @@ export type Database = {
         }
         Returns: boolean
       }
+      inspektur_catat: {
+        Args: { _catatan: string; _keputusan: string; _peserta: string }
+        Returns: string
+      }
+      inspektur_list_var: {
+        Args: never
+        Returns: {
+          detected_at: string
+          juri_berbeda: number
+          kategori: string
+          mazmur_variants: Json
+          nama: string
+          nomor_urut: number
+          peserta_id: string
+        }[]
+      }
+      inspektur_monitor: {
+        Args: never
+        Returns: {
+          bacaan: string
+          juri_done: number
+          juri_total: number
+          kategori: string
+          nama: string
+          nomor_urut: number
+          peserta_id: string
+          status: string
+        }[]
+      }
+      inspektur_ringkasan: {
+        Args: never
+        Returns: {
+          belum_tampil: number
+          sedang_tampil: number
+          sesi_aktif: number
+          sesi_selesai: number
+          sudah_tampil: number
+          total_peserta: number
+          total_var: number
+        }[]
+      }
+      inspektur_var_detail: { Args: { _peserta: string }; Returns: Json }
       mulai_sesi: {
         Args: { _mazmur: string; _peserta: string }
         Returns: string
