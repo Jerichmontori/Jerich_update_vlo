@@ -204,6 +204,21 @@ function OperatorPage() {
     () => (sesi && sesi.mazmur_id ? mazmur.find(m => m.id === sesi.mazmur_id) : null),
     [sesi, mazmur]
   );
+  const pesertaTerpilih = useMemo(
+    () => peserta.find(p => p.id === selectedPeserta) ?? null,
+    [peserta, selectedPeserta]
+  );
+  const mazmurFiltered = useMemo(() => {
+    const kat = pesertaTerpilih?.kategori?.trim().toLowerCase();
+    if (!kat) return mazmur;
+    return mazmur.filter(m => (m.kategori ?? "").trim().toLowerCase() === kat);
+  }, [mazmur, pesertaTerpilih]);
+  // Kosongkan pilihan mazmur bila tak sesuai kategori peserta terpilih
+  useEffect(() => {
+    if (sesi) return;
+    if (!selectedMazmur) return;
+    if (!mazmurFiltered.some(m => m.id === selectedMazmur)) setSelectedMazmur("");
+  }, [mazmurFiltered, selectedMazmur, sesi]);
   const statusPenilaian: "Belum Dimulai" | "Sedang Berlangsung" | "Selesai" =
     !sesi ? "Belum Dimulai" : juriDone >= juriTotal && juriTotal > 0 ? "Selesai" : "Sedang Berlangsung";
 
