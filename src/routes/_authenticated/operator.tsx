@@ -35,6 +35,7 @@ function OperatorPage() {
   const [juriTotal, setJuriTotal] = useState<number>(0);
   const [juriDone, setJuriDone] = useState<number>(0);
   const [busy, setBusy] = useState(false);
+  const [currentUser, setCurrentUser] = useState<{ nama: string; email: string; role: string } | null>(null);
 
   // Role gate
   useEffect(() => {
