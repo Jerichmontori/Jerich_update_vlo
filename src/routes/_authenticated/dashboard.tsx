@@ -1347,13 +1347,14 @@ function PenilaianTab() {
   }
 
 
-  async function perbaikiPenilaianSaya() {
-    if (!discrepancy) return;
-    const pesertaTarget = discrepancy.pesertaId;
+  async function perbaikiPenilaianSaya(pesertaOverride?: string) {
+    const pesertaTarget = pesertaOverride ?? discrepancy?.pesertaId;
+    if (!pesertaTarget) return;
     toast.warning("✦ Lakukan perubahan", {
       description: "Silakan perbaiki pilihan Peserta atau Bacaan Mazmur, lalu klik Kirim. Nilai kriteria Anda tetap disimpan.",
     });
     setDiscrepancy(null);
+    setPendingDiscrepancy(null);
     setSubmittedFor(null);
     setJudgesDoneForPeserta(0);
     setEditMode({ oldPesertaId: pesertaTarget });
