@@ -1,13 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
+type Role = "admin" | "juri" | "panitia";
+
 type CreateInput = {
   nama: string;
   jabatan?: string | null;
   email: string;
   password: string;
-  role: "admin" | "juri";
+  role: Role;
 };
+
 
 async function assertAdmin(context: { supabase: any; userId: string }) {
   const { data: isAdmin, error } = await context.supabase.rpc("has_role", {
