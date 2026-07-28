@@ -1119,6 +1119,7 @@ function PenilaianTab() {
     const { data: userData } = await supabase.auth.getUser();
     const uid = userData.user?.id ?? null;
     let admin = false;
+    let profJuriId: string | null = null;
     if (uid) {
       const { data: adminCheck } = await supabase.rpc("has_role", { _user_id: uid, _role: "admin" as any });
       admin = !!adminCheck;
@@ -1129,6 +1130,7 @@ function PenilaianTab() {
         .eq("id", uid)
         .maybeSingle();
       if (prof?.juri_id) {
+        profJuriId = prof.juri_id;
         setMyJuriId(prof.juri_id);
         setMyJuriNama(prof.nama ?? "");
         if (!admin) setJuriId(prof.juri_id);
