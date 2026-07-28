@@ -1155,6 +1155,8 @@ function PenilaianTab() {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   // Aturan #7 — kunci form setelah kirim, buka lagi setelah semua juri selesai
   const [submittedFor, setSubmittedFor] = useState<string | null>(null);
+  // Semua peserta yang PERNAH saya kirim (persist antar refresh) — mencegah kirim ulang
+  const [mySubmittedIds, setMySubmittedIds] = useState<Set<string>>(new Set());
   const [judgesDoneForPeserta, setJudgesDoneForPeserta] = useState<number>(0);
   const pollingInFlightRef = useRef(false);
   const resolvingCompletionRef = useRef<string | null>(null);
@@ -1231,17 +1233,28 @@ function PenilaianTab() {
   useEffect(() => {
     let stopped = false;
     async function poll() {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from("var_clarification_session" as any)
-        .select("peserta_id, komponen_berbeda, status, peserta:peserta_id(nama, nomor_urut)")
+        .select("peserta_id, komponen_berbeda, status")
         .neq("status", "final");
       if (stopped) return;
-      const rows = ((data as any[]) ?? []).map((r) => ({
-        peserta_id: r.peserta_id,
-        peserta_nama: r.peserta ? `${r.peserta.nomor_urut ?? ""}. ${r.peserta.nama ?? ""}`.trim().replace(/^\.\s*/, "") : "",
-        komponen: Array.isArray(r.komponen_berbeda) ? (r.komponen_berbeda as string[]) : [],
-        status: r.status,
-      })) as VarAktifRow[];
+      if (error) { console.error("var poll", error); return; }
+      const rawRows = ((data as any[]) ?? []);
+      const pids = Array.from(new Set(rawRows.map(r => r.peserta_id)));
+      let pesertaMap = new Map<string, { nama: string; nomor_urut: number }>();
+      if (pids.length > 0) {
+        const { data: pdata } = await supabase.from("peserta").select("id, nama, nomor_urut").in("id", pids);
+        (pdata ?? []).forEach((p: any) => pesertaMap.set(p.id, { nama: p.nama, nomor_urut: p.nomor_urut }));
+      }
+      const rows = rawRows.map((r) => {
+        const p = pesertaMap.get(r.peserta_id);
+        return {
+          peserta_id: r.peserta_id,
+          peserta_nama: p ? `${p.nomor_urut}. ${p.nama}` : "",
+          komponen: Array.isArray(r.komponen_berbeda) ? (r.komponen_berbeda as string[]) : [],
+          status: r.status,
+        } as VarAktifRow;
+      });
       setVarAktifList(rows);
     }
     poll();
@@ -1306,6 +1319,11 @@ function PenilaianTab() {
     // Restore state setelah refresh berbasis SUBMISSION (bukan kriteria terisi).
     // Juri dianggap "sudah menilai" hanya jika sudah menekan Kirim (ada baris di penilaian_submission).
     const activeJuriId = admin ? (juriId || "") : (profJuriId || "");
+    if (activeJuriId) {
+      setMySubmittedIds(new Set(submissionList.filter(sb => sb.juri_id === activeJuriId).map(sb => sb.peserta_id)));
+    } else {
+      setMySubmittedIds(new Set());
+    }
     if (activeJuriId && !editMode && restoreSubmissionState) {
       const mine = submissionList
         .filter(sb => sb.juri_id === activeJuriId)
@@ -1866,6 +1884,12 @@ function PenilaianTab() {
                   description: `Penilaian diperbarui untuk ${currentPesertaLabel}.`,
                 });
                 resolvingCompletionRef.current = null;
+                setMySubmittedIds(prev => {
+                  const next = new Set(prev);
+                  next.delete(editMode.oldPesertaId);
+                  next.add(pesertaId);
+                  return next;
+                });
                 setEditMode(null);
                 setSubmittedFor(pesertaId);
                 setOpenKriteria(null);
@@ -1881,6 +1905,7 @@ function PenilaianTab() {
                 description: `Penilaian untuk ${currentPesertaLabel} tersimpan.`,
               });
               resolvingCompletionRef.current = null;
+              setMySubmittedIds(prev => new Set(prev).add(pesertaId));
               setSubmittedFor(pesertaId);
               setOpenKriteria(null);
               await loadAll({ restoreSubmissionState: false });
@@ -1936,12 +1961,12 @@ function PenilaianTab() {
                       disabled={
                         saving ||
                         (!editMode && scored.length === 0) ||
-                        (!editMode && !!submittedFor && submittedFor === pesertaId)
+                        (!editMode && !!pesertaId && mySubmittedIds.has(pesertaId))
                       }
                       className="gap-2 min-w-[160px]"
                     >
                       <Check className="size-4" />
-                      {(!editMode && !!submittedFor && submittedFor === pesertaId)
+                      {(!editMode && !!pesertaId && mySubmittedIds.has(pesertaId))
                         ? "Sudah Dikirim"
                         : editMode ? "Kirim Perubahan" : "Kirim"}
                     </Button>
