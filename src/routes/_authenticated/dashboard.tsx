@@ -1657,8 +1657,8 @@ function PenilaianTab() {
     if (error) return toast.error(error.message);
     toast.success(`Nilai ${openKriteria.nama} disimpan`);
     setOpenKriteria(null);
-    setCatatanValues(CATATAN_ASPEK.map(() => 3));
-    setCatatanClearText(false);
+    setCatatanValues(CATATAN_ASPEK.map(() => null));
+    setCatatanClearText(null);
     setPerhatianChecks([]);
     
     loadAll();
