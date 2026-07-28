@@ -1283,6 +1283,31 @@ function PenilaianTab() {
 
   // Deteksi perbedaan input antar juri yang SUDAH MENGIRIM (submission) untuk peserta terkait.
   // Hanya membandingkan juri yang benar-benar sudah klik "Kirim" — bukan yang masih mengisi.
+  // Hitung jumlah baris penilaian per juri untuk 1 peserta.
+  async function fetchJuriCounts(pesertaIdCheck: string, juriIds: string[]): Promise<Map<string, number>> {
+    const counts = new Map<string, number>();
+    for (const j of juriIds) counts.set(j, 0);
+    if (juriIds.length === 0) return counts;
+    const { data } = await supabase
+      .from("penilaian")
+      .select("juri_id")
+      .eq("peserta_id", pesertaIdCheck)
+      .in("juri_id", juriIds);
+    for (const r of ((data ?? []) as any[])) {
+      counts.set(r.juri_id, (counts.get(r.juri_id) ?? 0) + 1);
+    }
+    return counts;
+  }
+
+  // Perbedaan hanya diakui jika semua juri yang dibandingkan memiliki JUMLAH INPUTAN yang SAMA (dan > 0).
+  function allCountsEqualAndPositive(counts: Map<string, number>): boolean {
+    const vals = Array.from(counts.values());
+    if (vals.length < 2) return false;
+    const first = vals[0];
+    if (first <= 0) return false;
+    return vals.every(v => v === first);
+  }
+
   async function checkPendingDiscrepancy(currentPesertaId: string): Promise<DiscrepancyReport | null> {
     const { data: subs } = await supabase
       .from("penilaian_submission" as any)
@@ -1306,38 +1331,54 @@ function PenilaianTab() {
     const pesertaMap = new Map<string, string>();
     peserta.forEach(p => pesertaMap.set(p.id, `#${p.nomor_urut} ${p.nama}`));
 
-    // 1) Perbedaan peserta: dilaporkan hanya jika ada juri yang submission terbarunya
-    //    untuk currentPesertaId DAN ada juri lain yang submission terbarunya untuk peserta berbeda.
+    // 1) Perbedaan peserta: hanya dilaporkan jika SEMUA juri yang dibandingkan telah mengisi
+    //    JUMLAH inputan yang sama untuk peserta masing-masing (submission penuh).
     let pesertaReport: DiscrepancyReport["peserta"] = null;
     const distinctPeserta = new Set(Array.from(latestSub.values()));
     if (distinctPeserta.size > 1 && distinctPeserta.has(currentPesertaId)) {
-      pesertaReport = Array.from(latestSub.entries()).map(([jid, pid]) => ({
-        juriNama: juriMap.get(jid) ?? "—",
-        pesertaLabel: pesertaMap.get(pid) ?? "—",
-      }));
+      // Cek jumlah inputan per juri pada peserta MASING-MASING; harus sama semua.
+      let allEqual = true;
+      let refCount = -1;
+      for (const [jid, pid] of latestSub.entries()) {
+        const c = await fetchJuriCounts(pid, [jid]);
+        const v = c.get(jid) ?? 0;
+        if (v <= 0) { allEqual = false; break; }
+        if (refCount === -1) refCount = v;
+        else if (v !== refCount) { allEqual = false; break; }
+      }
+      if (allEqual) {
+        pesertaReport = Array.from(latestSub.entries()).map(([jid, pid]) => ({
+          juriNama: juriMap.get(jid) ?? "—",
+          pesertaLabel: pesertaMap.get(pid) ?? "—",
+        }));
+      }
     }
 
-    // 2) Perbedaan mazmur: hanya di antara juri yang SUBMISSION-nya untuk currentPesertaId.
+    // 2) Perbedaan mazmur: hanya di antara juri yang SUBMISSION-nya untuk currentPesertaId,
+    //    dan hanya jika jumlah inputan mereka SAMA (dan > 0).
     const juriSamePeserta = Array.from(latestSub.entries())
       .filter(([, pid]) => pid === currentPesertaId)
       .map(([jid]) => jid);
     let mazmurReport: DiscrepancyReport["mazmur"] = null;
     if (juriSamePeserta.length >= 2) {
-      const { data: penRows } = await supabase
-        .from("penilaian")
-        .select("juri_id, mazmur_id")
-        .eq("peserta_id", currentPesertaId)
-        .in("juri_id", juriSamePeserta);
-      const juriMazmur = new Map<string, string | null>();
-      for (const r of (penRows ?? []) as any[]) {
-        if (!juriMazmur.has(r.juri_id)) juriMazmur.set(r.juri_id, r.mazmur_id ?? null);
-      }
-      const distinctMazmur = new Set(Array.from(juriMazmur.values()).map(v => v ?? "-"));
-      if (distinctMazmur.size > 1) {
-        mazmurReport = Array.from(juriMazmur.entries()).map(([jid, mid]) => ({
-          juriNama: juriMap.get(jid) ?? "—",
-          mazmurLabel: mid ? (mazmurMap.get(mid) ?? "—") : "(kosong)",
-        }));
+      const counts = await fetchJuriCounts(currentPesertaId, juriSamePeserta);
+      if (allCountsEqualAndPositive(counts)) {
+        const { data: penRows } = await supabase
+          .from("penilaian")
+          .select("juri_id, mazmur_id")
+          .eq("peserta_id", currentPesertaId)
+          .in("juri_id", juriSamePeserta);
+        const juriMazmur = new Map<string, string | null>();
+        for (const r of (penRows ?? []) as any[]) {
+          if (!juriMazmur.has(r.juri_id)) juriMazmur.set(r.juri_id, r.mazmur_id ?? null);
+        }
+        const distinctMazmur = new Set(Array.from(juriMazmur.values()).map(v => v ?? "-"));
+        if (distinctMazmur.size > 1) {
+          mazmurReport = Array.from(juriMazmur.entries()).map(([jid, mid]) => ({
+            juriNama: juriMap.get(jid) ?? "—",
+            mazmurLabel: mid ? (mazmurMap.get(mid) ?? "—") : "(kosong)",
+          }));
+        }
       }
     }
 
