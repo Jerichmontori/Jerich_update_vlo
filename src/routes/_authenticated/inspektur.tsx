@@ -531,7 +531,7 @@ function InspekturPage() {
                 {detailData.nilai_akhir != null && (
                   <div className="rounded-lg border bg-accent/10 p-3">
                     <div className="text-xs text-muted-foreground">Nilai Akhir</div>
-                    <div className="text-2xl font-serif font-semibold">{Number(detailData.nilai_akhir).toFixed(2)}</div>
+                    <div className="text-2xl font-serif font-semibold">{Number(detailData.nilai_akhir).toFixed(3)}</div>
                   </div>
                 )}
               </>
