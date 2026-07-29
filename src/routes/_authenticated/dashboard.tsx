@@ -1268,6 +1268,8 @@ function PenilaianTab() {
   const [submittedFor, setSubmittedFor] = useState<string | null>(null);
   // Semua peserta yang PERNAH saya kirim (persist antar refresh) — mencegah kirim ulang
   const [mySubmittedIds, setMySubmittedIds] = useState<Set<string>>(new Set());
+  // Peserta yang sudah saya kirim-ulang selama siklus Perbaikan Perhatian yang aktif.
+  const [perbaikanResubmittedIds, setPerbaikanResubmittedIds] = useState<Set<string>>(new Set());
   const [judgesDoneForPeserta, setJudgesDoneForPeserta] = useState<number>(0);
   const [nilaiJuriPreview, setNilaiJuriPreview] = useState<number | null>(null);
   const pollingInFlightRef = useRef(false);
