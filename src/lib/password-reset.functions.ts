@@ -47,12 +47,13 @@ export const listPasswordResets = createServerFn({ method: "GET" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("password_reset_request")
-      .select("id, user_id, identifier, new_password, status, created_at")
+      .select("id, user_id, identifier, status, created_at")
       .eq("status", "pending")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
     return data ?? [];
   });
+
 
 export const approvePasswordReset = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
