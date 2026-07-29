@@ -3685,6 +3685,32 @@ function RincianNilaiTab() {
       y += 10;
       if (y > 520) { doc.addPage(); y = 40; }
     });
+
+    // Lampiran: Masukan Juri per ayat (di luar penilaian)
+    const juriDenganMasukan = juri.filter((j) => masukanFor(p.id, j.id).length > 0);
+    if (juriDenganMasukan.length > 0) {
+      doc.addPage();
+      doc.setFontSize(14); doc.text("Lampiran — Masukan Juri per Ayat", 40, 40);
+      doc.setFontSize(10); doc.setTextColor(100);
+      doc.text(`${p.nomor_urut}. ${p.nama}${p.kategori ? " • " + p.kategori : ""}`, 40, 58);
+      doc.setTextColor(0);
+      let y2 = 78;
+      juriDenganMasukan.forEach((j) => {
+        const rows = masukanFor(p.id, j.id).map((c) => [String(c.ayat), c.teks]);
+        doc.setFontSize(11); doc.text(`Juri: ${j.nama}${j.jabatan ? " — " + j.jabatan : ""}`, 40, y2);
+        autoTable(doc, {
+          startY: y2 + 6,
+          head: [["Ayat", "Masukan"]],
+          body: rows,
+          styles: { fontSize: 9, cellPadding: 4, valign: "top" },
+          headStyles: { fillColor: [60, 90, 140], textColor: 255 },
+          columnStyles: { 0: { halign: "center", cellWidth: 50 } },
+        });
+        // @ts-ignore
+        y2 = (doc as any).lastAutoTable.finalY + 14;
+        if (y2 > 520) { doc.addPage(); y2 = 40; }
+      });
+    }
   }
 
   function downloadSatu(p: Peserta) {
@@ -3700,6 +3726,39 @@ function RincianNilaiTab() {
     const suffix = kategoriFilter === LIHAT_ALL ? "semua" : kategoriFilter.replace(/\s+/g, "_");
     doc.save(`rincian-nilai-${suffix}-${stamp}.pdf`);
   }
+
+  function downloadMasukan(p: Peserta) {
+    const juriDenganMasukan = juri.filter((j) => masukanFor(p.id, j.id).length > 0);
+    if (juriDenganMasukan.length === 0) return toast.info("Belum ada masukan juri untuk peserta ini.");
+    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+    doc.setFontSize(16); doc.text("Masukan Juri per Ayat", 40, 40);
+    doc.setFontSize(12); doc.setTextColor(60);
+    doc.text(`${p.nomor_urut}. ${p.nama}`, 40, 62);
+    doc.setFontSize(10); doc.setTextColor(100);
+    const meta = [p.kategori && `Kategori: ${p.kategori}`, p.asal && `Asal: ${p.asal}`].filter(Boolean).join("  •  ");
+    if (meta) doc.text(meta, 40, 78);
+    doc.setTextColor(0);
+    let y = meta ? 96 : 82;
+    juriDenganMasukan.forEach((j) => {
+      const rows = masukanFor(p.id, j.id).map((c) => [String(c.ayat), c.teks]);
+      doc.setFontSize(11); doc.text(`Juri: ${j.nama}${j.jabatan ? " — " + j.jabatan : ""}`, 40, y);
+      autoTable(doc, {
+        startY: y + 6,
+        head: [["Ayat", "Masukan"]],
+        body: rows,
+        styles: { fontSize: 9, cellPadding: 4, valign: "top" },
+        headStyles: { fillColor: [60, 90, 140], textColor: 255 },
+        columnStyles: { 0: { halign: "center", cellWidth: 50 } },
+      });
+      // @ts-ignore
+      y = (doc as any).lastAutoTable.finalY + 14;
+      if (y > 760) { doc.addPage(); y = 40; }
+    });
+    const stamp = new Date().toISOString().slice(0, 10);
+    doc.save(`masukan-juri-${p.nomor_urut}-${p.nama.replace(/\s+/g, "_")}-${stamp}.pdf`);
+  }
+
+
 
   return (
     <SectionCard
