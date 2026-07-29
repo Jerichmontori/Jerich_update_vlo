@@ -3506,8 +3506,7 @@ function RincianNilaiTab() {
           head = [["Pilihan", "Deskripsi"]];
           body = [[d.label, d.desc]];
         } else if (d.type === "catatan") {
-          head = [["#", "Aspek", "Clear Text", "Nilai (1–5)"]];
-          head = [["#", "Aspek", "Nilai"]];
+          head = [["#", "Aspek", "Nilai (1–5)"]];
           body = d.aspek.map((a, i) => [
             i + 1, a.nama,
             a.skipped ? "— (dilewati)" : String(a.nilai),
