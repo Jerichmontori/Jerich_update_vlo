@@ -776,6 +776,17 @@ export type Database = {
           submitted_count: number
         }[]
       }
+      get_var_manual_pending: {
+        Args: never
+        Returns: {
+          alasan: string
+          nomor_urut: number
+          peserta_id: string
+          peserta_nama: string
+          session_id: string
+          sudah_vote: boolean
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -788,6 +799,11 @@ export type Database = {
         Args: { _juri: string; _peserta: string }
         Returns: number
       }
+      inspektur_ajukan_var: {
+        Args: { _alasan: string; _peserta: string }
+        Returns: string
+      }
+      inspektur_akhiri_sesi: { Args: { _peserta: string }; Returns: undefined }
       inspektur_buka_perhatian: {
         Args: { _catatan?: string; _peserta: string }
         Returns: string
@@ -823,6 +839,7 @@ export type Database = {
           status: string
         }[]
       }
+      inspektur_progres_juri: { Args: { _peserta: string }; Returns: Json }
       inspektur_ringkasan: {
         Args: never
         Returns: {
@@ -844,6 +861,10 @@ export type Database = {
         Returns: string
       }
       inspektur_var_detail: { Args: { _peserta: string }; Returns: Json }
+      juri_vote_var: {
+        Args: { _session: string; _setuju: boolean }
+        Returns: Json
+      }
       lookup_nilai: { Args: { _grade: number }; Returns: number }
       mulai_klarifikasi_var: { Args: { _peserta: string }; Returns: string }
       mulai_sesi: {

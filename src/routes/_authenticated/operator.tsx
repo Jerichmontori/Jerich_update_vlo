@@ -7,8 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Toaster, toast } from "sonner";
-import { ArrowUp, ArrowDown, Play, Square, RefreshCw, BookOpenText, Users, Gavel, AlertTriangle } from "lucide-react";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ArrowUp, ArrowDown, Play, RefreshCw, BookOpenText, Users, Gavel } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/operator")({
   component: OperatorPage,
@@ -38,7 +37,7 @@ function OperatorPage() {
   const [submissionCounts, setSubmissionCounts] = useState<Record<string, number>>({});
   const [busy, setBusy] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ nama: string; email: string; role: string } | null>(null);
-  const [confirmAkhiriOpen, setConfirmAkhiriOpen] = useState(false);
+  
 
 
   // Role gate
@@ -185,18 +184,8 @@ function OperatorPage() {
     loadSesi();
   }
 
-  async function akhiriSesi() {
-    if (!sesi) return;
-    setBusy(true);
-    const { error } = await supabase.rpc("akhiri_sesi" as any, { _id: sesi.id });
-    setBusy(false);
-    setConfirmAkhiriOpen(false);
-    if (error) return toast.error(error.message);
-    toast.success("Sesi diakhiri");
-    setSelectedPeserta("");
-    setSelectedMazmur("");
-    loadSesi();
-  }
+  // Sesi tidak lagi diakhiri dari halaman Operator — dipindah ke halaman Inspektur.
+
 
   async function ubahMazmur() {
     if (!sesi) return;
@@ -378,9 +367,9 @@ function OperatorPage() {
                   <Button onClick={ubahMazmur} variant="outline" disabled={busy} className="gap-2">
                     <RefreshCw className="size-4" /> Ubah Bacaan Mazmur
                   </Button>
-                  <Button onClick={() => setConfirmAkhiriOpen(true)} variant="destructive" disabled={busy} className="gap-2">
-                    <Square className="size-4" /> Akhiri Penilaian
-                  </Button>
+                  <div className="text-xs text-muted-foreground self-center">
+                    Sesi aktif — tombol <b>Mulai Penilaian</b> dinonaktifkan hingga Inspektur mengakhiri sesi ini.
+                  </div>
                 </>
               )}
             </div>
@@ -455,29 +444,6 @@ function OperatorPage() {
         </Card>
       </main>
 
-      <Dialog open={confirmAkhiriOpen} onOpenChange={setConfirmAkhiriOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <div className="mx-auto mb-2 grid place-items-center size-12 rounded-full bg-destructive/10 text-destructive ring-4 ring-destructive/20">
-              <AlertTriangle className="size-6" />
-            </div>
-            <DialogTitle className="text-center font-serif text-xl">Akhiri Sesi Penilaian?</DialogTitle>
-            <DialogDescription className="text-center">
-              {pesertaAktif ? (
-                <>Sesi untuk <span className="font-semibold text-foreground">{pesertaAktif.nama}</span>{mazmurAktif ? <> — <span className="font-semibold text-foreground">{mazmurAktif.bacaan}</span></> : null} akan diakhiri. Form penilaian juri akan dikosongkan.</>
-              ) : (
-                <>Sesi penilaian aktif akan diakhiri dan form juri akan dikosongkan.</>
-              )}
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter className="sm:justify-center gap-2">
-            <Button variant="outline" onClick={() => setConfirmAkhiriOpen(false)} disabled={busy}>Batal</Button>
-            <Button variant="destructive" onClick={akhiriSesi} disabled={busy} className="gap-2">
-              <Square className="size-4" /> Ya, Akhiri
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

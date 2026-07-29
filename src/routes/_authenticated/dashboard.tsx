@@ -1359,6 +1359,50 @@ function PenilaianTab() {
     mengurangi_kata: "Mengurangi kata",
   };
 
+  // VAR manual — pending approval untuk juri
+  type VarManualPending = { session_id: string; peserta_id: string; peserta_nama: string; nomor_urut: number; alasan: string; sudah_vote: boolean };
+  const [varManualPending, setVarManualPending] = useState<VarManualPending[]>([]);
+  const [varManualLoading, setVarManualLoading] = useState<string | null>(null);
+  useEffect(() => {
+    let stopped = false;
+    async function poll() {
+      const { data, error } = await supabase.rpc("get_var_manual_pending" as any);
+      if (stopped || error) return;
+      setVarManualPending(((data as any[]) ?? []) as VarManualPending[]);
+    }
+    poll();
+    const id = setInterval(poll, 3000);
+    return () => { stopped = true; clearInterval(id); };
+  }, []);
+  async function voteVarManual(sessionId: string, setuju: boolean) {
+    setVarManualLoading(sessionId);
+    try {
+      const { data, error } = await supabase.rpc("juri_vote_var" as any, { _session: sessionId, _setuju: setuju });
+      if (error) throw error;
+      const status = (data as any)?.status;
+      if (status === "disetujui_juri") {
+        toast.success("✦ VAR disetujui semua juri", { description: "Form penilaian dibuka kembali — silakan perbarui nilai dan kirim ulang." });
+        setSubmittedFor(null);
+        setMySubmittedIds(prev => {
+          const next = new Set(prev);
+          const target = varManualPending.find(v => v.session_id === sessionId);
+          if (target) next.delete(target.peserta_id);
+          return next;
+        });
+        loadAll({ restoreSubmissionState: false });
+      } else if (status === "ditolak_juri") {
+        toast.info("Pengajuan VAR ditolak", { description: "Salah satu juri menolak; nilai tetap sebagaimana adanya." });
+      } else {
+        toast.success(setuju ? "Persetujuan Anda tercatat" : "Penolakan Anda tercatat");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal mengirim suara");
+    } finally {
+      setVarManualLoading(null);
+    }
+  }
+
+
 
 
 
