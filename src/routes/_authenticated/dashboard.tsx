@@ -2396,8 +2396,8 @@ function PenilaianTab() {
                                 "rounded-md border-2 py-2 text-sm font-semibold transition",
                                 active
                                   ? (opt.val
-                                      ? "border-destructive bg-destructive text-destructive-foreground"
-                                      : "border-accent bg-accent text-accent-foreground")
+                                      ? "border-accent bg-accent text-accent-foreground"
+                                      : "border-destructive bg-destructive text-destructive-foreground")
                                   : "border-primary/20 bg-background hover:border-accent/60",
                                 locked ? "cursor-not-allowed opacity-70 hover:border-primary/20" : "",
                               ].join(" ")}
