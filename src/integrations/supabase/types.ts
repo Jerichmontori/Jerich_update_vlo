@@ -122,6 +122,65 @@ export type Database = {
         }
         Relationships: []
       }
+      masukan_juri: {
+        Row: {
+          catatan: Json
+          created_at: string
+          id: string
+          juri_id: string
+          mazmur_id: string | null
+          peserta_id: string
+          updated_at: string
+        }
+        Insert: {
+          catatan?: Json
+          created_at?: string
+          id?: string
+          juri_id: string
+          mazmur_id?: string | null
+          peserta_id: string
+          updated_at?: string
+        }
+        Update: {
+          catatan?: Json
+          created_at?: string
+          id?: string
+          juri_id?: string
+          mazmur_id?: string | null
+          peserta_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "masukan_juri_juri_id_fkey"
+            columns: ["juri_id"]
+            isOneToOne: false
+            referencedRelation: "juri"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "masukan_juri_juri_id_fkey"
+            columns: ["juri_id"]
+            isOneToOne: false
+            referencedRelation: "juri_public"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "masukan_juri_mazmur_id_fkey"
+            columns: ["mazmur_id"]
+            isOneToOne: false
+            referencedRelation: "mazmur"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "masukan_juri_peserta_id_fkey"
+            columns: ["peserta_id"]
+            isOneToOne: false
+            referencedRelation: "peserta"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       mazmur: {
         Row: {
           bacaan: string
