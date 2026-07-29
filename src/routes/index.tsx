@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { BookOpenText, ShieldCheck, Gavel, Trophy } from "lucide-react";
+import { ShieldCheck, Gavel, Trophy } from "lucide-react";
+import bumotikLogo from "@/assets/bumotik-logo.png.asset.json";
+import multimediaLogo from "@/assets/multimedia-bumotik.webp.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -15,12 +17,15 @@ function Landing() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/40 to-background">
       <header className="mx-auto max-w-6xl px-4 py-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="grid place-items-center size-11 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/20 ring-4 ring-accent/30">
-            <BookOpenText className="size-5" />
-          </div>
-          <span className="font-serif text-lg font-semibold">Sistem Penjurian Baca Mazmur</span>
-        </div>
+        <Link to="/" className="flex items-center gap-3">
+          <img
+            src={bumotikLogo.url}
+            alt="Logo BUMOTIK"
+            className="h-10 sm:h-12 w-auto object-contain"
+            width={480}
+            height={130}
+          />
+        </Link>
         <Button asChild variant="outline">
           <Link to="/auth">Masuk</Link>
         </Button>
@@ -59,8 +64,16 @@ function Landing() {
         </section>
       </main>
 
-      <footer className="mx-auto max-w-6xl px-4 py-10 text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} Sistem Penjurian Baca Mazmur
+      <footer className="mx-auto max-w-6xl px-4 py-10 flex flex-col items-center gap-3 border-t">
+        <img
+          src={multimediaLogo.url}
+          alt="Logo Multimedia BUMOTIK — Blessed to be Blessing"
+          className="h-14 sm:h-16 w-auto object-contain opacity-90"
+          loading="lazy"
+          width={480}
+          height={340}
+        />
+        <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} Multimedia BUMOTIK</p>
       </footer>
     </div>
   );
