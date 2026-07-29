@@ -252,7 +252,6 @@ export type Database = {
           created_at: string
           id: string
           identifier: string
-          new_password: string
           status: string
           updated_at: string
           user_id: string | null
@@ -261,7 +260,6 @@ export type Database = {
           created_at?: string
           id?: string
           identifier: string
-          new_password: string
           status?: string
           updated_at?: string
           user_id?: string | null
@@ -270,7 +268,6 @@ export type Database = {
           created_at?: string
           id?: string
           identifier?: string
-          new_password?: string
           status?: string
           updated_at?: string
           user_id?: string | null
