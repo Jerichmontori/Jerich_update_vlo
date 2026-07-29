@@ -3928,8 +3928,26 @@ function RincianNilaiTab() {
                               </div>
                             );
                           })}
+                          {(() => {
+                            const list = masukanFor(p.id, j.id);
+                            if (list.length === 0) return null;
+                            return (
+                              <div className="rounded border-2 border-accent/30 bg-accent/5 p-3">
+                                <div className="text-xs font-semibold text-accent mb-2">Masukan Juri per Ayat</div>
+                                <div className="grid gap-1 text-xs">
+                                  {list.map((c, i) => (
+                                    <div key={i} className="flex gap-3 border-b last:border-0 py-1">
+                                      <span className="font-mono w-14 shrink-0">Ayat {c.ayat}</span>
+                                      <span className="flex-1 whitespace-pre-wrap">{c.teks}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
+
                     );
                   })}
                 </div>
