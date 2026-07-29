@@ -1383,11 +1383,15 @@ function PenilaianTab() {
   }, []);
   const perbaikanPerhatianIds = new Set(varAktifList.filter(v => v.status === "perbaikan_perhatian").map(v => v.peserta_id));
   useEffect(() => {
-    if (perbaikanPerhatianIds.size === 0) return;
-    setMySubmittedIds(prev => {
+    // Saat siklus Perbaikan Perhatian selesai untuk suatu peserta,
+    // bersihkan pula catatan "sudah kirim-ulang" agar siklus berikutnya bisa dibuka lagi.
+    setPerbaikanResubmittedIds(prev => {
+      if (prev.size === 0) return prev;
       let changed = false;
       const next = new Set(prev);
-      perbaikanPerhatianIds.forEach(id => { if (next.delete(id)) changed = true; });
+      prev.forEach(id => {
+        if (!perbaikanPerhatianIds.has(id)) { next.delete(id); changed = true; }
+      });
       return changed ? next : prev;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
