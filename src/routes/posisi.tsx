@@ -61,6 +61,8 @@ function PosisiPublic() {
         rata_rata: Number(r?.rata_rata ?? 0),
         jumlah_juri: jumlah,
         nilai_akhir: nilai,
+        juri_total_sum: Number(r?.juri_total_sum ?? 0),
+        juri_spread: Number(r?.juri_spread ?? 0),
         scored: nilai != null && jumlah > 0,
       };
     });
@@ -71,9 +73,12 @@ function PosisiPublic() {
     for (let i = 0; i < scoredSorted.length; i += 10) {
       const slice = scoredSorted.slice(i, i + 10);
       const ranked = [...slice].sort((a, b) => {
-        const av = Number(a.nilai_akhir ?? 0);
-        const bv = Number(b.nilai_akhir ?? 0);
-        return bv !== av ? bv - av : a.nomor_urut - b.nomor_urut;
+        const av = Number(a.nilai_akhir ?? 0), bv = Number(b.nilai_akhir ?? 0);
+        const ar = Math.round(av * 1000), br = Math.round(bv * 1000);
+        if (br !== ar) return br - ar;
+        if (b.juri_total_sum !== a.juri_total_sum) return b.juri_total_sum - a.juri_total_sum;
+        if (b.juri_spread !== a.juri_spread) return b.juri_spread - a.juri_spread;
+        return a.nomor_urut - b.nomor_urut;
       });
       const first = slice[0]?.nomor_urut ?? i + 1;
       const last = slice[slice.length - 1]?.nomor_urut ?? i + slice.length;
