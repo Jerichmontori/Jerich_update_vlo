@@ -26,8 +26,8 @@ type Kriteria = { id: string; nama: string; bobot: number; batas_atas: number; b
 type Mazmur = { id: string; bacaan: string; jumlah_ayat: number; kategori: string | null };
 type PenilaianDetail =
   | { type: "grade"; grade: number; label: string; desc: string }
-  | { type: "catatan"; clearText: boolean; aspek: { nama: string; nilai: number; skipped?: boolean }[] }
-  | { type: "perhatian"; membacaPerikop: boolean | null; aspek: { nama: string; ayat: boolean[]; ditandai: number[] }[] }
+  | { type: "catatan"; clearText?: boolean; aspek: { nama: string; nilai: number; skipped?: boolean }[] }
+  | { type: "perhatian"; clearText: boolean | null; membacaPerikop?: boolean | null; aspek: { nama: string; ayat: boolean[]; ditandai: number[] }[] }
   | null;
 type Penilaian = { id: string; peserta_id: string; juri_id: string; kriteria_id: string; nilai: number; mazmur_id: string | null; detail?: PenilaianDetail; created_at?: string };
 type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: string | null; total_skor: number; rata_rata: number; jumlah_juri: number; nilai_akhir: number | null; var_status?: string | null; juri_total_sum?: number | null; juri_spread?: number | null };
