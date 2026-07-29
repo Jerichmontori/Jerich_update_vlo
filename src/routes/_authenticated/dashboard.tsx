@@ -2188,6 +2188,7 @@ function PenilaianTab() {
                   .update({ status: "final", finalized_at: new Date().toISOString() } as any)
                   .eq("peserta_id", pesertaId)
                   .eq("status", "perbaikan_perhatian");
+                setPerbaikanResubmittedIds(prev => new Set(prev).add(pesertaId));
               }
               toast.success("✦ Penilaian dikirim", {
                 description: `Penilaian untuk ${currentPesertaLabel} tersimpan.`,
