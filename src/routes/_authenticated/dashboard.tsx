@@ -1610,6 +1610,7 @@ function PenilaianTab() {
           setSubmittedFor(current => current === lockedPesertaId ? null : current);
           setPendingDiscrepancy(null);
           setJudgesDoneForPeserta(0);
+          setJudgesTotalForPeserta(0);
           return;
         }
       }
@@ -2036,7 +2037,7 @@ function PenilaianTab() {
                   Nilai Anda untuk peserta ini sudah tersimpan. Form akan terbuka kembali setelah semua juri menyelesaikan penilaian.
                 </div>
                 <div className="mt-4 font-serif text-3xl font-bold text-primary tabular-nums">
-                  {judgesDoneForPeserta} / {totalJuriApproved}
+                  {judgesDoneForPeserta} / {judgesTotalForPeserta || totalJuriApproved}
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">juri telah mengirim penilaian</div>
               </div>
