@@ -1268,6 +1268,8 @@ function PenilaianTab() {
   const [submittedFor, setSubmittedFor] = useState<string | null>(null);
   // Semua peserta yang PERNAH saya kirim (persist antar refresh) — mencegah kirim ulang
   const [mySubmittedIds, setMySubmittedIds] = useState<Set<string>>(new Set());
+  // Peserta yang sudah saya kirim-ulang selama siklus Perbaikan Perhatian yang aktif.
+  const [perbaikanResubmittedIds, setPerbaikanResubmittedIds] = useState<Set<string>>(new Set());
   const [judgesDoneForPeserta, setJudgesDoneForPeserta] = useState<number>(0);
   const [nilaiJuriPreview, setNilaiJuriPreview] = useState<number | null>(null);
   const pollingInFlightRef = useRef(false);
@@ -1381,11 +1383,15 @@ function PenilaianTab() {
   }, []);
   const perbaikanPerhatianIds = new Set(varAktifList.filter(v => v.status === "perbaikan_perhatian").map(v => v.peserta_id));
   useEffect(() => {
-    if (perbaikanPerhatianIds.size === 0) return;
-    setMySubmittedIds(prev => {
+    // Saat siklus Perbaikan Perhatian selesai untuk suatu peserta,
+    // bersihkan pula catatan "sudah kirim-ulang" agar siklus berikutnya bisa dibuka lagi.
+    setPerbaikanResubmittedIds(prev => {
+      if (prev.size === 0) return prev;
       let changed = false;
       const next = new Set(prev);
-      perbaikanPerhatianIds.forEach(id => { if (next.delete(id)) changed = true; });
+      prev.forEach(id => {
+        if (!perbaikanPerhatianIds.has(id)) { next.delete(id); changed = true; }
+      });
       return changed ? next : prev;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -2182,6 +2188,7 @@ function PenilaianTab() {
                   .update({ status: "final", finalized_at: new Date().toISOString() } as any)
                   .eq("peserta_id", pesertaId)
                   .eq("status", "perbaikan_perhatian");
+                setPerbaikanResubmittedIds(prev => new Set(prev).add(pesertaId));
               }
               toast.success("✦ Penilaian dikirim", {
                 description: `Penilaian untuk ${currentPesertaLabel} tersimpan.`,
@@ -2259,17 +2266,25 @@ function PenilaianTab() {
                     <Button
                       size="lg"
                       onClick={requestKirim}
-                      disabled={
-                        saving ||
-                        (!editMode && !allDone) ||
-                        (!editMode && !!pesertaId && mySubmittedIds.has(pesertaId))
-                      }
+                      disabled={(() => {
+                        if (saving) return true;
+                        if (editMode) return false;
+                        if (!allDone) return true;
+                        if (!pesertaId) return false;
+                        const inPerbaikan = perbaikanPerhatianIds.has(pesertaId);
+                        if (inPerbaikan) return perbaikanResubmittedIds.has(pesertaId);
+                        return mySubmittedIds.has(pesertaId);
+                      })()}
                       className="gap-2 min-w-[160px]"
                     >
                       <Check className="size-4" />
-                      {(!editMode && !!pesertaId && mySubmittedIds.has(pesertaId))
-                        ? "Sudah Dikirim"
-                        : editMode ? "Kirim Perubahan" : "Kirim"}
+                      {(() => {
+                        if (editMode) return "Kirim Perubahan";
+                        if (!pesertaId) return "Kirim";
+                        const inPerbaikan = perbaikanPerhatianIds.has(pesertaId);
+                        if (inPerbaikan) return perbaikanResubmittedIds.has(pesertaId) ? "Sudah Dikirim" : "Kirim";
+                        return mySubmittedIds.has(pesertaId) ? "Sudah Dikirim" : "Kirim";
+                      })()}
                     </Button>
 
                   </div>
