@@ -1328,11 +1328,14 @@ function PenilaianTab() {
     if (!activeSession) return;
     if (isAdmin) return;
     if (editMode) return;
+    // Jangan pindahkan peserta/mazmur selama overlay "menunggu" aktif —
+    // biarkan form tetap terkunci pada peserta yang baru dikirim sampai semua juri selesai.
+    if (submittedFor) return;
     setPesertaId(prev => prev === activeSession.peserta_id ? prev : activeSession.peserta_id);
     if (activeSession.mazmur_id) {
       setMazmurId(prev => prev === activeSession.mazmur_id ? prev : activeSession.mazmur_id!);
     }
-  }, [activeSession, isAdmin, editMode]);
+  }, [activeSession, isAdmin, editMode, submittedFor]);
   // Ketika Operator mengakhiri sesi → kosongkan field Peserta & Bacaan Mazmur untuk juri.
   const prevActiveSessionIdRef = useRef<string | null>(null);
   useEffect(() => {
