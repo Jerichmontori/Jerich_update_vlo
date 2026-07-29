@@ -104,6 +104,9 @@ function InspekturPage() {
   const [activeSesiPesertaIds, setActiveSesiPesertaIds] = useState<Set<string>>(new Set());
   // Progres juri di detail dialog
   const [progresJuri, setProgresJuri] = useState<any[] | null>(null);
+  // Progres juri per peserta (dashboard) — { [pesertaId]: rows[] }
+  const [progresMap, setProgresMap] = useState<Record<string, any[]>>({});
+
 
   useEffect(() => {
     (async () => {
