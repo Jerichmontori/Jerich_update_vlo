@@ -2768,8 +2768,9 @@ function DashboardTab() {
                             <td className="py-1.5 pr-3">{p.nomor_urut}</td>
                             <td className="py-1.5 pr-3">{p.nama}{p.asal ? ` — ${p.asal}` : ""}</td>
                             <td className="py-1.5 pr-3 text-right font-semibold text-primary">
-                              {computeNilai(r.juri.id, p.id)}
+                              {(() => { const v = computeNilai(r.juri.id, p.id); return v == null ? "—" : v.toFixed(3); })()}
                             </td>
+
                           </tr>
                         ))}
                       </tbody>
