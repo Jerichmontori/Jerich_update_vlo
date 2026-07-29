@@ -1271,6 +1271,7 @@ function PenilaianTab() {
   // Peserta yang sudah saya kirim-ulang selama siklus Perbaikan Perhatian yang aktif.
   const [perbaikanResubmittedIds, setPerbaikanResubmittedIds] = useState<Set<string>>(new Set());
   const [judgesDoneForPeserta, setJudgesDoneForPeserta] = useState<number>(0);
+  const [judgesTotalForPeserta, setJudgesTotalForPeserta] = useState<number>(0);
   const [nilaiJuriPreview, setNilaiJuriPreview] = useState<number | null>(null);
   const pollingInFlightRef = useRef(false);
   const resolvingCompletionRef = useRef<string | null>(null);
@@ -1577,7 +1578,7 @@ function PenilaianTab() {
 
   // Aturan #7 — polling jumlah juri yang sudah menilai peserta terkunci
   useEffect(() => {
-    if (!submittedFor) { overlayShownAtRef.current = null; return; }
+    if (!submittedFor) { overlayShownAtRef.current = null; setJudgesTotalForPeserta(0); return; }
     if (overlayShownAtRef.current == null) overlayShownAtRef.current = Date.now();
     const lockedPesertaId = submittedFor;
     resolvingCompletionRef.current = null;
@@ -1624,6 +1625,7 @@ function PenilaianTab() {
       const done = Number(progressRow?.done_count ?? 0);
       const totalRequired = Number(progressRow?.total_count ?? totalJuriApproved);
       setJudgesDoneForPeserta(done);
+      setJudgesTotalForPeserta(totalRequired);
 
       // Deteksi perbedaan input SELAMA menunggu (peserta/mazmur berbeda antar juri)
       const pending = await checkPendingDiscrepancy(lockedPesertaId);
@@ -1645,6 +1647,7 @@ function PenilaianTab() {
           setSubmittedFor(current => current === lockedPesertaId ? null : current);
           setPendingDiscrepancy(null);
           setJudgesDoneForPeserta(0);
+          setJudgesTotalForPeserta(0);
           return;
         }
         // 3) Perbedaan parameter di form Perhatian (Q2, Q4, Q5).
@@ -1656,6 +1659,7 @@ function PenilaianTab() {
           setSubmittedFor(current => current === lockedPesertaId ? null : current);
           setPendingDiscrepancy(null);
           setJudgesDoneForPeserta(0);
+          setJudgesTotalForPeserta(0);
           return;
         }
         stopped = true;
@@ -1669,6 +1673,7 @@ function PenilaianTab() {
         setMazmurId("");
         setOpenKriteria(null);
         setJudgesDoneForPeserta(0);
+        setJudgesTotalForPeserta(0);
         loadAll({ restoreSubmissionState: false });
       }
       } finally {
