@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RankingRouteImport } from './routes/ranking'
 import { Route as PosisiRouteImport } from './routes/posisi'
 import { Route as LiveRouteImport } from './routes/live'
@@ -24,6 +25,11 @@ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authentica
 import { Route as ApiPublicLiveDotjsonRouteImport } from './routes/api/public/live[.]json'
 import { Route as ApiPublicBootstrapAdminRouteImport } from './routes/api/public/bootstrap-admin'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RankingRoute = RankingRouteImport.update({
   id: '/ranking',
   path: '/ranking',
@@ -101,6 +107,7 @@ export interface FileRoutesByFullPath {
   '/live': typeof LiveRoute
   '/posisi': typeof PosisiRoute
   '/ranking': typeof RankingRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inspektur': typeof AuthenticatedInspekturRoute
   '/operator': typeof AuthenticatedOperatorRoute
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/live': typeof LiveRoute
   '/posisi': typeof PosisiRoute
   '/ranking': typeof RankingRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inspektur': typeof AuthenticatedInspekturRoute
   '/operator': typeof AuthenticatedOperatorRoute
@@ -133,6 +141,7 @@ export interface FileRoutesById {
   '/live': typeof LiveRoute
   '/posisi': typeof PosisiRoute
   '/ranking': typeof RankingRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/inspektur': typeof AuthenticatedInspekturRoute
   '/_authenticated/operator': typeof AuthenticatedOperatorRoute
@@ -150,6 +159,7 @@ export interface FileRouteTypes {
     | '/live'
     | '/posisi'
     | '/ranking'
+    | '/sitemap.xml'
     | '/dashboard'
     | '/inspektur'
     | '/operator'
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
     | '/live'
     | '/posisi'
     | '/ranking'
+    | '/sitemap.xml'
     | '/dashboard'
     | '/inspektur'
     | '/operator'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
     | '/live'
     | '/posisi'
     | '/ranking'
+    | '/sitemap.xml'
     | '/_authenticated/dashboard'
     | '/_authenticated/inspektur'
     | '/_authenticated/operator'
@@ -198,6 +210,7 @@ export interface RootRouteChildren {
   LiveRoute: typeof LiveRoute
   PosisiRoute: typeof PosisiRoute
   RankingRoute: typeof RankingRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   VmixLeaderboardRoute: typeof VmixLeaderboardRoute
   VmixNowreadingRoute: typeof VmixNowreadingRoute
   ApiPublicBootstrapAdminRoute: typeof ApiPublicBootstrapAdminRoute
@@ -206,6 +219,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ranking': {
       id: '/ranking'
       path: '/ranking'
@@ -330,6 +350,7 @@ const rootRouteChildren: RootRouteChildren = {
   LiveRoute: LiveRoute,
   PosisiRoute: PosisiRoute,
   RankingRoute: RankingRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   VmixLeaderboardRoute: VmixLeaderboardRoute,
   VmixNowreadingRoute: VmixNowreadingRoute,
   ApiPublicBootstrapAdminRoute: ApiPublicBootstrapAdminRoute,
