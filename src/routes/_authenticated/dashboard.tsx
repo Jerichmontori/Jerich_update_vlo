@@ -1274,6 +1274,10 @@ function PenilaianTab() {
   const [nilaiJuriPreview, setNilaiJuriPreview] = useState<number | null>(null);
   const pollingInFlightRef = useRef(false);
   const resolvingCompletionRef = useRef<string | null>(null);
+  // Waktu overlay mulai tampil — dipakai memastikan overlay tidak "berkedip"
+  // bila juri saat ini kebetulan menjadi juri terakhir yang mengirim.
+  const overlayShownAtRef = useRef<number | null>(null);
+  const OVERLAY_MIN_MS = 1800;
   // Aturan #6 — konfirmasi kirim
   const [confirmOpen, setConfirmOpen] = useState(false);
   // Mode edit: dipicu setelah user menekan OK di dialog perbedaan.
@@ -1566,10 +1570,16 @@ function PenilaianTab() {
 
   // Aturan #7 — polling jumlah juri yang sudah menilai peserta terkunci
   useEffect(() => {
-    if (!submittedFor) return;
+    if (!submittedFor) { overlayShownAtRef.current = null; return; }
+    if (overlayShownAtRef.current == null) overlayShownAtRef.current = Date.now();
     const lockedPesertaId = submittedFor;
     resolvingCompletionRef.current = null;
     let stopped = false;
+    async function ensureMinDisplay() {
+      const start = overlayShownAtRef.current ?? Date.now();
+      const wait = OVERLAY_MIN_MS - (Date.now() - start);
+      if (wait > 0) await new Promise(r => setTimeout(r, wait));
+    }
     async function tick() {
       if (pollingInFlightRef.current) return;
       pollingInFlightRef.current = true;
@@ -1617,6 +1627,7 @@ function PenilaianTab() {
         const report = await checkDiscrepancy(lockedPesertaId);
         if (report) {
           stopped = true;
+          await ensureMinDisplay();
           setDiscrepancy(report);
           setSubmittedFor(current => current === lockedPesertaId ? null : current);
           setPendingDiscrepancy(null);
@@ -1627,6 +1638,7 @@ function PenilaianTab() {
         const perhatianReport = await checkPerhatianDiscrepancy(lockedPesertaId);
         if (perhatianReport) {
           stopped = true;
+          await ensureMinDisplay();
           setPerhatianDiscrepancy(perhatianReport);
           setSubmittedFor(current => current === lockedPesertaId ? null : current);
           setPendingDiscrepancy(null);
@@ -1634,6 +1646,7 @@ function PenilaianTab() {
           return;
         }
         stopped = true;
+        await ensureMinDisplay();
         toast.success("✦ Semua juri sudah menilai", {
           description: "Silahkan melakukan penilaian peserta selanjutnya.",
         });
