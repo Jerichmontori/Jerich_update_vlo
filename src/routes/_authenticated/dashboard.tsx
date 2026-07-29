@@ -3689,17 +3689,19 @@ function RincianNilaiTab() {
                                   <div className="grid gap-1 text-xs">
                                     {d.aspek.map((a, i) => (
                                       <div key={i} className="flex justify-between gap-3 border-b last:border-0 py-1">
-                                        <span>{i + 1}. {a.nama}{i === 0 ? ` (Clear text: ${d.clearText ? "Ya" : "Tidak"})` : ""}</span>
+                                        <span>{i + 1}. {a.nama}</span>
                                         <span className="font-mono">{a.skipped ? "—" : a.nilai}</span>
                                       </div>
                                     ))}
                                   </div>
                                 )}
-                                {d.type === "perhatian" && (
+                                {d.type === "perhatian" && (() => {
+                                  const ctVal = (d as any).clearText ?? (d as any).membacaPerikop;
+                                  return (
                                   <div className="grid gap-1 text-xs">
                                     <div className="flex justify-between gap-3 border-b py-1">
-                                      <span>1. Membaca Perikop</span>
-                                      <span className="font-mono">{d.membacaPerikop === null ? "—" : d.membacaPerikop ? "Ya" : "Tidak"}</span>
+                                      <span>1. Clear Text</span>
+                                      <span className="font-mono">{ctVal === null || ctVal === undefined ? "—" : ctVal ? "Ya" : "Tidak"}</span>
                                     </div>
                                     {d.aspek.map((a, i) => (
                                       <div key={i} className="flex justify-between gap-3 border-b last:border-0 py-1">
@@ -3708,7 +3710,8 @@ function RincianNilaiTab() {
                                       </div>
                                     ))}
                                   </div>
-                                )}
+                                  );
+                                })()}
                               </div>
                             );
                           })}
