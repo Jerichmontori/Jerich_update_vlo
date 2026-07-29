@@ -3127,8 +3127,6 @@ function RincianNilaiTab() {
     [pesertaFiltered, pesertaFilter]
   );
 
-  const totalBobotKriteria = useMemo(() => kriteria.reduce((s, k) => s + Number(k.bobot || 0), 0), [kriteria]);
-
   function kategoriForKriteria(krNama: string) {
     return kategoriRows.find(
       (k) => (k.kriteria_penilaian ?? "").toLowerCase().trim() === krNama.toLowerCase().trim()
@@ -3191,7 +3189,6 @@ function RincianNilaiTab() {
       });
       const totalNilai = rows.reduce((s, r) => s + (r[6] === "—" ? 0 : parseFloat(r[6] as string)), 0);
       const totalBerbobot = rows.reduce((s, r) => s + (r[7] === "—" ? 0 : parseFloat(r[7] as string)), 0);
-      const rata = totalBobotKriteria > 0 ? totalBerbobot / totalBobotKriteria : 0;
       const nilaiJuri = nilaiJuriRentang(j.id, p.id);
 
       const mzId = penilaian.find((n) => n.peserta_id === p.id && n.juri_id === j.id)?.mazmur_id;
@@ -3346,7 +3343,6 @@ function RincianNilaiTab() {
                       if (nilai !== null) { totalNilai += nilai; totalBerbobot += berbobot!; }
                       return { k, kat, nilai, bobot, berbobot };
                     });
-                    const rata = totalBobotKriteria > 0 ? totalBerbobot / totalBobotKriteria : 0;
                     return (
                       <div key={j.id} className="rounded-md border bg-background overflow-x-auto">
                         <div className="px-3 py-2 text-sm font-medium bg-secondary/60">Juri: {j.nama}{j.jabatan ? ` — ${j.jabatan}` : ""}</div>
