@@ -1139,7 +1139,7 @@ const CATATAN_ASPEK = [
 ];
 
 const PERHATIAN_ASPEK = [
-  "Tidak Membaca Perikop",
+  "Membaca Perikop",
   "Salah kata",
   "Mengubah makna teks",
   "Menambah kata",
@@ -1786,28 +1786,25 @@ function PenilaianTab() {
   }
 
   async function saveCatatan() {
-    if (catatanClearText === null) {
-      return toast.warning("Pilih jawaban untuk 'Membaca teks yang jelas' terlebih dahulu.");
-    }
-    // Aspek 0 auto = 1 bila clearText=false (skipped); selain itu wajib dipilih 1-5.
-    for (let i = 0; i < catatanValues.length; i++) {
-      const skipped = i === 0 && !catatanClearText;
-      if (!skipped && (catatanValues[i] === null || catatanValues[i] === undefined)) {
-        return toast.warning("Lengkapi semua pilihan pada Catatan Juri terlebih dahulu.");
-      }
-    }
-    const effective: number[] = catatanValues.map((v, i) =>
-      i === 0 && !catatanClearText ? 1 : (v as number)
-    );
-    const avg = effective.reduce((a, b) => a + b, 0) / effective.length;
+    // Semua pilihan opsional. Aspek yang tidak dipilih ditandai skipped dan tidak ikut dihitung.
+    // Aspek 0 juga skipped bila clearText=false atau belum dipilih.
+    const skippedFlags = catatanValues.map((v, i) => {
+      if (i === 0) return catatanClearText !== true || v === null || v === undefined;
+      return v === null || v === undefined;
+    });
+    const contributions: number[] = [];
+    catatanValues.forEach((v, i) => {
+      if (!skippedFlags[i] && v !== null && v !== undefined) contributions.push(v);
+    });
+    const avg = contributions.length === 0 ? 0 : contributions.reduce((a, b) => a + b, 0) / contributions.length;
     const nilai = Math.round(avg * 20 * 100) / 100; // scale 1-5 → 20-100
     const detail: PenilaianDetail = {
       type: "catatan",
-      clearText: catatanClearText,
+      clearText: catatanClearText === true,
       aspek: CATATAN_ASPEK.map((nama, i) => ({
         nama,
-        nilai: effective[i],
-        skipped: i === 0 && !catatanClearText,
+        nilai: skippedFlags[i] ? 0 : (catatanValues[i] as number),
+        skipped: skippedFlags[i],
       })),
     };
     await saveNilai(nilai, detail);
@@ -3347,7 +3344,7 @@ function RincianNilaiTab() {
         } else if (d.type === "perhatian") {
           head = [["#", "Aspek", "Penanda"]];
           body = [
-            ["1", "Tidak Membaca Perikop", d.membacaPerikop === null ? "—" : d.membacaPerikop ? "Ya" : "Tidak"],
+            ["1", "Membaca Perikop", d.membacaPerikop === null ? "—" : d.membacaPerikop ? "Ya" : "Tidak"],
             ...d.aspek.map((a, i) => [
               String(i + 2),
               a.nama,
@@ -3530,7 +3527,7 @@ function RincianNilaiTab() {
                                 {d.type === "perhatian" && (
                                   <div className="grid gap-1 text-xs">
                                     <div className="flex justify-between gap-3 border-b py-1">
-                                      <span>1. Tidak Membaca Perikop</span>
+                                      <span>1. Membaca Perikop</span>
                                       <span className="font-mono">{d.membacaPerikop === null ? "—" : d.membacaPerikop ? "Ya" : "Tidak"}</span>
                                     </div>
                                     {d.aspek.map((a, i) => (
