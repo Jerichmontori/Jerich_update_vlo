@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { BookOpenText, ShieldCheck, Gavel, Trophy, Eye } from "lucide-react";
+import { BookOpenText, ShieldCheck, Gavel, Trophy } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -43,13 +43,7 @@ function Landing() {
               <Link to="/auth">Masuk sebagai Juri / Admin</Link>
             </Button>
             <Button asChild size="lg" variant="secondary">
-              <Link to="/daftar">Daftar sebagai Juri</Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="gap-2">
-              <Link to="/ranking"><Eye className="size-4" />Lihat Ranking (Viewer)</Link>
-            </Button>
-            <Button asChild size="lg" variant="outline" className="gap-2">
-              <Link to="/posisi"><Trophy className="size-4" />Posisi per Sesi</Link>
+              <Link to="/daftar">Daftar</Link>
             </Button>
           </div>
 
