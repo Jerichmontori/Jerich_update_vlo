@@ -1762,6 +1762,54 @@ function PenilaianTab() {
     setOpenKriteria(k);
   }
 
+  async function openMasukanDialog() {
+    if (!juriId) return toast.error("Pilih juri terlebih dahulu");
+    if (!pesertaId) return toast.error("Pilih peserta terlebih dahulu");
+    if (!selectedMazmur) return toast.error("Pilih bacaan mazmur terlebih dahulu");
+    const jumlah = selectedMazmur.jumlah_ayat || 0;
+    const empty = Array(jumlah).fill("");
+    const { data } = await supabase
+      .from("masukan_juri" as any)
+      .select("catatan")
+      .eq("peserta_id", pesertaId)
+      .eq("juri_id", juriId)
+      .maybeSingle();
+    const existing = ((data as any)?.catatan ?? []) as { ayat: number; teks: string }[];
+    const values = [...empty];
+    existing.forEach((e) => {
+      if (e && typeof e.ayat === "number" && e.ayat >= 1 && e.ayat <= jumlah) {
+        values[e.ayat - 1] = String(e.teks ?? "");
+      }
+    });
+    setMasukanValues(values);
+    setOpenMasukan(true);
+  }
+
+  async function saveMasukan() {
+    if (!juriId || !pesertaId || !selectedMazmur) { setOpenMasukan(false); return; }
+    setSavingMasukan(true);
+    const catatan = masukanValues
+      .map((teks, i) => ({ ayat: i + 1, teks: (teks || "").trim() }))
+      .filter((x) => x.teks.length > 0);
+    const { error } = await supabase
+      .from("masukan_juri" as any)
+      .upsert(
+        {
+          peserta_id: pesertaId,
+          juri_id: juriId,
+          mazmur_id: mazmurId || null,
+          catatan,
+        } as any,
+        { onConflict: "peserta_id,juri_id" }
+      );
+    setSavingMasukan(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("✦ Masukan juri tersimpan", { description: `${catatan.length} ayat terisi.` });
+    setOpenMasukan(false);
+  }
+
+
+
 
   async function saveNilai(nilai: number, detail: PenilaianDetail = null) {
     if (!openKriteria) return;
