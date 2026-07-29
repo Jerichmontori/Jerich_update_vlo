@@ -1783,12 +1783,8 @@ function PenilaianTab() {
   }
 
   async function saveCatatan() {
-    // Semua pilihan opsional. Aspek yang tidak dipilih ditandai skipped dan tidak ikut dihitung.
-    // Aspek 0 juga skipped bila clearText=false atau belum dipilih.
-    const skippedFlags = catatanValues.map((v, i) => {
-      if (i === 0) return catatanClearText !== true || v === null || v === undefined;
-      return v === null || v === undefined;
-    });
+    // Semua pilihan opsional; aspek yang tidak dipilih ditandai skipped dan tidak ikut dihitung.
+    const skippedFlags = catatanValues.map(v => v === null || v === undefined);
     const contributions: number[] = [];
     catatanValues.forEach((v, i) => {
       if (!skippedFlags[i] && v !== null && v !== undefined) contributions.push(v);
@@ -1797,7 +1793,6 @@ function PenilaianTab() {
     const nilai = Math.round(avg * 20 * 100) / 100; // scale 1-5 → 20-100
     const detail: PenilaianDetail = {
       type: "catatan",
-      clearText: catatanClearText === true,
       aspek: CATATAN_ASPEK.map((nama, i) => ({
         nama,
         nilai: skippedFlags[i] ? 0 : (catatanValues[i] as number),
@@ -1807,30 +1802,31 @@ function PenilaianTab() {
     await saveNilai(nilai, detail);
   }
 
-  const perhatianTotal = perhatianChecks.reduce((s, row) => s + row.length, 0);
-  const perhatianChecked = perhatianChecks.reduce((s, row) => s + row.filter(Boolean).length, 0);
+  // Aspek 0 = Clear Text (Ya/Tidak) tidak dihitung sebagai penanda; hanya aspek pemicu VAR (baris 1..) yang menghitung.
+  const perhatianTotal = perhatianChecks.slice(1).reduce((s, row) => s + row.length, 0);
+  const perhatianChecked = perhatianChecks.slice(1).reduce((s, row) => s + row.filter(Boolean).length, 0);
   const perhatianNilai = perhatianTotal === 0
     ? 0
     : Math.round(((perhatianTotal - perhatianChecked) / perhatianTotal) * 100 * 100) / 100;
 
   async function savePerhatian() {
-    // Wajibkan jawaban "Membaca Perikop" (Ya/Tidak) sebelum menyimpan.
+    // Wajibkan jawaban "Clear Text" (Ya/Tidak) sebelum menyimpan.
     if (perhatianChecks[0]?.[0] === undefined) {
-      return toast.warning("Pilih jawaban untuk 'Membaca Perikop' terlebih dahulu.");
+      return toast.warning("Pilih jawaban untuk 'Clear Text' terlebih dahulu.");
     }
-    // Guard: bila mode Perbaikan Perhatian aktif, paksa baris non-pemicu (selain 1/3/4)
-    // kembali ke baseline saat dialog dibuka — jadi hanya 3 parameter pemicu VAR yang benar-benar bisa diubah.
+    // Guard: bila mode Perbaikan Perhatian aktif, paksa baris non-pemicu kembali ke baseline saat dialog dibuka.
     const perbaikanAktifNow = !!(pesertaId && perbaikanPerhatianIds.has(pesertaId));
     const baseline = perhatianBaselineRef.current;
     const effective = (perbaikanAktifNow && baseline)
       ? perhatianChecks.map((row, i) => PERHATIAN_VAR_TRIGGER_IDX.has(i) ? row : (baseline[i] ? [...baseline[i]] : row))
       : perhatianChecks;
-    const totalAll = effective.reduce((s, row) => s + row.length, 0);
-    const checkedAll = effective.reduce((s, row) => s + row.filter(Boolean).length, 0);
+    // Skor hanya berdasarkan 3 pertanyaan pemicu VAR (bukan Clear Text).
+    const totalAll = effective.slice(1).reduce((s, row) => s + row.length, 0);
+    const checkedAll = effective.slice(1).reduce((s, row) => s + row.filter(Boolean).length, 0);
     const nilaiAll = totalAll === 0 ? 0 : Math.round(((totalAll - checkedAll) / totalAll) * 100 * 100) / 100;
     const detail: PenilaianDetail = {
       type: "perhatian",
-      membacaPerikop: (effective[0]?.[0] as unknown as boolean) ?? null,
+      clearText: (effective[0]?.[0] as unknown as boolean) ?? null,
       aspek: PERHATIAN_ASPEK.slice(1).map((nama, idx) => {
         const row = effective[idx + 1] ?? [];
         const ditandai: number[] = [];
