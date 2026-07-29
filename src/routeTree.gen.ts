@@ -11,14 +11,18 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RankingRouteImport } from './routes/ranking'
 import { Route as PosisiRouteImport } from './routes/posisi'
+import { Route as LiveRouteImport } from './routes/live'
 import { Route as DaftarRouteImport } from './routes/daftar'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VmixNowreadingRouteImport } from './routes/vmix.nowreading'
+import { Route as VmixLeaderboardRouteImport } from './routes/vmix.leaderboard'
 import { Route as AuthenticatedOperatorRouteImport } from './routes/_authenticated/operator'
 import { Route as AuthenticatedInspekturRouteImport } from './routes/_authenticated/inspektur'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as ApiPublicBootstrapAdminRouteImport } from './routes/api/public/bootstrap-admin'
+import { Route as ApiPublicLiveJsonRouteImport } from './routes/api/public/live.json'
 
 const RankingRoute = RankingRouteImport.update({
   id: '/ranking',
@@ -28,6 +32,11 @@ const RankingRoute = RankingRouteImport.update({
 const PosisiRoute = PosisiRouteImport.update({
   id: '/posisi',
   path: '/posisi',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LiveRoute = LiveRouteImport.update({
+  id: '/live',
+  path: '/live',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DaftarRoute = DaftarRouteImport.update({
@@ -47,6 +56,16 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VmixNowreadingRoute = VmixNowreadingRouteImport.update({
+  id: '/vmix/nowreading',
+  path: '/vmix/nowreading',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VmixLeaderboardRoute = VmixLeaderboardRouteImport.update({
+  id: '/vmix/leaderboard',
+  path: '/vmix/leaderboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedOperatorRoute = AuthenticatedOperatorRouteImport.update({
@@ -69,28 +88,41 @@ const ApiPublicBootstrapAdminRoute = ApiPublicBootstrapAdminRouteImport.update({
   path: '/api/public/bootstrap-admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicLiveJsonRoute = ApiPublicLiveJsonRouteImport.update({
+  id: '/api/public/live/json',
+  path: '/api/public/live/json',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/daftar': typeof DaftarRoute
+  '/live': typeof LiveRoute
   '/posisi': typeof PosisiRoute
   '/ranking': typeof RankingRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inspektur': typeof AuthenticatedInspekturRoute
   '/operator': typeof AuthenticatedOperatorRoute
+  '/vmix/leaderboard': typeof VmixLeaderboardRoute
+  '/vmix/nowreading': typeof VmixNowreadingRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
+  '/api/public/live/json': typeof ApiPublicLiveJsonRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/daftar': typeof DaftarRoute
+  '/live': typeof LiveRoute
   '/posisi': typeof PosisiRoute
   '/ranking': typeof RankingRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inspektur': typeof AuthenticatedInspekturRoute
   '/operator': typeof AuthenticatedOperatorRoute
+  '/vmix/leaderboard': typeof VmixLeaderboardRoute
+  '/vmix/nowreading': typeof VmixNowreadingRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
+  '/api/public/live/json': typeof ApiPublicLiveJsonRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -98,12 +130,16 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/daftar': typeof DaftarRoute
+  '/live': typeof LiveRoute
   '/posisi': typeof PosisiRoute
   '/ranking': typeof RankingRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/inspektur': typeof AuthenticatedInspekturRoute
   '/_authenticated/operator': typeof AuthenticatedOperatorRoute
+  '/vmix/leaderboard': typeof VmixLeaderboardRoute
+  '/vmix/nowreading': typeof VmixNowreadingRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
+  '/api/public/live/json': typeof ApiPublicLiveJsonRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -111,35 +147,47 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/daftar'
+    | '/live'
     | '/posisi'
     | '/ranking'
     | '/dashboard'
     | '/inspektur'
     | '/operator'
+    | '/vmix/leaderboard'
+    | '/vmix/nowreading'
     | '/api/public/bootstrap-admin'
+    | '/api/public/live/json'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/daftar'
+    | '/live'
     | '/posisi'
     | '/ranking'
     | '/dashboard'
     | '/inspektur'
     | '/operator'
+    | '/vmix/leaderboard'
+    | '/vmix/nowreading'
     | '/api/public/bootstrap-admin'
+    | '/api/public/live/json'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
     | '/daftar'
+    | '/live'
     | '/posisi'
     | '/ranking'
     | '/_authenticated/dashboard'
     | '/_authenticated/inspektur'
     | '/_authenticated/operator'
+    | '/vmix/leaderboard'
+    | '/vmix/nowreading'
     | '/api/public/bootstrap-admin'
+    | '/api/public/live/json'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -147,9 +195,13 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   DaftarRoute: typeof DaftarRoute
+  LiveRoute: typeof LiveRoute
   PosisiRoute: typeof PosisiRoute
   RankingRoute: typeof RankingRoute
+  VmixLeaderboardRoute: typeof VmixLeaderboardRoute
+  VmixNowreadingRoute: typeof VmixNowreadingRoute
   ApiPublicBootstrapAdminRoute: typeof ApiPublicBootstrapAdminRoute
+  ApiPublicLiveJsonRoute: typeof ApiPublicLiveJsonRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -166,6 +218,13 @@ declare module '@tanstack/react-router' {
       path: '/posisi'
       fullPath: '/posisi'
       preLoaderRoute: typeof PosisiRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/live': {
+      id: '/live'
+      path: '/live'
+      fullPath: '/live'
+      preLoaderRoute: typeof LiveRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/daftar': {
@@ -196,6 +255,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/vmix/nowreading': {
+      id: '/vmix/nowreading'
+      path: '/vmix/nowreading'
+      fullPath: '/vmix/nowreading'
+      preLoaderRoute: typeof VmixNowreadingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vmix/leaderboard': {
+      id: '/vmix/leaderboard'
+      path: '/vmix/leaderboard'
+      fullPath: '/vmix/leaderboard'
+      preLoaderRoute: typeof VmixLeaderboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/operator': {
       id: '/_authenticated/operator'
       path: '/operator'
@@ -224,6 +297,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBootstrapAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/live/json': {
+      id: '/api/public/live/json'
+      path: '/api/public/live/json'
+      fullPath: '/api/public/live/json'
+      preLoaderRoute: typeof ApiPublicLiveJsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -247,9 +327,13 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   DaftarRoute: DaftarRoute,
+  LiveRoute: LiveRoute,
   PosisiRoute: PosisiRoute,
   RankingRoute: RankingRoute,
+  VmixLeaderboardRoute: VmixLeaderboardRoute,
+  VmixNowreadingRoute: VmixNowreadingRoute,
   ApiPublicBootstrapAdminRoute: ApiPublicBootstrapAdminRoute,
+  ApiPublicLiveJsonRoute: ApiPublicLiveJsonRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

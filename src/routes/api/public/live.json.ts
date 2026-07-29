@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { createClient } from "@supabase/supabase-js";
 
-export const Route = createFileRoute("/api/public/live[.]json")({
+export const Route = createFileRoute("/api/public/live/json")({
   server: {
     handlers: {
       GET: async () => {

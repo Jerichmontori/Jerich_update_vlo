@@ -45,6 +45,9 @@ function Landing() {
             <Button asChild size="lg" variant="secondary">
               <Link to="/daftar">Daftar</Link>
             </Button>
+            <Button asChild size="lg" variant="outline">
+              <Link to="/live">Live Ranking</Link>
+            </Button>
           </div>
 
         </section>
