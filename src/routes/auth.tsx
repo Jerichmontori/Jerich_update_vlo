@@ -31,8 +31,6 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotIdentifier, setForgotIdentifier] = useState("");
-  const [forgotNewPw, setForgotNewPw] = useState("");
-  const [forgotShowPw, setForgotShowPw] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
 
   useEffect(() => {
@@ -49,25 +47,20 @@ function AuthPage() {
       toast.error("Masukkan email atau nama akun Anda.");
       return;
     }
-    if (forgotNewPw.length < 8) {
-      toast.error("Kata sandi baru minimal 8 karakter.");
-      return;
-    }
     setForgotLoading(true);
     try {
       const { requestPasswordReset } = await import("@/lib/password-reset.functions");
-      await requestPasswordReset({ data: { identifier: ident, newPassword: forgotNewPw } });
-      toast.success("Permintaan dikirim. Kata sandi baru akan aktif setelah admin menyetujui.");
+      await requestPasswordReset({ data: { identifier: ident } });
+      toast.success("Permintaan dikirim. Admin akan menetapkan kata sandi baru untuk Anda.");
       setForgotOpen(false);
       setForgotIdentifier("");
-      setForgotNewPw("");
-      setForgotShowPw(false);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal mengirim permintaan");
     } finally {
       setForgotLoading(false);
     }
   }
+
 
 
 
