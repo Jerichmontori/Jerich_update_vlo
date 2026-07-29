@@ -2266,17 +2266,25 @@ function PenilaianTab() {
                     <Button
                       size="lg"
                       onClick={requestKirim}
-                      disabled={
-                        saving ||
-                        (!editMode && !allDone) ||
-                        (!editMode && !!pesertaId && mySubmittedIds.has(pesertaId))
-                      }
+                      disabled={(() => {
+                        if (saving) return true;
+                        if (editMode) return false;
+                        if (!allDone) return true;
+                        if (!pesertaId) return false;
+                        const inPerbaikan = perbaikanPerhatianIds.has(pesertaId);
+                        if (inPerbaikan) return perbaikanResubmittedIds.has(pesertaId);
+                        return mySubmittedIds.has(pesertaId);
+                      })()}
                       className="gap-2 min-w-[160px]"
                     >
                       <Check className="size-4" />
-                      {(!editMode && !!pesertaId && mySubmittedIds.has(pesertaId))
-                        ? "Sudah Dikirim"
-                        : editMode ? "Kirim Perubahan" : "Kirim"}
+                      {(() => {
+                        if (editMode) return "Kirim Perubahan";
+                        if (!pesertaId) return "Kirim";
+                        const inPerbaikan = perbaikanPerhatianIds.has(pesertaId);
+                        if (inPerbaikan) return perbaikanResubmittedIds.has(pesertaId) ? "Sudah Dikirim" : "Kirim";
+                        return mySubmittedIds.has(pesertaId) ? "Sudah Dikirim" : "Kirim";
+                      })()}
                     </Button>
 
                   </div>
