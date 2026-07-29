@@ -20,7 +20,7 @@ export const Route = createFileRoute("/ranking")({
   component: RankingPublic,
 });
 
-type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: string | null; total_skor: number; rata_rata: number; jumlah_juri: number; nilai_akhir: number | null };
+type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: string | null; total_skor: number; rata_rata: number; jumlah_juri: number; nilai_akhir: number | null; juri_total_sum: number | null; juri_spread: number | null };
 type Peserta = { id: string; kategori: string | null };
 
 const ALL = "__all__";
@@ -61,7 +61,17 @@ function RankingPublic() {
     const list = kategori === ALL
       ? rows
       : rows.filter((r) => (kategoriMap[r.peserta_id] ?? "") === kategori);
-    return [...list].sort((a, b) => Number(b.nilai_akhir ?? 0) - Number(a.nilai_akhir ?? 0));
+    return [...list].sort((a, b) => {
+      const av = Number(a.nilai_akhir ?? 0), bv = Number(b.nilai_akhir ?? 0);
+      // bandingkan hingga 3 desimal untuk deteksi seri
+      const ar = Math.round(av * 1000), br = Math.round(bv * 1000);
+      if (br !== ar) return br - ar;
+      const at = Number(a.juri_total_sum ?? 0), bt = Number(b.juri_total_sum ?? 0);
+      if (bt !== at) return bt - at;
+      const as = Number(a.juri_spread ?? 0), bs = Number(b.juri_spread ?? 0);
+      if (bs !== as) return bs - as;
+      return a.nomor_urut - b.nomor_urut;
+    });
   }, [rows, kategori, kategoriMap]);
 
   const medals = ["🥇", "🥈", "🥉"];
