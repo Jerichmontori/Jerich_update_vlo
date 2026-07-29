@@ -1130,7 +1130,7 @@ function KriteriaTab() {
             ))}
             <TableRow className="bg-muted/50">
               <TableCell className="font-semibold text-right">Total</TableCell>
-              <TableCell colSpan={2}><Badge className={totalBobot === 100 ? "bg-accent text-accent-foreground" : "bg-destructive text-destructive-foreground"}>{totalBobot}%</Badge></TableCell>
+              <TableCell colSpan={2}><Badge className="bg-accent text-accent-foreground">{totalBobot}</Badge></TableCell>
             </TableRow>
           </TableBody>
         </Table>
