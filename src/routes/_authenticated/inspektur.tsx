@@ -380,14 +380,14 @@ function InspekturPage() {
                   <TableHead>Nama</TableHead>
                   <TableHead>Kategori</TableHead>
                   <TableHead>Bacaan Mazmur</TableHead>
-                  <TableHead>Progres Juri</TableHead>
+                  
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {monitor.length === 0 && (
-                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Belum ada data</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Belum ada data</TableCell></TableRow>
                 )}
                 {monitor.map((r) => {
                   const v = statusVariant(r.status);
@@ -398,27 +398,8 @@ function InspekturPage() {
                       <TableCell className="font-medium">{r.nama}</TableCell>
                       <TableCell className="text-muted-foreground">{r.kategori || "—"}</TableCell>
                       <TableCell className="text-muted-foreground">{r.bacaan || "—"}</TableCell>
-                      <TableCell>{r.juri_done} / {r.juri_total} juri</TableCell>
                       <TableCell><Badge className={v.className}>{v.label}</Badge></TableCell>
                       <TableCell className="text-right space-x-2 whitespace-nowrap">
-                        {activeSesiPesertaIds.has(r.peserta_id) && (
-                          <>
-                            <Button
-                              size="sm"
-                              className="bg-rose-600 hover:bg-rose-700 text-white"
-                              onClick={() => openAjukanVar(r.peserta_id, r.nama)}
-                            >
-                              <Siren className="size-4 mr-1" /> Ajukan VAR
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="destructive"
-                              onClick={() => openAkhiri(r.peserta_id, r.nama)}
-                            >
-                              <Square className="size-4 mr-1" /> Akhiri
-                            </Button>
-                          </>
-                        )}
                         {hasActiveVar && (
                           <Button
                             size="sm"
@@ -710,6 +691,22 @@ function InspekturPage() {
           </div>
 
           <DialogFooter className="flex-wrap gap-2">
+            {detailPeserta && activeSesiPesertaIds.has(detailPeserta.peserta_id) && (
+              <>
+                <Button
+                  className="bg-rose-600 hover:bg-rose-700 text-white"
+                  onClick={() => openAjukanVar(detailPeserta.peserta_id, detailPeserta.nama)}
+                >
+                  <Siren className="size-4 mr-1" /> Ajukan VAR
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => openAkhiri(detailPeserta.peserta_id, detailPeserta.nama)}
+                >
+                  <Square className="size-4 mr-1" /> Akhiri & Finalkan
+                </Button>
+              </>
+            )}
             {detailData?.var_session && (
               <>
                 <Button
