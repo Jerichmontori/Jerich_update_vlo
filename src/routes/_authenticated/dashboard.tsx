@@ -1992,7 +1992,22 @@ function PenilaianTab() {
       )}
       {canJudge && (
         <div className="relative">
-          {/* Overlay "menunggu juri" dihapus — juri langsung bebas ke peserta berikutnya setelah kirim. */}
+          {/* Overlay "menunggu juri lain" — aktif setelah juri klik Kirim, nonaktif ketika semua juri selesai. */}
+          {submittedFor && submittedFor === pesertaId && (
+            <div className="absolute inset-0 z-30 flex items-center justify-center rounded-2xl bg-background/85 backdrop-blur-sm">
+              <div className="max-w-md mx-4 rounded-2xl border-2 border-accent/50 bg-card p-6 text-center shadow-xl">
+                <div className="text-xs uppercase tracking-[0.25em] text-accent font-semibold">Penilaian Terkirim</div>
+                <div className="font-serif text-2xl mt-2">Menunggu Juri Lain</div>
+                <div className="mt-3 text-sm text-muted-foreground">
+                  Nilai Anda untuk peserta ini sudah tersimpan. Form akan terbuka kembali setelah semua juri menyelesaikan penilaian.
+                </div>
+                <div className="mt-4 font-serif text-3xl font-bold text-primary tabular-nums">
+                  {judgesDoneForPeserta} / {totalJuriApproved}
+                </div>
+                <div className="text-xs text-muted-foreground mt-1">juri telah mengirim penilaian</div>
+              </div>
+            </div>
+          )}
 
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
