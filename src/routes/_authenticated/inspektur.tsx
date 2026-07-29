@@ -450,7 +450,74 @@ function InspekturPage() {
           </CardContent>
         </Card>
 
+        {/* Progres Juri per Peserta (sesi aktif) */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><CheckCircle2 className="size-5 text-emerald-600" /> Progres Penilaian Juri</CardTitle>
+            <CardDescription>Progres pengiriman & nilai tiap juri untuk peserta pada sesi yang sedang aktif. Diperbarui setiap 3 detik.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {(() => {
+              const aktif = monitor.filter((r) => activeSesiPesertaIds.has(r.peserta_id));
+              if (aktif.length === 0) {
+                return <div className="text-sm text-muted-foreground py-4 text-center">Tidak ada sesi penilaian yang sedang aktif.</div>;
+              }
+              return aktif.map((r) => {
+                const rows = progresMap[r.peserta_id] ?? [];
+                return (
+                  <div key={r.peserta_id} className="rounded-lg border p-3 space-y-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <div className="font-semibold">{r.nomor_urut}. {r.nama}</div>
+                        <div className="text-xs text-muted-foreground">{r.kategori || "—"} · {r.bacaan || "—"}</div>
+                      </div>
+                      <Badge className={statusVariant(r.status).className}>{statusVariant(r.status).label}</Badge>
+                    </div>
+                    {rows.length === 0 ? (
+                      <div className="text-xs text-muted-foreground">Belum ada juri terdaftar.</div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Juri</TableHead>
+                              <TableHead>Status Kirim</TableHead>
+                              <TableHead className="text-right">Nilai Juri</TableHead>
+                              <TableHead className="text-right">Kriteria Terisi</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {rows.map((row: any) => (
+                              <TableRow key={row.juri_id}>
+                                <TableCell className="font-medium">{row.juri_nama}</TableCell>
+                                <TableCell>
+                                  {row.sudah_kirim ? (
+                                    <Badge className="bg-emerald-600 text-white"><CheckCircle2 className="size-3 mr-1" />Sudah Kirim</Badge>
+                                  ) : (
+                                    <Badge className="bg-muted text-foreground"><XCircle className="size-3 mr-1" />Belum Kirim</Badge>
+                                  )}
+                                </TableCell>
+                                <TableCell className="text-right font-mono">
+                                  {row.nilai_juri == null ? <span className="text-muted-foreground italic">—</span> : Number(row.nilai_juri).toFixed(3)}
+                                </TableCell>
+                                <TableCell className="text-right text-xs text-muted-foreground">
+                                  {Array.isArray(row.penilaian) ? row.penilaian.length : 0} kriteria
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                      </div>
+                    )}
+                  </div>
+                );
+              });
+            })()}
+          </CardContent>
+        </Card>
+
         {/* Daftar VAR */}
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><AlertTriangle className="size-5 text-rose-500" /> Daftar Potensi VAR</CardTitle>
