@@ -2310,51 +2310,23 @@ function PenilaianTab() {
                     <span className="text-sm font-medium">{i + 1}. {aspek}</span>
                   </div>
 
-                  {i === 0 && (
-                    <div className="mb-3">
-                      <div className="text-xs text-muted-foreground mb-1">Clear text?</div>
-                      <div className="grid grid-cols-2 gap-2">
-                        {[
-                          { label: "Ya", val: true },
-                          { label: "Tidak", val: false },
-                        ].map(opt => (
-                          <button
-                            key={opt.label}
-                            type="button"
-                            onClick={() => setCatatanClearText(opt.val)}
-                            className={[
-                              "rounded-md border-2 py-2 text-sm font-semibold transition",
-                              catatanClearText === opt.val
-                                ? "border-accent bg-accent text-accent-foreground"
-                                : "border-primary/20 bg-background hover:border-accent/60",
-                            ].join(" ")}
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {(i !== 0 || catatanClearText) && (
-                    <div className="grid grid-cols-5 gap-2">
-                      {[1, 2, 3, 4, 5].map(v => (
-                        <button
-                          key={v}
-                          type="button"
-                          onClick={() => setCatatanValues(prev => prev.map((x, idx) => idx === i ? v : x))}
-                          className={[
-                            "rounded-md border-2 py-2 text-sm font-semibold transition",
-                            catatanValues[i] === v
-                              ? "border-accent bg-accent text-accent-foreground"
-                              : "border-primary/20 bg-background hover:border-accent/60",
-                          ].join(" ")}
-                        >
-                          {v}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  <div className="grid grid-cols-5 gap-2">
+                    {[1, 2, 3, 4, 5].map(v => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setCatatanValues(prev => prev.map((x, idx) => idx === i ? v : x))}
+                        className={[
+                          "rounded-md border-2 py-2 text-sm font-semibold transition",
+                          catatanValues[i] === v
+                            ? "border-accent bg-accent text-accent-foreground"
+                            : "border-primary/20 bg-background hover:border-accent/60",
+                        ].join(" ")}
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               ))}
               <p className="text-xs text-muted-foreground pt-2">
