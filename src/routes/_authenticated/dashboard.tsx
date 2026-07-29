@@ -700,11 +700,17 @@ function PendingPasswordResets() {
 
   async function load() {
     try {
+      // Skip if not signed in — avoids 401 toast spam during logout/session loss.
+      const { data: sess } = await supabase.auth.getSession();
+      if (!sess.session?.access_token) return;
       const { listPasswordResets } = await import("@/lib/password-reset.functions");
       const data = await listPasswordResets();
       setItems(data as any);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Gagal memuat permintaan");
+      const msg = err instanceof Error ? err.message : String(err);
+      // Silently ignore auth errors — session may have expired mid-poll.
+      if (/Unauthorized|401|authorization header/i.test(msg)) return;
+      toast.error(msg || "Gagal memuat permintaan");
     }
   }
   useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, []);
