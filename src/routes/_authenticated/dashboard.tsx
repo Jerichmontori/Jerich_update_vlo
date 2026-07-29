@@ -1094,7 +1094,7 @@ function KriteriaTab() {
             </SelectContent>
           </Select>
         </div>
-        <div><Label>Bobot (%)</Label><Input type="number" step="0.1" value={bobot} onChange={e=>setBobot(e.target.value)} placeholder="25" /></div>
+        <div><Label>Bobot</Label><Input type="number" step="0.1" value={bobot} onChange={e=>setBobot(e.target.value)} placeholder="25" /></div>
         <div className="flex items-end"><Button type="submit" className="gap-1"><Plus className="size-4" />Tambah</Button></div>
       </form>
       <div className="rounded-lg border bg-card">
