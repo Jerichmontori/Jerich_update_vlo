@@ -1145,18 +1145,12 @@ const CATATAN_ASPEK = [
 ];
 
 const PERHATIAN_ASPEK = [
-  "Membaca Perikop",
+  "Clear Text",
   "Salah kata",
-  "Mengubah makna teks",
   "Menambah kata",
   "Mengurangi kata",
-  "Tidak berhenti pada koma",
-  "Tidak berhenti pada titik",
-  "Jeda mengganggu makna",
-  "Suara kurang jelas",
-  "Tempo terlalu cepat",
-  "Tempo terlalu lambat",
 ];
+
 
 function kriteriaKey(nama: string): keyof typeof GRADE_DESCRIPTIONS | "catatan" | "perhatian" | null {
   const n = nama.toLowerCase();
