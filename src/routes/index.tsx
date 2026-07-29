@@ -64,8 +64,16 @@ function Landing() {
         </section>
       </main>
 
-      <footer className="mx-auto max-w-6xl px-4 py-10 text-center text-sm text-muted-foreground">
-        © {new Date().getFullYear()} Sistem Penjurian Baca Mazmur
+      <footer className="mx-auto max-w-6xl px-4 py-10 flex flex-col items-center gap-3 border-t">
+        <img
+          src={multimediaLogo.url}
+          alt="Logo Multimedia BUMOTIK — Blessed to be Blessing"
+          className="h-14 sm:h-16 w-auto object-contain opacity-90"
+          loading="lazy"
+          width={480}
+          height={340}
+        />
+        <p className="text-xs text-muted-foreground">© {new Date().getFullYear()} Multimedia BUMOTIK</p>
       </footer>
     </div>
   );
