@@ -2841,10 +2841,10 @@ function LihatPenilaianTab() {
       supabase.from("penilaian_submission" as any).select("peserta_id, juri_id"),
       supabase.rpc("get_ranking" as any),
     ]);
-    if (p.error) return toast.error(p.error.message);
-    if (j.error) return toast.error(j.error.message);
-    if (k.error) return toast.error(k.error.message);
-    if (n.error) return toast.error(n.error.message);
+    if (p.error || j.error || k.error || n.error || rank.error) {
+      setLoading(false);
+      return toast.error(p.error?.message || j.error?.message || k.error?.message || n.error?.message || rank.error?.message || "Gagal memuat data");
+    }
     setPeserta((p.data ?? []) as Peserta[]);
     setJuri(((j.data ?? []) as unknown as Juri[]).filter((x) => x.approved && x.role !== "viewer"));
     setKriteria((k.data ?? []) as Kriteria[]);
