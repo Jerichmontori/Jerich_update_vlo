@@ -1328,11 +1328,14 @@ function PenilaianTab() {
     if (!activeSession) return;
     if (isAdmin) return;
     if (editMode) return;
+    // Jangan pindahkan peserta/mazmur selama overlay "menunggu" aktif —
+    // biarkan form tetap terkunci pada peserta yang baru dikirim sampai semua juri selesai.
+    if (submittedFor) return;
     setPesertaId(prev => prev === activeSession.peserta_id ? prev : activeSession.peserta_id);
     if (activeSession.mazmur_id) {
       setMazmurId(prev => prev === activeSession.mazmur_id ? prev : activeSession.mazmur_id!);
     }
-  }, [activeSession, isAdmin, editMode]);
+  }, [activeSession, isAdmin, editMode, submittedFor]);
   // Ketika Operator mengakhiri sesi → kosongkan field Peserta & Bacaan Mazmur untuk juri.
   const prevActiveSessionIdRef = useRef<string | null>(null);
   useEffect(() => {
@@ -1993,7 +1996,7 @@ function PenilaianTab() {
       {canJudge && (
         <div className="relative">
           {/* Overlay "menunggu juri lain" — aktif setelah juri klik Kirim, nonaktif ketika semua juri selesai. */}
-          {submittedFor && submittedFor === pesertaId && (
+          {submittedFor && (
             <div className="absolute inset-0 z-30 flex items-center justify-center rounded-2xl bg-background/85 backdrop-blur-sm">
               <div className="max-w-md mx-4 rounded-2xl border-2 border-accent/50 bg-card p-6 text-center shadow-xl">
                 <div className="text-xs uppercase tracking-[0.25em] text-accent font-semibold">Penilaian Terkirim</div>
