@@ -32,6 +32,7 @@ type PenilaianDetail =
 type Penilaian = { id: string; peserta_id: string; juri_id: string; kriteria_id: string; nilai: number; mazmur_id: string | null; detail?: PenilaianDetail; created_at?: string };
 type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: string | null; total_skor: number; rata_rata: number; jumlah_juri: number; nilai_akhir: number | null; var_status?: string | null; juri_total_sum?: number | null; juri_spread?: number | null };
 type Kategori = { id: string; kategori: string | null; batas_atas: number; batas_bawah: number; kriteria_penilaian: string | null; kriteria_peserta: string | null; bobot: number; nilai_tengah: number; nilai_standart: number };
+type Submission = { peserta_id: string; juri_id: string };
 
 function App() {
   // Single-device enforcement dijalankan di layout `_authenticated/route.tsx`
@@ -804,7 +805,7 @@ function KategoriTab() {
   const [nilaiStandart, setNilaiStandart] = useState("");
 
   async function load() {
-    const { data, error } = await supabase.from("kategori").select("*").order("created_at");
+    const { data, error } = await supabase.from("kategori").select("*").order("updated_at", { ascending: false }).order("created_at", { ascending: false });
     if (error) return toast.error(error.message);
     setItems((data ?? []) as Kategori[]);
   }
@@ -2824,19 +2825,22 @@ function LihatPenilaianTab() {
   const [juri, setJuri] = useState<Juri[]>([]);
   const [kriteria, setKriteria] = useState<Kriteria[]>([]);
   const [penilaian, setPenilaian] = useState<Penilaian[]>([]);
+  const [nilaiMap, setNilaiMap] = useState<Record<string, number | null>>({});
+  const [rankMap, setRankMap] = useState<Record<string, Ranking>>({});
   const [loading, setLoading] = useState(true);
   const [kategori, setKategori] = useState<string>(LIHAT_ALL);
   const [pesertaPilih, setPesertaPilih] = useState<string>("");
 
   async function load() {
     setLoading(true);
-    const [p, j, k, n] = await Promise.all([
+    const [p, j, k, n, s, rank] = await Promise.all([
       supabase.from("peserta").select("*").order("nomor_urut"),
       supabase.from("juri_public" as any).select("*").order("created_at"),
       supabase.from("kriteria").select("*").order("created_at"),
       supabase.from("penilaian").select("*"),
+      supabase.from("penilaian_submission" as any).select("peserta_id, juri_id"),
+      supabase.rpc("get_ranking" as any),
     ]);
-    setLoading(false);
     if (p.error) return toast.error(p.error.message);
     if (j.error) return toast.error(j.error.message);
     if (k.error) return toast.error(k.error.message);
@@ -2845,8 +2849,24 @@ function LihatPenilaianTab() {
     setJuri(((j.data ?? []) as unknown as Juri[]).filter((x) => x.approved && x.role !== "viewer"));
     setKriteria((k.data ?? []) as Kriteria[]);
     setPenilaian((n.data ?? []) as Penilaian[]);
+    const submitted = ((s.data ?? []) as unknown as Submission[]);
+    const nilaiEntries = await Promise.all(submitted.map(async (row) => {
+      const key = `${row.juri_id}|${row.peserta_id}`;
+      const { data } = await supabase.rpc("hitung_nilai_juri" as any, { _peserta: row.peserta_id, _juri: row.juri_id });
+      return [key, data == null ? null : Number(data)] as const;
+    }));
+    setNilaiMap(Object.fromEntries(nilaiEntries));
+    const nextRankMap: Record<string, Ranking> = {};
+    ((rank.data ?? []) as unknown as Ranking[]).forEach((r) => { nextRankMap[r.peserta_id] = r; });
+    setRankMap(nextRankMap);
+    setLoading(false);
   }
   useEffect(() => { load(); }, []);
+
+  function nilaiJuri(juriId: string, pesertaId: string): number | undefined {
+    const value = nilaiMap[`${juriId}|${pesertaId}`];
+    return value == null ? undefined : value;
+  }
 
   const kategoriList = useMemo(() => {
     const s = new Set<string>();
@@ -2889,16 +2909,17 @@ function LihatPenilaianTab() {
     doc.setFontSize(10); doc.setTextColor(100);
     doc.text(`Kategori: ${p.kategori || "—"}${p.asal ? " • Asal: " + p.asal : ""}`, 40, startY + 18);
     doc.setTextColor(0);
-    const dHead = [["Juri", ...kriteria.map((k) => `${k.nama} (b:${k.bobot})`), "Total Berbobot"]];
+    const dHead = [["Juri", ...kriteria.map((k) => `${k.nama} (b:${k.bobot})`), "Nilai Juri"]];
     const dBody = juri.map((j) => {
       const rec = scoreMap[p.id]?.[j.id];
+      const nilai = nilaiJuri(j.id, p.id);
       return [
         j.nama,
         ...kriteria.map((k) => {
           const v = rec?.per[k.id];
           return v === undefined ? "—" : Number(v).toFixed(2);
         }),
-        rec ? rec.weighted.toFixed(2) : "—",
+        nilai === undefined ? "—" : nilai.toFixed(3),
       ];
     });
     autoTable(doc, {
@@ -2919,20 +2940,20 @@ function LihatPenilaianTab() {
     const head = [[
       "No.", "Peserta", "Kategori",
       ...juri.map((j) => j.nama),
-      "Rata-rata", "Total"
+      "Nilai Akhir", "Total Juri"
     ]];
     const body = pesertaFiltered.map((p) => {
-      const scores = juri.map((j) => scoreMap[p.id]?.[j.id]?.weighted);
+      const scores = juri.map((j) => nilaiJuri(j.id, p.id));
       const valid = scores.filter((s): s is number => typeof s === "number" && s > 0);
-      const rata = valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0;
-      const total = valid.reduce((a, b) => a + b, 0);
+      const nilaiAkhir = rankMap[p.id]?.nilai_akhir;
+      const total = rankMap[p.id]?.juri_total_sum ?? valid.reduce((a, b) => a + b, 0);
       return [
         String(p.nomor_urut),
         p.nama,
         p.kategori || "—",
-        ...scores.map((s) => (s === undefined ? "—" : s.toFixed(2))),
-        valid.length ? rata.toFixed(2) : "—",
-        valid.length ? total.toFixed(2) : "—",
+        ...scores.map((s) => (s === undefined ? "—" : s.toFixed(3))),
+        nilaiAkhir == null ? "—" : Number(nilaiAkhir).toFixed(3),
+        valid.length ? Number(total).toFixed(3) : "—",
       ];
     });
 
@@ -3009,18 +3030,18 @@ function LihatPenilaianTab() {
               {juri.map((j) => (
                 <TableHead key={j.id} className="text-right whitespace-nowrap">{j.nama}</TableHead>
               ))}
-              <TableHead className="text-right w-28">Rata-rata</TableHead>
-              <TableHead className="text-right w-28">Total</TableHead>
+              <TableHead className="text-right w-32">Nilai Akhir</TableHead>
+              <TableHead className="text-right w-28">Total Juri</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading && <TableRow><TableCell colSpan={5 + juri.length} className="text-center py-10 text-muted-foreground">Memuat…</TableCell></TableRow>}
             {!loading && pesertaFiltered.length === 0 && <TableRow><TableCell colSpan={5 + juri.length} className="text-center py-10 text-muted-foreground">Belum ada peserta.</TableCell></TableRow>}
             {pesertaFiltered.map((p) => {
-              const scores = juri.map((j) => scoreMap[p.id]?.[j.id]?.weighted);
+              const scores = juri.map((j) => nilaiJuri(j.id, p.id));
               const valid = scores.filter((s): s is number => typeof s === "number" && s > 0);
-              const rata = valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0;
-              const total = valid.reduce((a, b) => a + b, 0);
+              const nilaiAkhir = rankMap[p.id]?.nilai_akhir;
+              const total = rankMap[p.id]?.juri_total_sum ?? valid.reduce((a, b) => a + b, 0);
               return (
                 <TableRow key={p.id}>
                   <TableCell className="font-mono">{p.nomor_urut}</TableCell>
@@ -3028,11 +3049,11 @@ function LihatPenilaianTab() {
                   <TableCell className="text-muted-foreground">{p.kategori || "—"}</TableCell>
                   {scores.map((s, i) => (
                     <TableCell key={juri[i].id} className="text-right font-mono">
-                      {s === undefined ? <span className="text-muted-foreground italic">—</span> : s.toFixed(2)}
+                      {s === undefined ? <span className="text-muted-foreground italic">—</span> : s.toFixed(3)}
                     </TableCell>
                   ))}
-                  <TableCell className="text-right font-mono">{valid.length ? rata.toFixed(2) : "—"}</TableCell>
-                  <TableCell className="text-right font-mono font-bold text-primary">{valid.length ? total.toFixed(2) : "—"}</TableCell>
+                  <TableCell className="text-right font-mono font-bold text-primary">{nilaiAkhir == null ? "—" : Number(nilaiAkhir).toFixed(3)}</TableCell>
+                  <TableCell className="text-right font-mono">{valid.length ? Number(total).toFixed(3) : "—"}</TableCell>
                 </TableRow>
               );
             })}
