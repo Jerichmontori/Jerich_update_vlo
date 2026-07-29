@@ -30,8 +30,9 @@ type PenilaianDetail =
   | { type: "perhatian"; membacaPerikop: boolean | null; aspek: { nama: string; ayat: boolean[]; ditandai: number[] }[] }
   | null;
 type Penilaian = { id: string; peserta_id: string; juri_id: string; kriteria_id: string; nilai: number; mazmur_id: string | null; detail?: PenilaianDetail; created_at?: string };
-type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: string | null; total_skor: number; rata_rata: number; jumlah_juri: number };
+type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: string | null; total_skor: number; rata_rata: number; jumlah_juri: number; nilai_akhir: number | null; var_status?: string | null; juri_total_sum?: number | null; juri_spread?: number | null };
 type Kategori = { id: string; kategori: string | null; batas_atas: number; batas_bawah: number; kriteria_penilaian: string | null; kriteria_peserta: string | null; bobot: number; nilai_tengah: number; nilai_standart: number };
+type Submission = { peserta_id: string; juri_id: string };
 
 function App() {
   // Single-device enforcement dijalankan di layout `_authenticated/route.tsx`
@@ -804,7 +805,7 @@ function KategoriTab() {
   const [nilaiStandart, setNilaiStandart] = useState("");
 
   async function load() {
-    const { data, error } = await supabase.from("kategori").select("*").order("created_at");
+    const { data, error } = await supabase.from("kategori").select("*").order("updated_at", { ascending: false }).order("created_at", { ascending: false });
     if (error) return toast.error(error.message);
     setItems((data ?? []) as Kategori[]);
   }
@@ -821,6 +822,7 @@ function KategoriTab() {
     e.preventDefault();
     if (!kriteriaPeserta) return toast.error("Kriteria Peserta wajib dipilih");
     const { error } = await supabase.from("kategori").insert({
+      kategori: kriteriaPeserta,
       kriteria_peserta: kriteriaPeserta,
       batas_atas: Number(batasAtas) || 0,
       batas_bawah: Number(batasBawah) || 0,
@@ -2427,7 +2429,16 @@ function RankingTab() {
 
   const filtered = useMemo(() => {
     const list = kategori === RANKING_ALL ? rows : rows.filter((r) => (kategoriMap[r.peserta_id] ?? "") === kategori);
-    return [...list].sort((a, b) => Number(b.total_skor) - Number(a.total_skor));
+    return [...list].sort((a, b) => {
+      const av = Number(a.nilai_akhir ?? 0), bv = Number(b.nilai_akhir ?? 0);
+      const ar = Math.round(av * 1000), br = Math.round(bv * 1000);
+      if (br !== ar) return br - ar;
+      const at = Number(a.juri_total_sum ?? a.total_skor ?? 0), bt = Number(b.juri_total_sum ?? b.total_skor ?? 0);
+      if (bt !== at) return bt - at;
+      const as = Number(a.juri_spread ?? 0), bs = Number(b.juri_spread ?? 0);
+      if (bs !== as) return bs - as;
+      return a.nomor_urut - b.nomor_urut;
+    });
   }, [rows, kategori, kategoriMap]);
 
   const medals = ["🥇", "🥈", "🥉"];
@@ -2459,15 +2470,15 @@ function RankingTab() {
               <TableHead>Asal</TableHead>
               <TableHead>Kategori</TableHead>
               <TableHead className="text-center w-24">Juri</TableHead>
-              <TableHead className="text-right w-32">Rata-rata</TableHead>
-              <TableHead className="text-right w-32">Total Skor</TableHead>
+              <TableHead className="text-right w-36">Nilai Akhir</TableHead>
+              <TableHead className="text-right w-32">Total Juri</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading && <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">Memuat…</TableCell></TableRow>}
             {!loading && filtered.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">Belum ada penilaian.</TableCell></TableRow>}
             {filtered.map((r, i) => {
-              const belum = !(Number(r.total_skor) > 0);
+              const belum = r.nilai_akhir == null || Number(r.jumlah_juri) === 0;
               const kat = kategoriMap[r.peserta_id];
               return (
               <TableRow key={r.peserta_id} className={!belum && i < 3 ? "bg-accent/10" : ""}>
@@ -2477,8 +2488,8 @@ function RankingTab() {
                 <TableCell className="text-muted-foreground">{r.asal || "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{kat || "—"}</TableCell>
                 <TableCell className="text-center">{belum ? <span className="text-muted-foreground italic">belum tampil</span> : r.jumlah_juri}</TableCell>
-                <TableCell className="text-right font-mono">{belum ? <span className="text-muted-foreground italic">belum tampil</span> : Number(r.rata_rata).toFixed(2)}</TableCell>
-                <TableCell className="text-right font-mono font-bold text-primary">{belum ? <span className="text-muted-foreground italic font-normal">belum tampil</span> : Number(r.total_skor).toFixed(2)}</TableCell>
+                <TableCell className="text-right font-mono font-bold text-primary">{belum ? <span className="text-muted-foreground italic font-normal">belum tampil</span> : Number(r.nilai_akhir).toFixed(3)}</TableCell>
+                <TableCell className="text-right font-mono">{belum ? <span className="text-muted-foreground italic">belum tampil</span> : Number(r.juri_total_sum ?? r.total_skor).toFixed(3)}</TableCell>
               </TableRow>
               );
             })}
@@ -2517,8 +2528,8 @@ function PosisiTab() {
   const grouped = useMemo(() => {
     const enrichedAll = peserta.map((p) => {
       const r = rankMap[p.id];
-      const total = Number(r?.total_skor ?? 0);
-      return { ...p, total, rata: Number(r?.rata_rata ?? 0), juri: Number(r?.jumlah_juri ?? 0), scored: !!r && total > 0 };
+      const nilai = r?.nilai_akhir != null ? Number(r.nilai_akhir) : null;
+      return { ...p, nilai, total: Number(r?.juri_total_sum ?? r?.total_skor ?? 0), spread: Number(r?.juri_spread ?? 0), juri: Number(r?.jumlah_juri ?? 0), scored: nilai != null && Number(r?.jumlah_juri ?? 0) > 0 };
     });
     const scoredSorted = enrichedAll
       .filter((r) => r.scored)
@@ -2526,7 +2537,13 @@ function PosisiTab() {
     const chunks: { key: string; label: string; range: string; list: typeof scoredSorted }[] = [];
     for (let i = 0; i < scoredSorted.length; i += 10) {
       const slice = scoredSorted.slice(i, i + 10);
-      const ranked = [...slice].sort((a, b) => (b.total !== a.total ? b.total - a.total : a.nomor_urut - b.nomor_urut));
+      const ranked = [...slice].sort((a, b) => {
+        const ar = Math.round(Number(a.nilai ?? 0) * 1000), br = Math.round(Number(b.nilai ?? 0) * 1000);
+        if (br !== ar) return br - ar;
+        if (b.total !== a.total) return b.total - a.total;
+        if (b.spread !== a.spread) return b.spread - a.spread;
+        return a.nomor_urut - b.nomor_urut;
+      });
       const first = slice[0]?.nomor_urut ?? i + 1;
       const last = slice[slice.length - 1]?.nomor_urut ?? i + slice.length;
       const idx = Math.floor(i / 10) + 1;
@@ -2565,8 +2582,8 @@ function PosisiTab() {
                     <TableHead>Peserta</TableHead>
                     <TableHead>Asal</TableHead>
                     <TableHead className="text-center w-24">Juri</TableHead>
-                    <TableHead className="text-right w-32">Rata-rata</TableHead>
-                    <TableHead className="text-right w-32">Total Skor</TableHead>
+                    <TableHead className="text-right w-36">Nilai Akhir</TableHead>
+                    <TableHead className="text-right w-32">Total Juri</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -2580,8 +2597,8 @@ function PosisiTab() {
                         <TableCell className="font-semibold">{r.nama}</TableCell>
                         <TableCell className="text-muted-foreground">{r.asal || "—"}</TableCell>
                         <TableCell className="text-center">{r.scored ? r.juri : <span className="text-muted-foreground italic">belum tampil</span>}</TableCell>
-                        <TableCell className="text-right font-mono">{r.scored ? r.rata.toFixed(2) : <span className="text-muted-foreground italic">belum tampil</span>}</TableCell>
-                        <TableCell className="text-right font-mono font-bold text-primary">{r.scored ? r.total.toFixed(2) : <span className="text-muted-foreground italic font-normal">belum tampil</span>}</TableCell>
+                        <TableCell className="text-right font-mono font-bold text-primary">{r.scored && r.nilai != null ? r.nilai.toFixed(3) : <span className="text-muted-foreground italic font-normal">belum tampil</span>}</TableCell>
+                        <TableCell className="text-right font-mono">{r.scored ? r.total.toFixed(3) : <span className="text-muted-foreground italic">belum tampil</span>}</TableCell>
                       </TableRow>
                     );
                   })}
@@ -2632,27 +2649,31 @@ function DashboardTab() {
   const [penilaian, setPenilaian] = useState<Penilaian[]>([]);
   const [kriteria, setKriteria] = useState<Kriteria[]>([]);
   const [nilaiMap, setNilaiMap] = useState<Record<string, number | null>>({});
+  const [submissionRows, setSubmissionRows] = useState<Array<{ peserta_id: string; juri_id: string }>>([]);
   const [loading, setLoading] = useState(true);
 
   async function load() {
     setLoading(true);
-    const [j, p, n, k] = await Promise.all([
+    const [j, p, n, k, s] = await Promise.all([
       supabase.from("juri_public" as any).select("*").eq("approved", true).eq("role", "juri").order("nama"),
       supabase.from("peserta").select("*"),
       supabase.rpc("admin_list_penilaian" as any),
       supabase.from("kriteria").select("*"),
+      supabase.from("penilaian_submission" as any).select("peserta_id, juri_id"),
     ]);
     const juriList = (j.data as unknown as Juri[]) || [];
     const pesertaList = (p.data as Peserta[]) || [];
     const penilaianList = (n.data as unknown as Penilaian[]) || [];
+    const submitted = ((s.data ?? []) as unknown as Array<{ peserta_id: string; juri_id: string }>);
     setJuri(juriList);
     setPeserta(pesertaList);
     setPenilaian(penilaianList);
     setKriteria((k.data as Kriteria[]) || []);
+    setSubmissionRows(submitted);
 
     // Hitung nilai per (juri, peserta) via RPC (menerapkan rentang kategori)
     const pairs = new Set<string>();
-    penilaianList.forEach((r) => pairs.add(`${r.juri_id}|${r.peserta_id}`));
+    submitted.forEach((r) => pairs.add(`${r.juri_id}|${r.peserta_id}`));
     const entries = await Promise.all(
       Array.from(pairs).map(async (key) => {
         const [ji, pi] = key.split("|");
@@ -2678,7 +2699,7 @@ function DashboardTab() {
 
   const rows = useMemo(() => {
     return juri.map((j) => {
-      const mine = penilaian.filter((p) => p.juri_id === j.id);
+      const mine = submissionRows.filter((p) => p.juri_id === j.id);
       const scoredIds = new Set(mine.map((p) => p.peserta_id));
       const sudahList = peserta.filter((p) => scoredIds.has(p.id)).sort((a, b) => a.nomor_urut - b.nomor_urut);
       const belumList = peserta.filter((p) => !scoredIds.has(p.id)).sort((a, b) => a.nomor_urut - b.nomor_urut);
@@ -2691,7 +2712,7 @@ function DashboardTab() {
         status: sudahList.length === 0 ? "belum" : belumList.length === 0 && totalPeserta > 0 ? "selesai" : "sebagian",
       };
     });
-  }, [juri, peserta, penilaian, totalPeserta]);
+  }, [juri, peserta, submissionRows, totalPeserta]);
 
   const totalSudahKirim = rows.filter((r) => r.sudah > 0).length;
   const totalBelumKirim = rows.filter((r) => r.sudah === 0).length;
@@ -2804,29 +2825,48 @@ function LihatPenilaianTab() {
   const [juri, setJuri] = useState<Juri[]>([]);
   const [kriteria, setKriteria] = useState<Kriteria[]>([]);
   const [penilaian, setPenilaian] = useState<Penilaian[]>([]);
+  const [nilaiMap, setNilaiMap] = useState<Record<string, number | null>>({});
+  const [rankMap, setRankMap] = useState<Record<string, Ranking>>({});
   const [loading, setLoading] = useState(true);
   const [kategori, setKategori] = useState<string>(LIHAT_ALL);
   const [pesertaPilih, setPesertaPilih] = useState<string>("");
 
   async function load() {
     setLoading(true);
-    const [p, j, k, n] = await Promise.all([
+    const [p, j, k, n, s, rank] = await Promise.all([
       supabase.from("peserta").select("*").order("nomor_urut"),
       supabase.from("juri_public" as any).select("*").order("created_at"),
       supabase.from("kriteria").select("*").order("created_at"),
       supabase.from("penilaian").select("*"),
+      supabase.from("penilaian_submission" as any).select("peserta_id, juri_id"),
+      supabase.rpc("get_ranking" as any),
     ]);
-    setLoading(false);
-    if (p.error) return toast.error(p.error.message);
-    if (j.error) return toast.error(j.error.message);
-    if (k.error) return toast.error(k.error.message);
-    if (n.error) return toast.error(n.error.message);
+    if (p.error || j.error || k.error || n.error || s.error || rank.error) {
+      setLoading(false);
+      return toast.error(p.error?.message || j.error?.message || k.error?.message || n.error?.message || s.error?.message || rank.error?.message || "Gagal memuat data");
+    }
     setPeserta((p.data ?? []) as Peserta[]);
     setJuri(((j.data ?? []) as unknown as Juri[]).filter((x) => x.approved && x.role !== "viewer"));
     setKriteria((k.data ?? []) as Kriteria[]);
     setPenilaian((n.data ?? []) as Penilaian[]);
+    const submitted = ((s.data ?? []) as unknown as Submission[]);
+    const nilaiEntries = await Promise.all(submitted.map(async (row) => {
+      const key = `${row.juri_id}|${row.peserta_id}`;
+      const { data } = await supabase.rpc("hitung_nilai_juri" as any, { _peserta: row.peserta_id, _juri: row.juri_id });
+      return [key, data == null ? null : Number(data)] as const;
+    }));
+    setNilaiMap(Object.fromEntries(nilaiEntries));
+    const nextRankMap: Record<string, Ranking> = {};
+    ((rank.data ?? []) as unknown as Ranking[]).forEach((r) => { nextRankMap[r.peserta_id] = r; });
+    setRankMap(nextRankMap);
+    setLoading(false);
   }
   useEffect(() => { load(); }, []);
+
+  function nilaiJuri(juriId: string, pesertaId: string): number | undefined {
+    const value = nilaiMap[`${juriId}|${pesertaId}`];
+    return value == null ? undefined : value;
+  }
 
   const kategoriList = useMemo(() => {
     const s = new Set<string>();
@@ -2869,16 +2909,17 @@ function LihatPenilaianTab() {
     doc.setFontSize(10); doc.setTextColor(100);
     doc.text(`Kategori: ${p.kategori || "—"}${p.asal ? " • Asal: " + p.asal : ""}`, 40, startY + 18);
     doc.setTextColor(0);
-    const dHead = [["Juri", ...kriteria.map((k) => `${k.nama} (b:${k.bobot})`), "Total Berbobot"]];
+    const dHead = [["Juri", ...kriteria.map((k) => `${k.nama} (b:${k.bobot})`), "Nilai Juri"]];
     const dBody = juri.map((j) => {
       const rec = scoreMap[p.id]?.[j.id];
+      const nilai = nilaiJuri(j.id, p.id);
       return [
         j.nama,
         ...kriteria.map((k) => {
           const v = rec?.per[k.id];
           return v === undefined ? "—" : Number(v).toFixed(2);
         }),
-        rec ? rec.weighted.toFixed(2) : "—",
+        nilai === undefined ? "—" : nilai.toFixed(3),
       ];
     });
     autoTable(doc, {
@@ -2899,20 +2940,20 @@ function LihatPenilaianTab() {
     const head = [[
       "No.", "Peserta", "Kategori",
       ...juri.map((j) => j.nama),
-      "Rata-rata", "Total"
+      "Nilai Akhir", "Total Juri"
     ]];
     const body = pesertaFiltered.map((p) => {
-      const scores = juri.map((j) => scoreMap[p.id]?.[j.id]?.weighted);
+      const scores = juri.map((j) => nilaiJuri(j.id, p.id));
       const valid = scores.filter((s): s is number => typeof s === "number" && s > 0);
-      const rata = valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0;
-      const total = valid.reduce((a, b) => a + b, 0);
+      const nilaiAkhir = rankMap[p.id]?.nilai_akhir;
+      const total = rankMap[p.id]?.juri_total_sum ?? valid.reduce((a, b) => a + b, 0);
       return [
         String(p.nomor_urut),
         p.nama,
         p.kategori || "—",
-        ...scores.map((s) => (s === undefined ? "—" : s.toFixed(2))),
-        valid.length ? rata.toFixed(2) : "—",
-        valid.length ? total.toFixed(2) : "—",
+        ...scores.map((s) => (s === undefined ? "—" : s.toFixed(3))),
+        nilaiAkhir == null ? "—" : Number(nilaiAkhir).toFixed(3),
+        valid.length ? Number(total).toFixed(3) : "—",
       ];
     });
 
@@ -2989,18 +3030,18 @@ function LihatPenilaianTab() {
               {juri.map((j) => (
                 <TableHead key={j.id} className="text-right whitespace-nowrap">{j.nama}</TableHead>
               ))}
-              <TableHead className="text-right w-28">Rata-rata</TableHead>
-              <TableHead className="text-right w-28">Total</TableHead>
+              <TableHead className="text-right w-32">Nilai Akhir</TableHead>
+              <TableHead className="text-right w-28">Total Juri</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading && <TableRow><TableCell colSpan={5 + juri.length} className="text-center py-10 text-muted-foreground">Memuat…</TableCell></TableRow>}
             {!loading && pesertaFiltered.length === 0 && <TableRow><TableCell colSpan={5 + juri.length} className="text-center py-10 text-muted-foreground">Belum ada peserta.</TableCell></TableRow>}
             {pesertaFiltered.map((p) => {
-              const scores = juri.map((j) => scoreMap[p.id]?.[j.id]?.weighted);
+              const scores = juri.map((j) => nilaiJuri(j.id, p.id));
               const valid = scores.filter((s): s is number => typeof s === "number" && s > 0);
-              const rata = valid.length ? valid.reduce((a, b) => a + b, 0) / valid.length : 0;
-              const total = valid.reduce((a, b) => a + b, 0);
+              const nilaiAkhir = rankMap[p.id]?.nilai_akhir;
+              const total = rankMap[p.id]?.juri_total_sum ?? valid.reduce((a, b) => a + b, 0);
               return (
                 <TableRow key={p.id}>
                   <TableCell className="font-mono">{p.nomor_urut}</TableCell>
@@ -3008,11 +3049,11 @@ function LihatPenilaianTab() {
                   <TableCell className="text-muted-foreground">{p.kategori || "—"}</TableCell>
                   {scores.map((s, i) => (
                     <TableCell key={juri[i].id} className="text-right font-mono">
-                      {s === undefined ? <span className="text-muted-foreground italic">—</span> : s.toFixed(2)}
+                      {s === undefined ? <span className="text-muted-foreground italic">—</span> : s.toFixed(3)}
                     </TableCell>
                   ))}
-                  <TableCell className="text-right font-mono">{valid.length ? rata.toFixed(2) : "—"}</TableCell>
-                  <TableCell className="text-right font-mono font-bold text-primary">{valid.length ? total.toFixed(2) : "—"}</TableCell>
+                  <TableCell className="text-right font-mono font-bold text-primary">{nilaiAkhir == null ? "—" : Number(nilaiAkhir).toFixed(3)}</TableCell>
+                  <TableCell className="text-right font-mono">{valid.length ? Number(total).toFixed(3) : "—"}</TableCell>
                 </TableRow>
               );
             })}
@@ -3031,23 +3072,29 @@ function RincianNilaiTab() {
   const [kategoriRows, setKategoriRows] = useState<Kategori[]>([]);
   const [mazmur, setMazmur] = useState<Mazmur[]>([]);
   const [nilaiAkhirMap, setNilaiAkhirMap] = useState<Record<string, number | null>>({});
+  const [nilaiJuriMap, setNilaiJuriMap] = useState<Record<string, number | null>>({});
   const [loading, setLoading] = useState(true);
   const [kategoriFilter, setKategoriFilter] = useState<string>(LIHAT_ALL);
   const [pesertaFilter, setPesertaFilter] = useState<string>(LIHAT_ALL);
 
   async function load() {
     setLoading(true);
-    const [p, j, k, n, kt, m, rank] = await Promise.all([
+    const [p, j, k, n, kt, m, rank, s] = await Promise.all([
       supabase.from("peserta").select("*").order("nomor_urut"),
       supabase.from("juri_public" as any).select("*").order("created_at"),
       supabase.from("kriteria").select("*").order("created_at"),
       supabase.from("penilaian").select("*"),
-      supabase.from("kategori").select("*").order("created_at"),
+      supabase.from("kategori").select("*").order("updated_at", { ascending: false }).order("created_at", { ascending: false }),
       supabase.from("mazmur").select("*"),
       supabase.rpc("get_ranking" as any),
+      supabase.from("penilaian_submission" as any).select("peserta_id, juri_id"),
     ]);
-    setLoading(false);
-    for (const r of [p, j, k, n, kt, m]) if ((r as any).error) return toast.error((r as any).error.message);
+    for (const r of [p, j, k, n, kt, m, rank, s]) {
+      if ((r as any).error) {
+        setLoading(false);
+        return toast.error((r as any).error.message);
+      }
+    }
     setPeserta((p.data ?? []) as Peserta[]);
     setJuri(((j.data ?? []) as unknown as Juri[]).filter((x) => x.approved && x.role !== "viewer"));
     setKriteria((k.data ?? []) as Kriteria[]);
@@ -3057,6 +3104,14 @@ function RincianNilaiTab() {
     const map: Record<string, number | null> = {};
     ((rank.data ?? []) as any[]).forEach((r) => { map[r.peserta_id] = r.nilai_akhir != null ? Number(r.nilai_akhir) : null; });
     setNilaiAkhirMap(map);
+    const submitted = ((s.data ?? []) as unknown as Submission[]);
+    const nilaiEntries = await Promise.all(submitted.map(async (row) => {
+      const key = `${row.juri_id}|${row.peserta_id}`;
+      const { data } = await supabase.rpc("hitung_nilai_juri" as any, { _peserta: row.peserta_id, _juri: row.juri_id });
+      return [key, data == null ? null : Number(data)] as const;
+    }));
+    setNilaiJuriMap(Object.fromEntries(nilaiEntries));
+    setLoading(false);
   }
   useEffect(() => {
     load();
@@ -3077,12 +3132,16 @@ function RincianNilaiTab() {
     [pesertaFiltered, pesertaFilter]
   );
 
-  const totalBobotKriteria = useMemo(() => kriteria.reduce((s, k) => s + Number(k.bobot || 0), 0), [kriteria]);
-
-  function kategoriForKriteria(krNama: string) {
+  function kategoriForPeserta(pesertaKategori: string | null) {
+    const target = (pesertaKategori ?? "").toLowerCase().trim();
     return kategoriRows.find(
-      (k) => (k.kriteria_penilaian ?? "").toLowerCase().trim() === krNama.toLowerCase().trim()
+      (k) => (k.kriteria_peserta ?? k.kategori ?? "").toLowerCase().trim() === target
     );
+  }
+
+  function nilaiJuriRentang(juriId: string, pesertaId: string): number | null {
+    const value = nilaiJuriMap[`${juriId}|${pesertaId}`];
+    return value == null ? null : value;
   }
 
   function buildPesertaPDF(doc: jsPDF, p: Peserta, startFresh: boolean) {
@@ -3119,7 +3178,7 @@ function RincianNilaiTab() {
     juriDenganNilai.forEach((j) => {
       const rows = kriteria.map((k) => {
         const rec = penilaian.find((n) => n.peserta_id === p.id && n.juri_id === j.id && n.kriteria_id === k.id);
-        const kat = kategoriForKriteria(k.nama);
+        const kat = kategoriForPeserta(p.kategori);
         const nilai = rec ? Number(rec.nilai) : null;
         const bobot = Number(k.bobot || 0);
         const berbobot = nilai !== null ? (nilai * bobot) : null;
@@ -3136,7 +3195,7 @@ function RincianNilaiTab() {
       });
       const totalNilai = rows.reduce((s, r) => s + (r[6] === "—" ? 0 : parseFloat(r[6] as string)), 0);
       const totalBerbobot = rows.reduce((s, r) => s + (r[7] === "—" ? 0 : parseFloat(r[7] as string)), 0);
-      const rata = totalBobotKriteria > 0 ? totalBerbobot / totalBobotKriteria : 0;
+      const nilaiJuri = nilaiJuriRentang(j.id, p.id);
 
       const mzId = penilaian.find((n) => n.peserta_id === p.id && n.juri_id === j.id)?.mazmur_id;
       const mz = mazmur.find((x) => x.id === mzId);
@@ -3148,8 +3207,8 @@ function RincianNilaiTab() {
         startY: y + (mz ? 18 : 6),
         head: [["Kriteria (Kategori)", "Kriteria Peserta", "Bobot", "Batas", "Tengah", "Standar", "Nilai", "Berbobot"]],
         body: rows,
-        foot: [["", "", "", "", "", "Total", totalNilai.toFixed(2), totalBerbobot.toFixed(2)],
-               ["", "", "", "", "", "Rata-rata Berbobot", "", rata.toFixed(2)]],
+        foot: [["", "", "", "", "", "Total Mentah", totalNilai.toFixed(2), totalBerbobot.toFixed(2)],
+               ["", "", "", "", "", "Nilai Juri", "", nilaiJuri == null ? "—" : nilaiJuri.toFixed(3)]],
         styles: { fontSize: 8, cellPadding: 3 },
         headStyles: { fillColor: [120, 30, 45], textColor: 255 },
         footStyles: { fillColor: [245, 235, 220], textColor: 40, fontStyle: "bold" },
@@ -3280,16 +3339,16 @@ function RincianNilaiTab() {
                 <div className="space-y-4">
                   {juriDenganNilai.map((j) => {
                     let totalNilai = 0, totalBerbobot = 0;
+                    const nilaiJuri = nilaiJuriRentang(j.id, p.id);
                     const rows = kriteria.map((k) => {
                       const rec = penilaian.find((n) => n.peserta_id === p.id && n.juri_id === j.id && n.kriteria_id === k.id);
-                      const kat = kategoriForKriteria(k.nama);
+                      const kat = kategoriForPeserta(p.kategori);
                       const nilai = rec ? Number(rec.nilai) : null;
                       const bobot = Number(k.bobot || 0);
                       const berbobot = nilai !== null ? nilai * bobot : null;
                       if (nilai !== null) { totalNilai += nilai; totalBerbobot += berbobot!; }
                       return { k, kat, nilai, bobot, berbobot };
                     });
-                    const rata = totalBobotKriteria > 0 ? totalBerbobot / totalBobotKriteria : 0;
                     return (
                       <div key={j.id} className="rounded-md border bg-background overflow-x-auto">
                         <div className="px-3 py-2 text-sm font-medium bg-secondary/60">Juri: {j.nama}{j.jabatan ? ` — ${j.jabatan}` : ""}</div>
@@ -3320,13 +3379,13 @@ function RincianNilaiTab() {
                               </TableRow>
                             ))}
                             <TableRow className="bg-secondary/40 font-semibold">
-                              <TableCell colSpan={6} className="text-right">Total</TableCell>
+                              <TableCell colSpan={6} className="text-right">Total Mentah</TableCell>
                               <TableCell className="text-right font-mono">{totalNilai.toFixed(2)}</TableCell>
                               <TableCell className="text-right font-mono">{totalBerbobot.toFixed(2)}</TableCell>
                             </TableRow>
                             <TableRow className="bg-primary/10 font-semibold">
-                              <TableCell colSpan={7} className="text-right">Rata-rata Berbobot</TableCell>
-                              <TableCell className="text-right font-mono text-primary">{rata.toFixed(2)}</TableCell>
+                              <TableCell colSpan={7} className="text-right">Nilai Juri</TableCell>
+                              <TableCell className="text-right font-mono text-primary">{nilaiJuri == null ? "—" : nilaiJuri.toFixed(3)}</TableCell>
                             </TableRow>
                           </TableBody>
                         </Table>
