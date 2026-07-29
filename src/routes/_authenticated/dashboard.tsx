@@ -3168,7 +3168,8 @@ function LihatPenilaianTab() {
         } else if (nm.includes("perhatian")) {
           const d = detailByKrit[k.id] as any;
           let marks = 0;
-          if (d?.membacaPerikop === true) marks += 1;
+          const ctVal = d?.clearText ?? d?.membacaPerikop;
+          if (ctVal === false) marks += 1;
           (d?.aspek ?? []).forEach((a: any) => (a?.ayat ?? []).forEach((b: any) => { if (b) marks += 1; }));
           const factor = Math.min(1, marks / 15);
           const kontrib = factor * Number(k.bobot || 0);
