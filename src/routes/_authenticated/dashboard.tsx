@@ -1605,11 +1605,13 @@ function PenilaianTab() {
           return;
         }
       }
-      const { data } = await supabase.rpc("get_ranking" as any);
+      // Sumber kebenaran: baris di penilaian_submission (juri sudah klik Kirim).
+      const { data: subRows } = await supabase
+        .from("penilaian_submission" as any)
+        .select("juri_id")
+        .eq("peserta_id", lockedPesertaId);
       if (stopped) return;
-      const rows = (data ?? []) as unknown as Ranking[];
-      const row = rows.find(r => r.peserta_id === lockedPesertaId);
-      const done = row ? Number(row.jumlah_juri) : 0;
+      const done = Array.isArray(subRows) ? subRows.length : 0;
       setJudgesDoneForPeserta(done);
 
       // Deteksi perbedaan input SELAMA menunggu (peserta/mazmur berbeda antar juri)
