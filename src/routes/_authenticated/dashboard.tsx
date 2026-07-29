@@ -39,8 +39,35 @@ type Submission = { peserta_id: string; juri_id: string };
 function App() {
   // Single-device enforcement dijalankan di layout `_authenticated/route.tsx`
   // agar berlaku untuk semua halaman (dashboard, operator, inspektur).
+  const [roles, setRoles] = useState<{
+    isAdm: boolean; isPan: boolean; isJuri: boolean; isInsp: boolean; isKetua: boolean;
+  } | null>(null);
 
+  useEffect(() => {
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      const uid = u.user?.id;
+      if (!uid) return;
+      const [{ data: isAdm }, { data: isPan }, { data: isJuri }, { data: isInsp }, { data: isKetua }] = await Promise.all([
+        supabase.rpc("has_role", { _user_id: uid, _role: "admin" as any }),
+        supabase.rpc("has_role", { _user_id: uid, _role: "panitia" as any }),
+        supabase.rpc("has_role", { _user_id: uid, _role: "juri" as any }),
+        supabase.rpc("has_role", { _user_id: uid, _role: "inspektur" as any }),
+        supabase.rpc("has_role", { _user_id: uid, _role: "ketua_juri" as any }),
+      ]);
+      // Role tunggal → arahkan ke halaman khusus role tersebut
+      if (!isAdm) {
+        if (isPan && !isJuri && !isInsp && !isKetua) { window.location.href = "/operator"; return; }
+        if (isInsp && !isPan && !isJuri && !isKetua) { window.location.href = "/inspektur"; return; }
+      }
+      setRoles({ isAdm: !!isAdm, isPan: !!isPan, isJuri: !!isJuri, isInsp: !!isInsp, isKetua: !!isKetua });
+    })();
+  }, []);
 
+  if (!roles) return <div className="p-8 text-center text-muted-foreground">Memuat…</div>;
+
+  // Juri murni (bukan admin/panitia/inspektur/ketua) → hanya tab Penilaian
+  const juriOnly = roles.isJuri && !roles.isAdm && !roles.isPan && !roles.isInsp && !roles.isKetua;
 
   return (
     <div className="min-h-screen">
@@ -63,35 +90,45 @@ function App() {
       />
       <Header />
       <main className="mx-auto max-w-6xl px-4 pb-16">
-        <div className="flex justify-end pt-4"><ResetAllPenilaianButton /></div>
-        <Tabs defaultValue="dashboard" className="w-full">
-          <TabsList className="grid w-full grid-cols-3 sm:grid-cols-11 h-auto bg-secondary/60 p-1">
-            <TabsTrigger value="dashboard" className="gap-2"><LayoutDashboard className="size-4" />Dashboard</TabsTrigger>
-            <TabsTrigger value="ranking" className="gap-2"><Trophy className="size-4" />Ranking</TabsTrigger>
-            <TabsTrigger value="lihat" className="gap-2"><FileText className="size-4" />Lihat Nilai</TabsTrigger>
-            <TabsTrigger value="rincian" className="gap-2"><FileText className="size-4" />Rincian Nilai</TabsTrigger>
-            <TabsTrigger value="posisi" className="gap-2"><Trophy className="size-4" />Posisi</TabsTrigger>
-            <TabsTrigger value="penilaian" className="gap-2"><ClipboardCheck className="size-4" />Penilaian</TabsTrigger>
-            <TabsTrigger value="peserta" className="gap-2"><Users className="size-4" />Peserta</TabsTrigger>
-            <TabsTrigger value="juri" className="gap-2"><Gavel className="size-4" />Juri</TabsTrigger>
-            <TabsTrigger value="kriteria" className="gap-2"><ListChecks className="size-4" />Kriteria</TabsTrigger>
-            <TabsTrigger value="kategori" className="gap-2"><Tags className="size-4" />Kategori</TabsTrigger>
-            <TabsTrigger value="mazmur" className="gap-2"><BookOpenText className="size-4" />Mazmur</TabsTrigger>
-          </TabsList>
-          <TabsContent value="dashboard"><DashboardTab /></TabsContent>
-          <TabsContent value="ranking"><RankingTab /></TabsContent>
-          <TabsContent value="lihat"><LihatPenilaianTab /></TabsContent>
-          <TabsContent value="rincian"><RincianNilaiTab /></TabsContent>
+        {roles.isAdm && (
+          <div className="flex justify-end pt-4"><ResetAllPenilaianButton /></div>
+        )}
+        {juriOnly ? (
+          <Tabs defaultValue="penilaian" className="w-full">
+            <TabsList className="grid w-full grid-cols-1 h-auto bg-secondary/60 p-1">
+              <TabsTrigger value="penilaian" className="gap-2"><ClipboardCheck className="size-4" />Penilaian</TabsTrigger>
+            </TabsList>
+            <TabsContent value="penilaian"><PenilaianTab /></TabsContent>
+          </Tabs>
+        ) : (
+          <Tabs defaultValue="dashboard" className="w-full">
+            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-11 h-auto bg-secondary/60 p-1">
+              <TabsTrigger value="dashboard" className="gap-2"><LayoutDashboard className="size-4" />Dashboard</TabsTrigger>
+              <TabsTrigger value="ranking" className="gap-2"><Trophy className="size-4" />Ranking</TabsTrigger>
+              <TabsTrigger value="lihat" className="gap-2"><FileText className="size-4" />Lihat Nilai</TabsTrigger>
+              <TabsTrigger value="rincian" className="gap-2"><FileText className="size-4" />Rincian Nilai</TabsTrigger>
+              <TabsTrigger value="posisi" className="gap-2"><Trophy className="size-4" />Posisi</TabsTrigger>
+              <TabsTrigger value="penilaian" className="gap-2"><ClipboardCheck className="size-4" />Penilaian</TabsTrigger>
+              <TabsTrigger value="peserta" className="gap-2"><Users className="size-4" />Peserta</TabsTrigger>
+              <TabsTrigger value="juri" className="gap-2"><Gavel className="size-4" />Juri</TabsTrigger>
+              <TabsTrigger value="kriteria" className="gap-2"><ListChecks className="size-4" />Kriteria</TabsTrigger>
+              <TabsTrigger value="kategori" className="gap-2"><Tags className="size-4" />Kategori</TabsTrigger>
+              <TabsTrigger value="mazmur" className="gap-2"><BookOpenText className="size-4" />Mazmur</TabsTrigger>
+            </TabsList>
+            <TabsContent value="dashboard"><DashboardTab /></TabsContent>
+            <TabsContent value="ranking"><RankingTab /></TabsContent>
+            <TabsContent value="lihat"><LihatPenilaianTab /></TabsContent>
+            <TabsContent value="rincian"><RincianNilaiTab /></TabsContent>
 
-          <TabsContent value="posisi"><PosisiTab /></TabsContent>
-          <TabsContent value="penilaian"><PenilaianTab /></TabsContent>
-          <TabsContent value="peserta"><PesertaTab /></TabsContent>
-          <TabsContent value="juri"><JuriTab /></TabsContent>
-          <TabsContent value="kriteria"><KriteriaTab /></TabsContent>
-          <TabsContent value="kategori"><KategoriTab /></TabsContent>
-          <TabsContent value="mazmur"><MazmurTab /></TabsContent>
-        </Tabs>
-
+            <TabsContent value="posisi"><PosisiTab /></TabsContent>
+            <TabsContent value="penilaian"><PenilaianTab /></TabsContent>
+            <TabsContent value="peserta"><PesertaTab /></TabsContent>
+            <TabsContent value="juri"><JuriTab /></TabsContent>
+            <TabsContent value="kriteria"><KriteriaTab /></TabsContent>
+            <TabsContent value="kategori"><KategoriTab /></TabsContent>
+            <TabsContent value="mazmur"><MazmurTab /></TabsContent>
+          </Tabs>
+        )}
       </main>
     </div>
   );
@@ -2010,6 +2047,20 @@ function PenilaianTab() {
               <Input readOnly value={selectedMazmur ? String(selectedMazmur.jumlah_ayat) : ""} placeholder="—" className="bg-muted/50" />
             </div>
           </div>
+
+          {/* Nilai Akhir juri ini (muncul saat seluruh kriteria terisi) */}
+          {nilaiJuriPreview !== null && (
+            <div className="mb-6 rounded-xl border-2 border-accent/50 bg-gradient-to-br from-accent/10 via-card to-primary/5 p-4 flex items-center justify-between shadow-sm">
+              <div>
+                <div className="text-xs uppercase tracking-[0.25em] text-accent font-semibold">Nilai Akhir Anda</div>
+                <div className="text-xs text-muted-foreground mt-0.5">Perhitungan otomatis dari seluruh kriteria yang telah Anda nilai.</div>
+              </div>
+              <div className="font-serif text-4xl font-bold text-primary tabular-nums">
+                {nilaiJuriPreview.toFixed(3)}
+              </div>
+            </div>
+          )}
+
 
           <div className="mb-2">
             <Label className="text-base">Pilih Kriteria</Label>
