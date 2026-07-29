@@ -2048,6 +2048,20 @@ function PenilaianTab() {
             </div>
           </div>
 
+          {/* Nilai Akhir juri ini (muncul saat seluruh kriteria terisi) */}
+          {nilaiJuriPreview !== null && (
+            <div className="mb-6 rounded-xl border-2 border-accent/50 bg-gradient-to-br from-accent/10 via-card to-primary/5 p-4 flex items-center justify-between shadow-sm">
+              <div>
+                <div className="text-xs uppercase tracking-[0.25em] text-accent font-semibold">Nilai Akhir Anda</div>
+                <div className="text-xs text-muted-foreground mt-0.5">Perhitungan otomatis dari seluruh kriteria yang telah Anda nilai.</div>
+              </div>
+              <div className="font-serif text-4xl font-bold text-primary tabular-nums">
+                {nilaiJuriPreview.toFixed(3)}
+              </div>
+            </div>
+          )}
+
+
           <div className="mb-2">
             <Label className="text-base">Pilih Kriteria</Label>
           </div>
