@@ -1256,6 +1256,12 @@ function PenilaianTab() {
   };
   const [perhatianDiscrepancy, setPerhatianDiscrepancy] = useState<PerhatianDiscrepancyReport | null>(null);
 
+  // Masukan Juri per ayat — bukan bagian penilaian, hanya lampiran rincian nilai
+  const [openMasukan, setOpenMasukan] = useState(false);
+  const [masukanValues, setMasukanValues] = useState<string[]>([]);
+  const [savingMasukan, setSavingMasukan] = useState(false);
+
+
   // Sesi aktif dari Panitia/Operator Lomba — juri tidak boleh memilih peserta/mazmur secara manual
   const [activeSession, setActiveSession] = useState<{ id: string; peserta_id: string; mazmur_id: string | null } | null>(null);
   useEffect(() => {
