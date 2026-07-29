@@ -11,14 +11,9 @@ async function assertAdmin(context: { supabase: any; userId: string }) {
 }
 
 export const requestPasswordReset = createServerFn({ method: "POST" })
-  .inputValidator((data: { identifier: string; newPassword: string }) => {
+  .inputValidator((data: { identifier: string }) => {
     if (!data?.identifier?.trim()) throw new Error("Email atau nama wajib diisi");
-    if (!data?.newPassword || data.newPassword.length < 8)
-      throw new Error("Kata sandi baru minimal 8 karakter");
-    return {
-      identifier: data.identifier.trim(),
-      newPassword: data.newPassword,
-    };
+    return { identifier: data.identifier.trim() };
   })
   .handler(async ({ data }) => {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
@@ -27,32 +22,23 @@ export const requestPasswordReset = createServerFn({ method: "POST" })
     // meskipun tidak ketemu, agar tidak membocorkan siapa yang terdaftar.
     let userId: string | null = null;
     const isEmail = data.identifier.includes("@");
-    if (isEmail) {
-      const { data: juri } = await supabaseAdmin
-        .from("juri")
-        .select("user_id")
-        .ilike("email", data.identifier)
-        .maybeSingle();
-      userId = (juri as any)?.user_id ?? null;
-    } else {
-      const { data: juri } = await supabaseAdmin
-        .from("juri")
-        .select("user_id")
-        .ilike("nama", data.identifier)
-        .maybeSingle();
-      userId = (juri as any)?.user_id ?? null;
-    }
+    const { data: juri } = await supabaseAdmin
+      .from("juri")
+      .select("user_id")
+      .ilike(isEmail ? "email" : "nama", data.identifier)
+      .maybeSingle();
+    userId = (juri as any)?.user_id ?? null;
 
     const { error } = await supabaseAdmin.from("password_reset_request").insert({
       user_id: userId,
       identifier: data.identifier,
-      new_password: data.newPassword,
       status: "pending",
     });
     if (error) throw new Error(error.message);
 
     return { ok: true };
   });
+
 
 export const listPasswordResets = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
