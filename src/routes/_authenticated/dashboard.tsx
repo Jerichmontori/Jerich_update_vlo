@@ -538,6 +538,8 @@ function JuriTab() {
   }
 
   return (
+    <>
+    <PendingPasswordResets />
     <SectionCard title="Dewan Juri" description="Daftar pendaftar juri dari halaman beranda. Setujui akun agar dapat login.">
       {/* Mobile: card list */}
       <div className="grid gap-3 md:hidden">
