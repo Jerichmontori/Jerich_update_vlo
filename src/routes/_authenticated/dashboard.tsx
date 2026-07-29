@@ -1359,6 +1359,50 @@ function PenilaianTab() {
     mengurangi_kata: "Mengurangi kata",
   };
 
+  // VAR manual — pending approval untuk juri
+  type VarManualPending = { session_id: string; peserta_id: string; peserta_nama: string; nomor_urut: number; alasan: string; sudah_vote: boolean };
+  const [varManualPending, setVarManualPending] = useState<VarManualPending[]>([]);
+  const [varManualLoading, setVarManualLoading] = useState<string | null>(null);
+  useEffect(() => {
+    let stopped = false;
+    async function poll() {
+      const { data, error } = await supabase.rpc("get_var_manual_pending" as any);
+      if (stopped || error) return;
+      setVarManualPending(((data as any[]) ?? []) as VarManualPending[]);
+    }
+    poll();
+    const id = setInterval(poll, 3000);
+    return () => { stopped = true; clearInterval(id); };
+  }, []);
+  async function voteVarManual(sessionId: string, setuju: boolean) {
+    setVarManualLoading(sessionId);
+    try {
+      const { data, error } = await supabase.rpc("juri_vote_var" as any, { _session: sessionId, _setuju: setuju });
+      if (error) throw error;
+      const status = (data as any)?.status;
+      if (status === "disetujui_juri") {
+        toast.success("✦ VAR disetujui semua juri", { description: "Form penilaian dibuka kembali — silakan perbarui nilai dan kirim ulang." });
+        setSubmittedFor(null);
+        setMySubmittedIds(prev => {
+          const next = new Set(prev);
+          const target = varManualPending.find(v => v.session_id === sessionId);
+          if (target) next.delete(target.peserta_id);
+          return next;
+        });
+        loadAll({ restoreSubmissionState: false });
+      } else if (status === "ditolak_juri") {
+        toast.info("Pengajuan VAR ditolak", { description: "Salah satu juri menolak; nilai tetap sebagaimana adanya." });
+      } else {
+        toast.success(setuju ? "Persetujuan Anda tercatat" : "Penolakan Anda tercatat");
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal mengirim suara");
+    } finally {
+      setVarManualLoading(null);
+    }
+  }
+
+
 
 
 
@@ -2589,6 +2633,56 @@ function PenilaianTab() {
               Kriteria ini belum memiliki panduan grade khusus. Tutup dialog dan gunakan kriteria standar (Vokal, Penghayatan, Intonasi, Penampilan, atau Catatan Juri).
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Dialog Persetujuan VAR Manual dari Inspektur */}
+      <Dialog open={varManualPending.length > 0} onOpenChange={() => { /* modal — tidak bisa ditutup manual */ }}>
+        <DialogContent className="max-w-lg" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-rose-800">
+              <AlertTriangle className="size-5 text-rose-600" /> Permintaan Persetujuan VAR
+            </DialogTitle>
+            <DialogDescription>
+              Inspektur mengajukan VAR. Persetujuan Anda dibutuhkan sebelum penilaian dibuka kembali.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+            {varManualPending.map((v) => (
+              <div key={v.session_id} className="rounded-lg border border-rose-200 bg-rose-50/50 p-4 space-y-3">
+                <div>
+                  <div className="text-xs uppercase tracking-wide text-rose-700 font-semibold">Peserta No. {v.nomor_urut}</div>
+                  <div className="text-base font-semibold text-foreground">{v.peserta_nama}</div>
+                </div>
+                <div>
+                  <div className="text-xs font-semibold text-muted-foreground mb-1">Alasan Inspektur</div>
+                  <div className="text-sm bg-background rounded p-2 border">{v.alasan || <span className="italic text-muted-foreground">—</span>}</div>
+                </div>
+                {v.sudah_vote ? (
+                  <div className="text-xs text-emerald-700 italic">✓ Suara Anda sudah tercatat — menunggu juri lain.</div>
+                ) : (
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={varManualLoading === v.session_id}
+                      onClick={() => voteVarManual(v.session_id, false)}
+                    >
+                      Tolak
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="bg-rose-600 hover:bg-rose-700 text-white"
+                      disabled={varManualLoading === v.session_id}
+                      onClick={() => voteVarManual(v.session_id, true)}
+                    >
+                      {varManualLoading === v.session_id ? "Mengirim…" : "Setujui VAR"}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
         </DialogContent>
       </Dialog>
     </SectionCard>

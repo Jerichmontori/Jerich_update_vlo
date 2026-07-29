@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
-import { Shield, RefreshCw, BookOpenText, AlertTriangle, Eye } from "lucide-react";
+import { Shield, RefreshCw, BookOpenText, AlertTriangle, Eye, Square, Siren, CheckCircle2, XCircle } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/inspektur")({
   component: InspekturPage,
@@ -91,6 +91,19 @@ function InspekturPage() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [confirmTarget, setConfirmTarget] = useState<{ pesertaId: string; nama: string; catatan: string | null; source: "row" | "detail" } | null>(null);
   const [confirmLoading, setConfirmLoading] = useState(false);
+  // Ajukan VAR manual
+  const [ajukanVarOpen, setAjukanVarOpen] = useState(false);
+  const [ajukanVarTarget, setAjukanVarTarget] = useState<{ pesertaId: string; nama: string } | null>(null);
+  const [ajukanVarAlasan, setAjukanVarAlasan] = useState("");
+  const [ajukanVarLoading, setAjukanVarLoading] = useState(false);
+  // Akhiri sesi
+  const [akhiriOpen, setAkhiriOpen] = useState(false);
+  const [akhiriTarget, setAkhiriTarget] = useState<{ pesertaId: string; nama: string } | null>(null);
+  const [akhiriLoading, setAkhiriLoading] = useState(false);
+  // Sesi aktif untuk peserta mana? map peserta_id -> sesi active
+  const [activeSesiPesertaIds, setActiveSesiPesertaIds] = useState<Set<string>>(new Set());
+  // Progres juri di detail dialog
+  const [progresJuri, setProgresJuri] = useState<any[] | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -122,10 +135,11 @@ function InspekturPage() {
         window.location.href = "/auth";
         return;
       }
-      const [r, m, v] = await Promise.all([
+      const [r, m, v, sa] = await Promise.all([
         supabase.rpc("inspektur_ringkasan" as any),
         supabase.rpc("inspektur_monitor" as any),
         supabase.rpc("inspektur_list_var" as any),
+        supabase.from("sesi_penilaian" as any).select("peserta_id").eq("status", "active"),
       ]);
       if (r.error) throw r.error;
       if (m.error) throw m.error;
@@ -133,6 +147,7 @@ function InspekturPage() {
       if (r.data && (r.data as any[])[0]) setRingkasan((r.data as any[])[0] as Ringkasan);
       setMonitor(((m.data as any[]) ?? []) as MonitorRow[]);
       setVars(((v.data as any[]) ?? []) as VarRow[]);
+      setActiveSesiPesertaIds(new Set(((sa.data as any[] | null) ?? []).map((x: any) => x.peserta_id)));
     } catch (err) {
       const message = err instanceof Error ? err.message : "Gagal memuat data";
       if (message.toLowerCase().includes("permission denied") || message.toLowerCase().includes("forbidden")) {
@@ -156,7 +171,11 @@ function InspekturPage() {
     setDetailPeserta(row);
     setDetailData(null);
     setCatatan("");
+    setProgresJuri(null);
     setDetailOpen(true);
+    supabase.rpc("inspektur_progres_juri" as any, { _peserta: row.peserta_id }).then(({ data, error }) => {
+      if (!error) setProgresJuri((data as any[]) ?? []);
+    });
     const { data: sessionData } = await supabase.auth.getSession();
     if (!sessionData.session) {
       toast.error("Sesi login berakhir. Silakan masuk ulang.");
@@ -256,6 +275,52 @@ function InspekturPage() {
     }
   }
 
+  function openAjukanVar(pesertaId: string, nama: string) {
+    setAjukanVarTarget({ pesertaId, nama });
+    setAjukanVarAlasan("");
+    setAjukanVarOpen(true);
+  }
+  async function handleAjukanVar() {
+    if (!ajukanVarTarget) return;
+    if (!ajukanVarAlasan.trim()) { toast.error("Alasan wajib diisi"); return; }
+    setAjukanVarLoading(true);
+    try {
+      const { error } = await supabase.rpc("inspektur_ajukan_var" as any, {
+        _peserta: ajukanVarTarget.pesertaId,
+        _alasan: ajukanVarAlasan.trim(),
+      });
+      if (error) throw error;
+      toast.success("Pengajuan VAR dikirim — menunggu persetujuan semua juri");
+      setAjukanVarOpen(false);
+      loadAll();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal mengajukan VAR");
+    } finally {
+      setAjukanVarLoading(false);
+    }
+  }
+
+  function openAkhiri(pesertaId: string, nama: string) {
+    setAkhiriTarget({ pesertaId, nama });
+    setAkhiriOpen(true);
+  }
+  async function handleAkhiri() {
+    if (!akhiriTarget) return;
+    setAkhiriLoading(true);
+    try {
+      const { error } = await supabase.rpc("inspektur_akhiri_sesi" as any, { _peserta: akhiriTarget.pesertaId });
+      if (error) throw error;
+      toast.success("Sesi diakhiri · status peserta ditetapkan Final");
+      setAkhiriOpen(false);
+      loadAll();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal mengakhiri sesi");
+    } finally {
+      setAkhiriLoading(false);
+    }
+  }
+
+
 
   if (allowed === null) return null;
   if (!allowed) return null;
@@ -336,6 +401,24 @@ function InspekturPage() {
                       <TableCell>{r.juri_done} / {r.juri_total} juri</TableCell>
                       <TableCell><Badge className={v.className}>{v.label}</Badge></TableCell>
                       <TableCell className="text-right space-x-2 whitespace-nowrap">
+                        {activeSesiPesertaIds.has(r.peserta_id) && (
+                          <>
+                            <Button
+                              size="sm"
+                              className="bg-rose-600 hover:bg-rose-700 text-white"
+                              onClick={() => openAjukanVar(r.peserta_id, r.nama)}
+                            >
+                              <Siren className="size-4 mr-1" /> Ajukan VAR
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              onClick={() => openAkhiri(r.peserta_id, r.nama)}
+                            >
+                              <Square className="size-4 mr-1" /> Akhiri
+                            </Button>
+                          </>
+                        )}
                         {hasActiveVar && (
                           <Button
                             size="sm"
@@ -506,6 +589,51 @@ function InspekturPage() {
                   );
                 })()}
 
+                {/* Progres Juri */}
+                <div>
+                  <div className="text-sm font-semibold mb-2 flex items-center gap-1">
+                    <CheckCircle2 className="size-4 text-emerald-600" /> Progres Juri
+                  </div>
+                  {progresJuri === null ? (
+                    <div className="text-xs text-muted-foreground">Memuat…</div>
+                  ) : progresJuri.length === 0 ? (
+                    <div className="text-xs text-muted-foreground">Belum ada juri terdaftar.</div>
+                  ) : (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Juri</TableHead>
+                          <TableHead>Status Kirim</TableHead>
+                          <TableHead className="text-right">Nilai Juri</TableHead>
+                          <TableHead className="text-right">Kriteria Terisi</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {progresJuri.map((row: any) => (
+                          <TableRow key={row.juri_id}>
+                            <TableCell className="font-medium">{row.juri_nama}</TableCell>
+                            <TableCell>
+                              {row.sudah_kirim ? (
+                                <Badge className="bg-emerald-600 text-white"><CheckCircle2 className="size-3 mr-1" />Sudah Kirim</Badge>
+                              ) : (
+                                <Badge className="bg-muted text-foreground"><XCircle className="size-3 mr-1" />Belum Kirim</Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right font-mono">
+                              {row.nilai_juri == null ? <span className="text-muted-foreground italic">—</span> : Number(row.nilai_juri).toFixed(3)}
+                            </TableCell>
+                            <TableCell className="text-right text-xs text-muted-foreground">
+                              {Array.isArray(row.penilaian) ? row.penilaian.length : 0} kriteria
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  )}
+                </div>
+
+
+
 
                 {detailData.penilaian && Array.isArray(detailData.penilaian) && (
                   <div>
@@ -635,6 +763,62 @@ function InspekturPage() {
               disabled={confirmLoading}
             >
               {confirmLoading ? "Memproses…" : <><AlertTriangle className="size-4 mr-1" /> Ya, Buka Perbaikan</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Ajukan VAR Manual */}
+      <Dialog open={ajukanVarOpen} onOpenChange={setAjukanVarOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-rose-800">
+              <Siren className="size-5 text-rose-600" /> Ajukan VAR
+            </DialogTitle>
+            <DialogDescription>
+              Ajukan VAR manual untuk <b>{ajukanVarTarget?.nama}</b>. Semua juri akan dimintai persetujuan;
+              bila disetujui semua, form penilaian dibuka kembali agar juri dapat mengubah nilai dan mengirim ulang.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <div className="text-sm font-medium">Alasan pengajuan VAR</div>
+            <Textarea
+              value={ajukanVarAlasan}
+              onChange={(e) => setAjukanVarAlasan(e.target.value)}
+              placeholder="Tuliskan alasan pengajuan VAR (wajib)…"
+              rows={4}
+            />
+          </div>
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button variant="outline" onClick={() => setAjukanVarOpen(false)} disabled={ajukanVarLoading}>Batal</Button>
+            <Button
+              className="bg-rose-600 hover:bg-rose-700 text-white"
+              onClick={handleAjukanVar}
+              disabled={ajukanVarLoading || !ajukanVarAlasan.trim()}
+            >
+              {ajukanVarLoading ? "Mengirim…" : <><Siren className="size-4 mr-1" /> Kirim Pengajuan VAR</>}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Akhiri Sesi & Finalkan */}
+      <Dialog open={akhiriOpen} onOpenChange={setAkhiriOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <div className="mx-auto mb-2 grid place-items-center size-12 rounded-full bg-destructive/10 text-destructive ring-4 ring-destructive/20">
+              <Square className="size-6" />
+            </div>
+            <DialogTitle className="text-center font-serif text-xl">Akhiri Sesi & Finalkan?</DialogTitle>
+            <DialogDescription className="text-center">
+              Sesi penilaian untuk <b className="text-foreground">{akhiriTarget?.nama}</b> akan diakhiri dan
+              status peserta ditetapkan menjadi <b>Final</b>. Semua VAR aktif untuk peserta ini juga akan difinalkan.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="sm:justify-center gap-2">
+            <Button variant="outline" onClick={() => setAkhiriOpen(false)} disabled={akhiriLoading}>Batal</Button>
+            <Button variant="destructive" onClick={handleAkhiri} disabled={akhiriLoading} className="gap-2">
+              <Square className="size-4" /> {akhiriLoading ? "Memproses…" : "Ya, Akhiri & Finalkan"}
             </Button>
           </DialogFooter>
         </DialogContent>
