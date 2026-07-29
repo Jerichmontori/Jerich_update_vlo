@@ -1117,8 +1117,8 @@ function KriteriaTab() {
                       value={edits[k.id] ?? ""}
                       onChange={e => setEdits(prev => ({ ...prev, [k.id]: e.target.value }))}
                     />
-                    <span className="text-muted-foreground text-sm">%</span>
                   </div>
+
                 </TableCell>
                 <TableCell className="text-right">
                   <Button size="icon" variant="ghost" onClick={() => hapus(k.id)}>
