@@ -1627,6 +1627,7 @@ function PenilaianTab() {
         const report = await checkDiscrepancy(lockedPesertaId);
         if (report) {
           stopped = true;
+          await ensureMinDisplay();
           setDiscrepancy(report);
           setSubmittedFor(current => current === lockedPesertaId ? null : current);
           setPendingDiscrepancy(null);
@@ -1637,6 +1638,7 @@ function PenilaianTab() {
         const perhatianReport = await checkPerhatianDiscrepancy(lockedPesertaId);
         if (perhatianReport) {
           stopped = true;
+          await ensureMinDisplay();
           setPerhatianDiscrepancy(perhatianReport);
           setSubmittedFor(current => current === lockedPesertaId ? null : current);
           setPendingDiscrepancy(null);
@@ -1644,6 +1646,7 @@ function PenilaianTab() {
           return;
         }
         stopped = true;
+        await ensureMinDisplay();
         toast.success("✦ Semua juri sudah menilai", {
           description: "Silahkan melakukan penilaian peserta selanjutnya.",
         });
