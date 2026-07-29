@@ -30,7 +30,7 @@ type PenilaianDetail =
   | { type: "perhatian"; membacaPerikop: boolean | null; aspek: { nama: string; ayat: boolean[]; ditandai: number[] }[] }
   | null;
 type Penilaian = { id: string; peserta_id: string; juri_id: string; kriteria_id: string; nilai: number; mazmur_id: string | null; detail?: PenilaianDetail; created_at?: string };
-type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: string | null; total_skor: number; rata_rata: number; jumlah_juri: number };
+type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: string | null; total_skor: number; rata_rata: number; jumlah_juri: number; nilai_akhir: number | null; var_status?: string | null; juri_total_sum?: number | null; juri_spread?: number | null };
 type Kategori = { id: string; kategori: string | null; batas_atas: number; batas_bawah: number; kriteria_penilaian: string | null; kriteria_peserta: string | null; bobot: number; nilai_tengah: number; nilai_standart: number };
 
 function App() {
@@ -821,6 +821,7 @@ function KategoriTab() {
     e.preventDefault();
     if (!kriteriaPeserta) return toast.error("Kriteria Peserta wajib dipilih");
     const { error } = await supabase.from("kategori").insert({
+      kategori: kriteriaPeserta,
       kriteria_peserta: kriteriaPeserta,
       batas_atas: Number(batasAtas) || 0,
       batas_bawah: Number(batasBawah) || 0,
@@ -2459,15 +2460,15 @@ function RankingTab() {
               <TableHead>Asal</TableHead>
               <TableHead>Kategori</TableHead>
               <TableHead className="text-center w-24">Juri</TableHead>
-              <TableHead className="text-right w-32">Rata-rata</TableHead>
-              <TableHead className="text-right w-32">Total Skor</TableHead>
+              <TableHead className="text-right w-36">Nilai Akhir</TableHead>
+              <TableHead className="text-right w-32">Total Juri</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading && <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">Memuat…</TableCell></TableRow>}
             {!loading && filtered.length === 0 && <TableRow><TableCell colSpan={8} className="text-center py-10 text-muted-foreground">Belum ada penilaian.</TableCell></TableRow>}
             {filtered.map((r, i) => {
-              const belum = !(Number(r.total_skor) > 0);
+              const belum = r.nilai_akhir == null || Number(r.jumlah_juri) === 0;
               const kat = kategoriMap[r.peserta_id];
               return (
               <TableRow key={r.peserta_id} className={!belum && i < 3 ? "bg-accent/10" : ""}>
@@ -2477,8 +2478,8 @@ function RankingTab() {
                 <TableCell className="text-muted-foreground">{r.asal || "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{kat || "—"}</TableCell>
                 <TableCell className="text-center">{belum ? <span className="text-muted-foreground italic">belum tampil</span> : r.jumlah_juri}</TableCell>
-                <TableCell className="text-right font-mono">{belum ? <span className="text-muted-foreground italic">belum tampil</span> : Number(r.rata_rata).toFixed(2)}</TableCell>
-                <TableCell className="text-right font-mono font-bold text-primary">{belum ? <span className="text-muted-foreground italic font-normal">belum tampil</span> : Number(r.total_skor).toFixed(2)}</TableCell>
+                <TableCell className="text-right font-mono font-bold text-primary">{belum ? <span className="text-muted-foreground italic font-normal">belum tampil</span> : Number(r.nilai_akhir).toFixed(3)}</TableCell>
+                <TableCell className="text-right font-mono">{belum ? <span className="text-muted-foreground italic">belum tampil</span> : Number(r.juri_total_sum ?? r.total_skor).toFixed(3)}</TableCell>
               </TableRow>
               );
             })}
@@ -2517,8 +2518,8 @@ function PosisiTab() {
   const grouped = useMemo(() => {
     const enrichedAll = peserta.map((p) => {
       const r = rankMap[p.id];
-      const total = Number(r?.total_skor ?? 0);
-      return { ...p, total, rata: Number(r?.rata_rata ?? 0), juri: Number(r?.jumlah_juri ?? 0), scored: !!r && total > 0 };
+      const nilai = r?.nilai_akhir != null ? Number(r.nilai_akhir) : null;
+      return { ...p, nilai, total: Number(r?.juri_total_sum ?? r?.total_skor ?? 0), spread: Number(r?.juri_spread ?? 0), juri: Number(r?.jumlah_juri ?? 0), scored: nilai != null && Number(r?.jumlah_juri ?? 0) > 0 };
     });
     const scoredSorted = enrichedAll
       .filter((r) => r.scored)
@@ -2526,7 +2527,13 @@ function PosisiTab() {
     const chunks: { key: string; label: string; range: string; list: typeof scoredSorted }[] = [];
     for (let i = 0; i < scoredSorted.length; i += 10) {
       const slice = scoredSorted.slice(i, i + 10);
-      const ranked = [...slice].sort((a, b) => (b.total !== a.total ? b.total - a.total : a.nomor_urut - b.nomor_urut));
+      const ranked = [...slice].sort((a, b) => {
+        const ar = Math.round(Number(a.nilai ?? 0) * 1000), br = Math.round(Number(b.nilai ?? 0) * 1000);
+        if (br !== ar) return br - ar;
+        if (b.total !== a.total) return b.total - a.total;
+        if (b.spread !== a.spread) return b.spread - a.spread;
+        return a.nomor_urut - b.nomor_urut;
+      });
       const first = slice[0]?.nomor_urut ?? i + 1;
       const last = slice[slice.length - 1]?.nomor_urut ?? i + slice.length;
       const idx = Math.floor(i / 10) + 1;
@@ -2565,8 +2572,8 @@ function PosisiTab() {
                     <TableHead>Peserta</TableHead>
                     <TableHead>Asal</TableHead>
                     <TableHead className="text-center w-24">Juri</TableHead>
-                    <TableHead className="text-right w-32">Rata-rata</TableHead>
-                    <TableHead className="text-right w-32">Total Skor</TableHead>
+                    <TableHead className="text-right w-36">Nilai Akhir</TableHead>
+                    <TableHead className="text-right w-32">Total Juri</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -2580,8 +2587,8 @@ function PosisiTab() {
                         <TableCell className="font-semibold">{r.nama}</TableCell>
                         <TableCell className="text-muted-foreground">{r.asal || "—"}</TableCell>
                         <TableCell className="text-center">{r.scored ? r.juri : <span className="text-muted-foreground italic">belum tampil</span>}</TableCell>
-                        <TableCell className="text-right font-mono">{r.scored ? r.rata.toFixed(2) : <span className="text-muted-foreground italic">belum tampil</span>}</TableCell>
-                        <TableCell className="text-right font-mono font-bold text-primary">{r.scored ? r.total.toFixed(2) : <span className="text-muted-foreground italic font-normal">belum tampil</span>}</TableCell>
+                        <TableCell className="text-right font-mono font-bold text-primary">{r.scored && r.nilai != null ? r.nilai.toFixed(3) : <span className="text-muted-foreground italic font-normal">belum tampil</span>}</TableCell>
+                        <TableCell className="text-right font-mono">{r.scored ? r.total.toFixed(3) : <span className="text-muted-foreground italic">belum tampil</span>}</TableCell>
                       </TableRow>
                     );
                   })}
