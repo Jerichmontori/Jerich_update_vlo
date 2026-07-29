@@ -150,7 +150,15 @@ function InspekturPage() {
       if (r.data && (r.data as any[])[0]) setRingkasan((r.data as any[])[0] as Ringkasan);
       setMonitor(((m.data as any[]) ?? []) as MonitorRow[]);
       setVars(((v.data as any[]) ?? []) as VarRow[]);
-      setActiveSesiPesertaIds(new Set(((sa.data as any[] | null) ?? []).map((x: any) => x.peserta_id)));
+      const activeIds = new Set(((sa.data as any[] | null) ?? []).map((x: any) => x.peserta_id));
+      setActiveSesiPesertaIds(activeIds);
+      // fetch progres juri untuk peserta dgn sesi aktif
+      const entries = await Promise.all(Array.from(activeIds).map(async (pid) => {
+        const { data, error } = await supabase.rpc("inspektur_progres_juri" as any, { _peserta: pid });
+        return [pid, error ? [] : ((data as any[]) ?? [])] as const;
+      }));
+      setProgresMap(Object.fromEntries(entries));
+
     } catch (err) {
       const message = err instanceof Error ? err.message : "Gagal memuat data";
       if (message.toLowerCase().includes("permission denied") || message.toLowerCase().includes("forbidden")) {
