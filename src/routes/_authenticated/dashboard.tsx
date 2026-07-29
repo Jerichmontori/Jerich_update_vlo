@@ -2338,7 +2338,7 @@ function PenilaianTab() {
 
           {activeKey === "perhatian" && (() => {
             const perbaikanAktifDlg = !!(pesertaId && perbaikanPerhatianIds.has(pesertaId));
-            const VAR_TRIGGER_IDX = new Set([1, 3, 4]);
+            const VAR_TRIGGER_IDX = new Set([1, 2, 3]);
             return (
             <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
               {perbaikanAktifDlg && (
