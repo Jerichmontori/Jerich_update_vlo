@@ -3322,6 +3322,9 @@ function LihatPenilaianTab() {
           <Button variant="secondary" onClick={downloadPesertaPDF} disabled={loading || !pesertaPilih} className="gap-2">
             <Download className="size-4" /> Unduh PDF
           </Button>
+          <Button variant="outline" onClick={downloadPerhitunganPDF} disabled={loading || !pesertaPilih} className="gap-2">
+            <FileText className="size-4" /> Unduh Perhitungan
+          </Button>
           <Button onClick={downloadPDF} disabled={loading || pesertaFiltered.length === 0} className="gap-2">
             <Download className="size-4" /> Unduh Semua
           </Button>
