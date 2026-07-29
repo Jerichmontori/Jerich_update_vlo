@@ -3811,6 +3811,16 @@ function RincianNilaiTab() {
                   <Button size="sm" variant="outline" onClick={() => downloadSatu(p)} className="gap-2">
                     <Download className="size-4" /> Unduh PDF
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => downloadMasukan(p)}
+                    disabled={!juri.some((j) => masukanFor(p.id, j.id).length > 0)}
+                    className="gap-2"
+                  >
+                    <FileText className="size-4" /> Unduh Masukan Juri
+                  </Button>
+
                 </div>
               </div>
               {juriDenganNilai.length === 0 ? (
