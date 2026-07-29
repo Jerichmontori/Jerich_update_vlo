@@ -2631,6 +2631,7 @@ function DashboardTab() {
   const [peserta, setPeserta] = useState<Peserta[]>([]);
   const [penilaian, setPenilaian] = useState<Penilaian[]>([]);
   const [kriteria, setKriteria] = useState<Kriteria[]>([]);
+  const [nilaiMap, setNilaiMap] = useState<Record<string, number | null>>({});
   const [loading, setLoading] = useState(true);
 
   async function load() {
@@ -2641,10 +2642,27 @@ function DashboardTab() {
       supabase.rpc("admin_list_penilaian" as any),
       supabase.from("kriteria").select("*"),
     ]);
-    setJuri((j.data as unknown as Juri[]) || []);
-    setPeserta((p.data as Peserta[]) || []);
-    setPenilaian((n.data as unknown as Penilaian[]) || []);
+    const juriList = (j.data as unknown as Juri[]) || [];
+    const pesertaList = (p.data as Peserta[]) || [];
+    const penilaianList = (n.data as unknown as Penilaian[]) || [];
+    setJuri(juriList);
+    setPeserta(pesertaList);
+    setPenilaian(penilaianList);
     setKriteria((k.data as Kriteria[]) || []);
+
+    // Hitung nilai per (juri, peserta) via RPC (menerapkan rentang kategori)
+    const pairs = new Set<string>();
+    penilaianList.forEach((r) => pairs.add(`${r.juri_id}|${r.peserta_id}`));
+    const entries = await Promise.all(
+      Array.from(pairs).map(async (key) => {
+        const [ji, pi] = key.split("|");
+        const { data } = await supabase.rpc("hitung_nilai_juri" as any, { _peserta: pi, _juri: ji });
+        return [key, data == null ? null : Number(data)] as const;
+      })
+    );
+    const map: Record<string, number | null> = {};
+    entries.forEach(([k, v]) => { map[k] = v; });
+    setNilaiMap(map);
     setLoading(false);
   }
 
@@ -2652,19 +2670,11 @@ function DashboardTab() {
 
   const totalPeserta = peserta.length;
 
-  function computeNilai(juriId: string, pesertaId: string): number {
-    const rows = penilaian.filter(x => x.juri_id === juriId && x.peserta_id === pesertaId);
-    if (rows.length === 0) return 0;
-    const scored = rows.map(r => {
-      const k = kriteria.find(kk => kk.id === r.kriteria_id);
-      return { bobot: Number(k?.bobot || 0), nilai: Number(r.nilai) };
-    });
-    const totalBobot = scored.reduce((s, x) => s + x.bobot, 0);
-    const weighted = totalBobot > 0
-      ? scored.reduce((s, x) => s + x.nilai * x.bobot, 0) / totalBobot
-      : scored.reduce((s, x) => s + x.nilai, 0) / scored.length;
-    return Math.round(weighted * 100) / 100;
+  function computeNilai(juriId: string, pesertaId: string): number | null {
+    const v = nilaiMap[`${juriId}|${pesertaId}`];
+    return v == null ? null : v;
   }
+
 
   const rows = useMemo(() => {
     return juri.map((j) => {
