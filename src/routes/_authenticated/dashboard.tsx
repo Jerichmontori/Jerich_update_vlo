@@ -2448,8 +2448,20 @@ function PenilaianTab() {
                     ) : (
                       <div className={["grid grid-cols-5 sm:grid-cols-8 gap-2", locked ? "pointer-events-none" : ""].join(" ")}>
                         {row.map((checked, ayatIdx) => (
-                          <label
+                          <button
                             key={ayatIdx}
+                            type="button"
+                            disabled={locked}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              (e.currentTarget as HTMLButtonElement).blur();
+                              if (locked) return;
+                              setPerhatianChecks(prev =>
+                                prev.map((r, idx) =>
+                                  idx === i ? r.map((c, ai) => (ai === ayatIdx ? !c : c)) : r
+                                )
+                              );
+                            }}
                             className={[
                               "select-none rounded-md border-2 px-2 py-1.5 text-xs font-semibold text-center leading-tight transition",
                               checked
@@ -2458,22 +2470,8 @@ function PenilaianTab() {
                               locked ? "cursor-not-allowed" : "cursor-pointer hover:border-accent/60",
                             ].join(" ")}
                           >
-                            <input
-                              type="checkbox"
-                              className="sr-only"
-                              checked={checked}
-                              disabled={locked}
-                              onChange={() => {
-                                if (locked) return;
-                                setPerhatianChecks(prev =>
-                                  prev.map((r, idx) =>
-                                    idx === i ? r.map((c, ai) => (ai === ayatIdx ? !c : c)) : r
-                                  )
-                                );
-                              }}
-                            />
                             Ayat {ayatIdx + 1}
-                          </label>
+                          </button>
                         ))}
                       </div>
 
