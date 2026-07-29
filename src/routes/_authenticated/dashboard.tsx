@@ -2926,11 +2926,34 @@ function StatCard({ label, value, tone }: { label: string; value: number; tone?:
 
 /* LIHAT PENILAIAN */
 const LIHAT_ALL = "__all__";
+const LOOKUP_VALS = [0.05, 0.12, 0.22, 0.36, 0.52, 0.68, 0.81, 0.91, 1.0];
+function lookupNilaiClient(g: number | null | undefined): number {
+  if (g == null || Number.isNaN(g)) return 0;
+  const gg = Math.max(1, Math.min(5, g));
+  const idx = Math.floor((gg - 1) / 0.5);
+  const frac = (gg - 1) / 0.5 - idx;
+  if (idx >= 8) return LOOKUP_VALS[8];
+  return LOOKUP_VALS[idx] + (LOOKUP_VALS[idx + 1] - LOOKUP_VALS[idx]) * frac;
+}
+function bobotFor(namaLower: string, kriteria: Kriteria[], fallback: number): number {
+  const found = kriteria.find((k) => k.nama.toLowerCase().includes(namaLower));
+  return found ? Number(found.bobot || 0) : fallback;
+}
+function findKategoriRow(rows: Kategori[], namaPeserta: string | null): Kategori | undefined {
+  const key = (namaPeserta || "").trim().toLowerCase();
+  if (!key) return undefined;
+  return rows.find((r) => {
+    const a = (r.kriteria_peserta || r.kategori || "").trim().toLowerCase();
+    return a === key;
+  });
+}
+
 function LihatPenilaianTab() {
   const [peserta, setPeserta] = useState<Peserta[]>([]);
   const [juri, setJuri] = useState<Juri[]>([]);
   const [kriteria, setKriteria] = useState<Kriteria[]>([]);
   const [penilaian, setPenilaian] = useState<Penilaian[]>([]);
+  const [kategoriRows, setKategoriRows] = useState<Kategori[]>([]);
   const [nilaiMap, setNilaiMap] = useState<Record<string, number | null>>({});
   const [rankMap, setRankMap] = useState<Record<string, Ranking>>({});
   const [loading, setLoading] = useState(true);
@@ -2939,22 +2962,24 @@ function LihatPenilaianTab() {
 
   async function load() {
     setLoading(true);
-    const [p, j, k, n, s, rank] = await Promise.all([
+    const [p, j, k, n, s, rank, kat] = await Promise.all([
       supabase.from("peserta").select("*").order("nomor_urut"),
       supabase.from("juri_public" as any).select("*").order("created_at"),
       supabase.from("kriteria").select("*").order("created_at"),
       supabase.from("penilaian").select("*"),
       supabase.from("penilaian_submission" as any).select("peserta_id, juri_id"),
       supabase.rpc("get_ranking" as any),
+      supabase.from("kategori").select("*"),
     ]);
-    if (p.error || j.error || k.error || n.error || s.error || rank.error) {
+    if (p.error || j.error || k.error || n.error || s.error || rank.error || kat.error) {
       setLoading(false);
-      return toast.error(p.error?.message || j.error?.message || k.error?.message || n.error?.message || s.error?.message || rank.error?.message || "Gagal memuat data");
+      return toast.error(p.error?.message || j.error?.message || k.error?.message || n.error?.message || s.error?.message || rank.error?.message || kat.error?.message || "Gagal memuat data");
     }
     setPeserta((p.data ?? []) as Peserta[]);
     setJuri(((j.data ?? []) as unknown as Juri[]).filter((x) => x.approved && x.role !== "viewer"));
     setKriteria((k.data ?? []) as Kriteria[]);
     setPenilaian((n.data ?? []) as Penilaian[]);
+    setKategoriRows((kat.data ?? []) as Kategori[]);
     const submitted = ((s.data ?? []) as unknown as Submission[]);
     const nilaiEntries = await Promise.all(submitted.map(async (row) => {
       const key = `${row.juri_id}|${row.peserta_id}`;
@@ -2968,6 +2993,7 @@ function LihatPenilaianTab() {
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
+
 
   function nilaiJuri(juriId: string, pesertaId: string): number | undefined {
     const value = nilaiMap[`${juriId}|${pesertaId}`];
@@ -3095,6 +3121,182 @@ function LihatPenilaianTab() {
     doc.save(`nilai-${p.nomor_urut}-${safe}-${stamp}.pdf`);
   }
 
+  function downloadPerhitunganPDF() {
+    const p = peserta.find((x) => x.id === pesertaPilih);
+    if (!p) return toast.error("Pilih peserta terlebih dahulu");
+    const hasAny = juri.some((j) => scoreMap[p.id]?.[j.id]);
+    if (!hasAny) return toast.error("Peserta ini belum memiliki penilaian");
+
+    const bV = bobotFor("vokal", kriteria, 25) || bobotFor("vocal", kriteria, 25);
+    const bPn = bobotFor("penghayatan", kriteria, 20);
+    const bIt = bobotFor("intonasi", kriteria, 30);
+    const bPl = bobotFor("penampilan", kriteria, 25);
+    const bCat = bobotFor("catatan", kriteria, 10);
+    const bPer = bobotFor("perhatian", kriteria, -10);
+    const rawMax = bV + bPn + bIt + bPl + bCat;
+    const rawMin = bPer;
+
+    const kat = findKategoriRow(kategoriRows, p.kategori);
+    let BB = 0, BA = 100, TG = 50;
+    if (kat) {
+      BB = Number(kat.batas_bawah || 0);
+      BA = Number(kat.batas_atas || 100);
+      TG = Number(kat.nilai_tengah || 0);
+      if (!TG || TG <= BB || TG >= BA) TG = (BB + BA) / 2;
+    }
+
+    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+    const pageW = doc.internal.pageSize.getWidth();
+    doc.setFontSize(16); doc.text("Perhitungan Nilai Peserta", 40, 40);
+    doc.setFontSize(11); doc.setTextColor(100);
+    doc.text(`${p.nomor_urut}. ${p.nama}${p.asal ? "  •  " + p.asal : ""}`, 40, 58);
+    doc.text(`Kategori: ${p.kategori || "—"}   |   Rentang: [${BB}, TG ${TG}, ${BA}]`, 40, 74);
+    doc.setTextColor(0);
+
+    // Skema
+    doc.setFontSize(12); doc.text("Skema Perhitungan", 40, 100);
+    autoTable(doc, {
+      startY: 108,
+      head: [["Langkah", "Rumus / Nilai"]],
+      body: [
+        ["1. Lookup non-linear (grade → bobot)", "1.0=0.050  1.5=0.120  2.0=0.220  2.5=0.360  3.0=0.520  3.5=0.680  4.0=0.810  4.5=0.910  5.0=1.000"],
+        ["2. Skor mentah (raw)", "Σ lookup(grade)×bobot untuk V/Pn/It/Pl  +  rata²(lookup aspek Catatan)×bobotCat  +  min(1, marks/15)×bobotPer"],
+        ["3. Bobot dipakai", `Vokal ${bV} · Penghayatan ${bPn} · Intonasi ${bIt} · Penampilan ${bPl} · Catatan ${bCat} · Perhatian ${bPer}`],
+        ["4. Normalisasi n∈[0,1]", `n = (raw − ${rawMin}) / (${rawMax} − ${rawMin})`],
+        ["5. Pemetaan kurva 2-segmen", `n≤0.5 → out = BB + (TG−BB)·(2n)^1.15\nn>0.5 → out = TG + (BA−TG)·(1 − (2(1−n))^1.15)`],
+        ["6. Jitter deterministik", "hash(peserta|juri) → ±0.0009 (mencegah kembar)"],
+        ["7. Nilai Akhir Peserta", "rata-rata nilai semua juri, di-clamp [BB, BA], 3 desimal"],
+      ],
+      styles: { fontSize: 8, cellPadding: 4, valign: "top" },
+      headStyles: { fillColor: [120, 30, 45], textColor: 255 },
+      columnStyles: { 0: { cellWidth: 150, fontStyle: "bold" } },
+      margin: { left: 40, right: 40 },
+    });
+
+    // Per-juri
+    const juriValid = juri.filter((j) => scoreMap[p.id]?.[j.id]);
+    juriValid.forEach((j, idx) => {
+      const rec = scoreMap[p.id][j.id];
+      const detailByKrit: Record<string, PenilaianDetail> = {};
+      penilaian.filter((n) => n.peserta_id === p.id && n.juri_id === j.id).forEach((n) => {
+        detailByKrit[n.kriteria_id] = (n.detail ?? null) as PenilaianDetail;
+      });
+      const gradeOf = (kritId: string): number | null => {
+        const d = detailByKrit[kritId];
+        if (d && (d as any).type === "grade") return Number((d as any).grade);
+        const v = rec.per[kritId];
+        return v == null ? null : v / 20;
+      };
+
+      let rawSum = 0;
+      const rows: (string | number)[][] = [];
+      kriteria.forEach((k) => {
+        const nm = k.nama.toLowerCase();
+        if (nm.includes("catatan")) {
+          const d = detailByKrit[k.id] as any;
+          const asp = d?.aspek ?? [];
+          const kept = asp.filter((a: any) => !a.skipped && a.nilai != null);
+          const ratio = kept.length ? kept.reduce((s: number, a: any) => s + lookupNilaiClient(Number(a.nilai)), 0) / kept.length : 0;
+          const kontrib = ratio * Number(k.bobot || 0);
+          rawSum += kontrib;
+          rows.push([k.nama, `${kept.length}/${asp.length} aspek`, ratio.toFixed(6), String(k.bobot), kontrib.toFixed(6)]);
+        } else if (nm.includes("perhatian")) {
+          const d = detailByKrit[k.id] as any;
+          let marks = 0;
+          if (d?.membacaPerikop === true) marks += 1;
+          (d?.aspek ?? []).forEach((a: any) => (a?.ayat ?? []).forEach((b: any) => { if (b) marks += 1; }));
+          const factor = Math.min(1, marks / 15);
+          const kontrib = factor * Number(k.bobot || 0);
+          rawSum += kontrib;
+          rows.push([k.nama, `${marks} penanda`, `min(1, ${marks}/15) = ${factor.toFixed(6)}`, String(k.bobot), kontrib.toFixed(6)]);
+        } else {
+          const g = gradeOf(k.id);
+          const lv = lookupNilaiClient(g);
+          const kontrib = lv * Number(k.bobot || 0);
+          rawSum += kontrib;
+          rows.push([k.nama, g == null ? "—" : g.toFixed(2), lv.toFixed(6), String(k.bobot), kontrib.toFixed(6)]);
+        }
+      });
+
+      const n = rawMax === rawMin ? 0 : Math.max(0, Math.min(1, (rawSum - rawMin) / (rawMax - rawMin)));
+      let out: number;
+      let mapExpr: string;
+      if (n <= 0.5) {
+        const t = Math.pow(n * 2, 1.15);
+        out = BB + (TG - BB) * t;
+        mapExpr = `n≤0.5 → t=(2·${n.toFixed(6)})^1.15=${t.toFixed(6)}  →  ${BB} + (${TG}−${BB})·t = ${out.toFixed(6)}`;
+      } else {
+        const t = 1 - Math.pow((1 - n) * 2, 1.15);
+        out = TG + (BA - TG) * t;
+        mapExpr = `n>0.5 → t=1−(2·(1−${n.toFixed(6)}))^1.15=${t.toFixed(6)}  →  ${TG} + (${BA}−${TG})·t = ${out.toFixed(6)}`;
+      }
+      const dbFinal = nilaiJuri(j.id, p.id);
+
+      const startY = (doc as any).lastAutoTable?.finalY ?? 200;
+      if (startY > 680) doc.addPage();
+      const y0 = (doc as any).lastAutoTable?.finalY && !(startY > 680) ? startY + 24 : 40;
+      doc.setFontSize(12); doc.setTextColor(0);
+      doc.text(`Juri ${idx + 1}: ${j.nama}`, 40, y0);
+
+      autoTable(doc, {
+        startY: y0 + 8,
+        head: [["Kriteria", "Grade / Detail", "lookup / faktor", "Bobot", "Kontribusi"]],
+        body: rows,
+        styles: { fontSize: 8, cellPadding: 4 },
+        headStyles: { fillColor: [70, 70, 90], textColor: 255 },
+        columnStyles: { 3: { halign: "right" }, 4: { halign: "right", fontStyle: "bold" } },
+        margin: { left: 40, right: 40 },
+      });
+
+      const y1 = (doc as any).lastAutoTable.finalY + 6;
+      autoTable(doc, {
+        startY: y1,
+        body: [
+          ["raw", `Σ kontribusi = ${rawSum.toFixed(6)}`],
+          ["n (normalisasi)", `(${rawSum.toFixed(6)} − ${rawMin}) / (${rawMax} − ${rawMin}) = ${n.toFixed(6)}`],
+          ["Pemetaan → out", mapExpr],
+          ["Clamp [BB,BA] + jitter ±0.0009", `pra-jitter ≈ ${Math.max(BB, Math.min(BA, out)).toFixed(6)}`],
+          ["Nilai Juri (final, dari basis data)", dbFinal == null ? "—" : dbFinal.toFixed(3)],
+        ],
+        styles: { fontSize: 8, cellPadding: 4 },
+        columnStyles: { 0: { cellWidth: 170, fontStyle: "bold" }, 1: { halign: "left" } },
+        margin: { left: 40, right: 40 },
+      });
+    });
+
+    // Total peserta
+    const startY = (doc as any).lastAutoTable?.finalY ?? 40;
+    if (startY > 680) doc.addPage();
+    const yT = startY > 680 ? 40 : startY + 24;
+    doc.setFontSize(12); doc.text("Nilai Akhir Peserta", 40, yT);
+    const juriValues = juriValid.map((j) => ({ nama: j.nama, v: nilaiJuri(j.id, p.id) }));
+    const avg = juriValues.filter((x) => x.v != null).reduce((s, x) => s + (x.v as number), 0) / Math.max(1, juriValues.filter((x) => x.v != null).length);
+    const nilaiAkhir = rankMap[p.id]?.nilai_akhir;
+    autoTable(doc, {
+      startY: yT + 8,
+      head: [["Juri", "Nilai"]],
+      body: [
+        ...juriValues.map((x) => [x.nama, x.v == null ? "—" : x.v.toFixed(3)]),
+        ["Rata-rata", isFinite(avg) ? avg.toFixed(6) : "—"],
+        ["Nilai Akhir (clamp [BB,BA], 3 desimal)", nilaiAkhir == null ? "—" : Number(nilaiAkhir).toFixed(3)],
+      ],
+      styles: { fontSize: 9, cellPadding: 4 },
+      headStyles: { fillColor: [120, 30, 45], textColor: 255 },
+      columnStyles: { 1: { halign: "right", fontStyle: "bold" } },
+      margin: { left: 40, right: 40 },
+    });
+
+    doc.setFontSize(8); doc.setTextColor(120);
+    doc.text(
+      "Catatan: jitter deterministik ±0.0009 dari hash(peserta|juri) dihitung di basis data (hashtext PostgreSQL) dan tidak dapat direplikasi persis di sisi klien; nilai final pada baris 'Nilai Juri' diambil langsung dari basis data.",
+      40, doc.internal.pageSize.getHeight() - 30, { maxWidth: pageW - 80 }
+    );
+
+    const stamp = new Date().toISOString().slice(0, 10);
+    const safe = p.nama.replace(/\s+/g, "_");
+    doc.save(`perhitungan-${p.nomor_urut}-${safe}-${stamp}.pdf`);
+  }
+
   return (
     <SectionCard
       title="Lihat Penilaian"
@@ -3119,6 +3321,9 @@ function LihatPenilaianTab() {
           </Select>
           <Button variant="secondary" onClick={downloadPesertaPDF} disabled={loading || !pesertaPilih} className="gap-2">
             <Download className="size-4" /> Unduh PDF
+          </Button>
+          <Button variant="outline" onClick={downloadPerhitunganPDF} disabled={loading || !pesertaPilih} className="gap-2">
+            <FileText className="size-4" /> Unduh Perhitungan
           </Button>
           <Button onClick={downloadPDF} disabled={loading || pesertaFiltered.length === 0} className="gap-2">
             <Download className="size-4" /> Unduh Semua
