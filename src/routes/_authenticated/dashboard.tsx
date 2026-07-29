@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
-import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight, LayoutDashboard, CheckCircle2, XCircle, FileText, KeyRound, AlertTriangle } from "lucide-react";
+import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight, LayoutDashboard, CheckCircle2, XCircle, FileText, KeyRound, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -538,6 +538,8 @@ function JuriTab() {
   }
 
   return (
+    <>
+    <PendingPasswordResets />
     <SectionCard title="Dewan Juri" description="Daftar pendaftar juri dari halaman beranda. Setujui akun agar dapat login.">
       {/* Mobile: card list */}
       <div className="grid gap-3 md:hidden">
@@ -686,6 +688,100 @@ function JuriTab() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+    </SectionCard>
+    </>
+  );
+}
+
+function PendingPasswordResets() {
+  const [items, setItems] = useState<Array<{ id: string; identifier: string; new_password: string; created_at: string; user_id: string | null }>>([]);
+  const [showPw, setShowPw] = useState<Record<string, boolean>>({});
+  const [loading, setLoading] = useState(false);
+
+  async function load() {
+    try {
+      const { listPasswordResets } = await import("@/lib/password-reset.functions");
+      const data = await listPasswordResets();
+      setItems(data as any);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal memuat permintaan");
+    }
+  }
+  useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, []);
+
+  async function approve(id: string, ident: string) {
+    if (loading) return;
+    setLoading(true);
+    try {
+      const { approvePasswordReset } = await import("@/lib/password-reset.functions");
+      await approvePasswordReset({ data: { id } });
+      toast.success(`Kata sandi baru untuk "${ident}" telah diterapkan`);
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menyetujui");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function reject(id: string, ident: string) {
+    if (loading) return;
+    if (!confirm(`Tolak permintaan reset kata sandi untuk "${ident}"?`)) return;
+    setLoading(true);
+    try {
+      const { rejectPasswordReset } = await import("@/lib/password-reset.functions");
+      await rejectPasswordReset({ data: { id } });
+      toast.success("Permintaan ditolak");
+      load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal menolak");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  if (items.length === 0) return null;
+
+  return (
+    <SectionCard
+      title="Permintaan Reset Kata Sandi"
+      description="Setujui untuk menerapkan kata sandi baru — akun & data penilaian tetap utuh."
+    >
+      <div className="grid gap-2">
+        {items.map((r) => (
+          <div key={r.id} className="rounded-lg border bg-card p-3 flex flex-wrap items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="font-medium truncate">{r.identifier}</div>
+              <div className="text-xs text-muted-foreground">
+                {new Date(r.created_at).toLocaleString("id-ID")}
+                {!r.user_id && <span className="ml-2 text-destructive">akun belum ditemukan</span>}
+              </div>
+              <div className="mt-1 flex items-center gap-2 text-xs">
+                <span className="text-muted-foreground">Sandi baru:</span>
+                <code className="rounded bg-secondary/50 px-2 py-0.5 font-mono">
+                  {showPw[r.id] ? r.new_password : "••••••••"}
+                </code>
+                <button
+                  type="button"
+                  onClick={() => setShowPw((s) => ({ ...s, [r.id]: !s[r.id] }))}
+                  className="text-muted-foreground hover:text-foreground"
+                  aria-label="Tampilkan/sembunyikan"
+                >
+                  {showPw[r.id] ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" onClick={() => approve(r.id, r.identifier)} disabled={loading || !r.user_id} className="gap-1">
+                <Check className="size-4" />Setujui
+              </Button>
+              <Button size="sm" variant="outline" onClick={() => reject(r.id, r.identifier)} disabled={loading}>
+                Tolak
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
     </SectionCard>
   );
 }
