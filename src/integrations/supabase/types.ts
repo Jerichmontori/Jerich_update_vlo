@@ -762,6 +762,13 @@ export type Database = {
           var_status: string
         }[]
       }
+      get_submission_progress: {
+        Args: { _peserta: string }
+        Returns: {
+          done_count: number
+          total_count: number
+        }[]
+      }
       get_var_aktif: {
         Args: never
         Returns: {
