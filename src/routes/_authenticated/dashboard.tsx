@@ -2428,7 +2428,16 @@ function RankingTab() {
 
   const filtered = useMemo(() => {
     const list = kategori === RANKING_ALL ? rows : rows.filter((r) => (kategoriMap[r.peserta_id] ?? "") === kategori);
-    return [...list].sort((a, b) => Number(b.total_skor) - Number(a.total_skor));
+    return [...list].sort((a, b) => {
+      const av = Number(a.nilai_akhir ?? 0), bv = Number(b.nilai_akhir ?? 0);
+      const ar = Math.round(av * 1000), br = Math.round(bv * 1000);
+      if (br !== ar) return br - ar;
+      const at = Number(a.juri_total_sum ?? a.total_skor ?? 0), bt = Number(b.juri_total_sum ?? b.total_skor ?? 0);
+      if (bt !== at) return bt - at;
+      const as = Number(a.juri_spread ?? 0), bs = Number(b.juri_spread ?? 0);
+      if (bs !== as) return bs - as;
+      return a.nomor_urut - b.nomor_urut;
+    });
   }, [rows, kategori, kategoriMap]);
 
   const medals = ["🥇", "🥈", "🥉"];
@@ -2639,27 +2648,31 @@ function DashboardTab() {
   const [penilaian, setPenilaian] = useState<Penilaian[]>([]);
   const [kriteria, setKriteria] = useState<Kriteria[]>([]);
   const [nilaiMap, setNilaiMap] = useState<Record<string, number | null>>({});
+  const [submissionRows, setSubmissionRows] = useState<Array<{ peserta_id: string; juri_id: string }>>([]);
   const [loading, setLoading] = useState(true);
 
   async function load() {
     setLoading(true);
-    const [j, p, n, k] = await Promise.all([
+    const [j, p, n, k, s] = await Promise.all([
       supabase.from("juri_public" as any).select("*").eq("approved", true).eq("role", "juri").order("nama"),
       supabase.from("peserta").select("*"),
       supabase.rpc("admin_list_penilaian" as any),
       supabase.from("kriteria").select("*"),
+      supabase.from("penilaian_submission" as any).select("peserta_id, juri_id"),
     ]);
     const juriList = (j.data as unknown as Juri[]) || [];
     const pesertaList = (p.data as Peserta[]) || [];
     const penilaianList = (n.data as unknown as Penilaian[]) || [];
+    const submitted = ((s.data ?? []) as Array<{ peserta_id: string; juri_id: string }>);
     setJuri(juriList);
     setPeserta(pesertaList);
     setPenilaian(penilaianList);
     setKriteria((k.data as Kriteria[]) || []);
+    setSubmissionRows(submitted);
 
     // Hitung nilai per (juri, peserta) via RPC (menerapkan rentang kategori)
     const pairs = new Set<string>();
-    penilaianList.forEach((r) => pairs.add(`${r.juri_id}|${r.peserta_id}`));
+    submitted.forEach((r) => pairs.add(`${r.juri_id}|${r.peserta_id}`));
     const entries = await Promise.all(
       Array.from(pairs).map(async (key) => {
         const [ji, pi] = key.split("|");
@@ -2685,7 +2698,7 @@ function DashboardTab() {
 
   const rows = useMemo(() => {
     return juri.map((j) => {
-      const mine = penilaian.filter((p) => p.juri_id === j.id);
+      const mine = submissionRows.filter((p) => p.juri_id === j.id);
       const scoredIds = new Set(mine.map((p) => p.peserta_id));
       const sudahList = peserta.filter((p) => scoredIds.has(p.id)).sort((a, b) => a.nomor_urut - b.nomor_urut);
       const belumList = peserta.filter((p) => !scoredIds.has(p.id)).sort((a, b) => a.nomor_urut - b.nomor_urut);
@@ -2698,7 +2711,7 @@ function DashboardTab() {
         status: sudahList.length === 0 ? "belum" : belumList.length === 0 && totalPeserta > 0 ? "selesai" : "sebagian",
       };
     });
-  }, [juri, peserta, penilaian, totalPeserta]);
+  }, [juri, peserta, submissionRows, totalPeserta]);
 
   const totalSudahKirim = rows.filter((r) => r.sudah > 0).length;
   const totalBelumKirim = rows.filter((r) => r.sudah === 0).length;
