@@ -733,13 +733,13 @@ function JuriTab() {
 }
 
 function PendingPasswordResets() {
-  const [items, setItems] = useState<Array<{ id: string; identifier: string; new_password: string; created_at: string; user_id: string | null }>>([]);
+  const [items, setItems] = useState<Array<{ id: string; identifier: string; created_at: string; user_id: string | null }>>([]);
+  const [pwInput, setPwInput] = useState<Record<string, string>>({});
   const [showPw, setShowPw] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
 
   async function load() {
     try {
-      // Skip if not signed in — avoids 401 toast spam during logout/session loss.
       const { data: sess } = await supabase.auth.getSession();
       if (!sess.session?.access_token) return;
       const { listPasswordResets } = await import("@/lib/password-reset.functions");
@@ -747,7 +747,6 @@ function PendingPasswordResets() {
       setItems(data as any);
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      // Silently ignore auth errors — session may have expired mid-poll.
       if (/Unauthorized|401|authorization header/i.test(msg)) return;
       toast.error(msg || "Gagal memuat permintaan");
     }
@@ -756,11 +755,18 @@ function PendingPasswordResets() {
 
   async function approve(id: string, ident: string) {
     if (loading) return;
+    const newPassword = (pwInput[id] ?? "").trim();
+    if (newPassword.length < 8) {
+      toast.error("Kata sandi baru minimal 8 karakter");
+      return;
+    }
+    if (!confirm(`Terapkan kata sandi baru untuk "${ident}"?`)) return;
     setLoading(true);
     try {
       const { approvePasswordReset } = await import("@/lib/password-reset.functions");
-      await approvePasswordReset({ data: { id } });
+      await approvePasswordReset({ data: { id, newPassword } });
       toast.success(`Kata sandi baru untuk "${ident}" telah diterapkan`);
+      setPwInput((s) => { const n = { ...s }; delete n[id]; return n; });
       load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal menyetujui");
@@ -790,7 +796,7 @@ function PendingPasswordResets() {
   return (
     <SectionCard
       title="Permintaan Reset Kata Sandi"
-      description="Setujui untuk menerapkan kata sandi baru — akun & data penilaian tetap utuh."
+      description="Tetapkan kata sandi baru untuk pemohon. Sampaikan sandi tersebut langsung kepada yang bersangkutan — kata sandi tidak disimpan di database."
     >
       <div className="grid gap-2">
         {items.map((r) => (
@@ -801,19 +807,24 @@ function PendingPasswordResets() {
                 {new Date(r.created_at).toLocaleString("id-ID")}
                 {!r.user_id && <span className="ml-2 text-destructive">akun belum ditemukan</span>}
               </div>
-              <div className="mt-1 flex items-center gap-2 text-xs">
-                <span className="text-muted-foreground">Sandi baru:</span>
-                <code className="rounded bg-secondary/50 px-2 py-0.5 font-mono">
-                  {showPw[r.id] ? r.new_password : "••••••••"}
-                </code>
-                <button
-                  type="button"
-                  onClick={() => setShowPw((s) => ({ ...s, [r.id]: !s[r.id] }))}
-                  className="text-muted-foreground hover:text-foreground"
-                  aria-label="Tampilkan/sembunyikan"
-                >
-                  {showPw[r.id] ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
-                </button>
+              <div className="mt-2 flex items-center gap-2">
+                <div className="relative w-full max-w-xs">
+                  <Input
+                    type={showPw[r.id] ? "text" : "password"}
+                    placeholder="Kata sandi baru (min. 8)"
+                    className="pr-10 h-8 text-sm"
+                    value={pwInput[r.id] ?? ""}
+                    onChange={(e) => setPwInput((s) => ({ ...s, [r.id]: e.target.value }))}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPw((s) => ({ ...s, [r.id]: !s[r.id] }))}
+                    className="absolute inset-y-0 right-0 grid place-items-center px-2 text-muted-foreground hover:text-foreground"
+                    aria-label="Tampilkan/sembunyikan"
+                  >
+                    {showPw[r.id] ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
+                </div>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -830,6 +841,7 @@ function PendingPasswordResets() {
     </SectionCard>
   );
 }
+
 
 
 
