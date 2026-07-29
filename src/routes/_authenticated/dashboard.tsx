@@ -1003,7 +1003,7 @@ function KategoriTab() {
         <div><Label>Batas Atas</Label><Input type="number" step="0.01" value={batasAtas} onChange={e=>setBatasAtas(e.target.value)} placeholder="100" /></div>
         <div><Label>Batas Bawah</Label><Input type="number" step="0.01" value={batasBawah} onChange={e=>setBatasBawah(e.target.value)} placeholder="0" /></div>
         <div><Label>Nilai Tengah</Label><Input type="number" step="0.01" value={nilaiTengah} onChange={e=>setNilaiTengah(e.target.value)} placeholder="50" /></div>
-        <div><Label>Nilai Standart</Label><Input type="number" step="0.01" value={nilaiStandart} onChange={e=>setNilaiStandart(e.target.value)} placeholder="75" /></div>
+        <div><Label>NIlai VAR / tidak Clear</Label><Input type="number" step="0.01" value={nilaiStandart} onChange={e=>setNilaiStandart(e.target.value)} placeholder="75" /></div>
         <div className="flex items-end sm:col-span-2 lg:col-span-5">
           <Button type="submit" className="gap-1"><Plus className="size-4" />Tambah</Button>
         </div>
@@ -1016,7 +1016,7 @@ function KategoriTab() {
               <TableHead className="text-center">Batas Atas</TableHead>
               <TableHead className="text-center">Batas Bawah</TableHead>
               <TableHead className="text-center">Nilai Tengah</TableHead>
-              <TableHead className="text-center">Nilai Standart</TableHead>
+              <TableHead className="text-center">NIlai VAR / tidak Clear</TableHead>
               <TableHead className="w-32 text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
