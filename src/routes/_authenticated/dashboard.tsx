@@ -2926,11 +2926,34 @@ function StatCard({ label, value, tone }: { label: string; value: number; tone?:
 
 /* LIHAT PENILAIAN */
 const LIHAT_ALL = "__all__";
+const LOOKUP_VALS = [0.05, 0.12, 0.22, 0.36, 0.52, 0.68, 0.81, 0.91, 1.0];
+function lookupNilaiClient(g: number | null | undefined): number {
+  if (g == null || Number.isNaN(g)) return 0;
+  const gg = Math.max(1, Math.min(5, g));
+  const idx = Math.floor((gg - 1) / 0.5);
+  const frac = (gg - 1) / 0.5 - idx;
+  if (idx >= 8) return LOOKUP_VALS[8];
+  return LOOKUP_VALS[idx] + (LOOKUP_VALS[idx + 1] - LOOKUP_VALS[idx]) * frac;
+}
+function bobotFor(namaLower: string, kriteria: Kriteria[], fallback: number): number {
+  const found = kriteria.find((k) => k.nama.toLowerCase().includes(namaLower));
+  return found ? Number(found.bobot || 0) : fallback;
+}
+function findKategoriRow(rows: Kategori[], namaPeserta: string | null): Kategori | undefined {
+  const key = (namaPeserta || "").trim().toLowerCase();
+  if (!key) return undefined;
+  return rows.find((r) => {
+    const a = (r.kriteria_peserta || r.kategori || "").trim().toLowerCase();
+    return a === key;
+  });
+}
+
 function LihatPenilaianTab() {
   const [peserta, setPeserta] = useState<Peserta[]>([]);
   const [juri, setJuri] = useState<Juri[]>([]);
   const [kriteria, setKriteria] = useState<Kriteria[]>([]);
   const [penilaian, setPenilaian] = useState<Penilaian[]>([]);
+  const [kategoriRows, setKategoriRows] = useState<Kategori[]>([]);
   const [nilaiMap, setNilaiMap] = useState<Record<string, number | null>>({});
   const [rankMap, setRankMap] = useState<Record<string, Ranking>>({});
   const [loading, setLoading] = useState(true);
@@ -2939,22 +2962,24 @@ function LihatPenilaianTab() {
 
   async function load() {
     setLoading(true);
-    const [p, j, k, n, s, rank] = await Promise.all([
+    const [p, j, k, n, s, rank, kat] = await Promise.all([
       supabase.from("peserta").select("*").order("nomor_urut"),
       supabase.from("juri_public" as any).select("*").order("created_at"),
       supabase.from("kriteria").select("*").order("created_at"),
       supabase.from("penilaian").select("*"),
       supabase.from("penilaian_submission" as any).select("peserta_id, juri_id"),
       supabase.rpc("get_ranking" as any),
+      supabase.from("kategori").select("*"),
     ]);
-    if (p.error || j.error || k.error || n.error || s.error || rank.error) {
+    if (p.error || j.error || k.error || n.error || s.error || rank.error || kat.error) {
       setLoading(false);
-      return toast.error(p.error?.message || j.error?.message || k.error?.message || n.error?.message || s.error?.message || rank.error?.message || "Gagal memuat data");
+      return toast.error(p.error?.message || j.error?.message || k.error?.message || n.error?.message || s.error?.message || rank.error?.message || kat.error?.message || "Gagal memuat data");
     }
     setPeserta((p.data ?? []) as Peserta[]);
     setJuri(((j.data ?? []) as unknown as Juri[]).filter((x) => x.approved && x.role !== "viewer"));
     setKriteria((k.data ?? []) as Kriteria[]);
     setPenilaian((n.data ?? []) as Penilaian[]);
+    setKategoriRows((kat.data ?? []) as Kategori[]);
     const submitted = ((s.data ?? []) as unknown as Submission[]);
     const nilaiEntries = await Promise.all(submitted.map(async (row) => {
       const key = `${row.juri_id}|${row.peserta_id}`;
@@ -2968,6 +2993,7 @@ function LihatPenilaianTab() {
     setLoading(false);
   }
   useEffect(() => { load(); }, []);
+
 
   function nilaiJuri(juriId: string, pesertaId: string): number | undefined {
     const value = nilaiMap[`${juriId}|${pesertaId}`];
