@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
-import { BookOpenText, ShieldCheck, Gavel, Trophy } from "lucide-react";
+import { ShieldCheck, Gavel, Trophy } from "lucide-react";
+import bumotikLogo from "@/assets/bumotik-logo.png.asset.json";
+import multimediaLogo from "@/assets/multimedia-bumotik.webp.asset.json";
 
 export const Route = createFileRoute("/")({
   head: () => ({
