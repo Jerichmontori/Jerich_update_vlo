@@ -1134,6 +1134,7 @@ function PenilaianTab() {
   // Semua peserta yang PERNAH saya kirim (persist antar refresh) — mencegah kirim ulang
   const [mySubmittedIds, setMySubmittedIds] = useState<Set<string>>(new Set());
   const [judgesDoneForPeserta, setJudgesDoneForPeserta] = useState<number>(0);
+  const [nilaiJuriPreview, setNilaiJuriPreview] = useState<number | null>(null);
   const pollingInFlightRef = useRef(false);
   const resolvingCompletionRef = useRef<string | null>(null);
   // Aturan #6 — konfirmasi kirim
@@ -1346,6 +1347,28 @@ function PenilaianTab() {
   useEffect(() => { loadAll(); }, []);
 
   const totalJuriApproved = juri.length;
+
+  useEffect(() => {
+    let cancelled = false;
+    async function loadNilaiJuriPreview() {
+      if (!juriId || !pesertaId || kriteria.length === 0) {
+        setNilaiJuriPreview(null);
+        return;
+      }
+      const complete = kriteria.every((k) =>
+        penilaian.some((n) => n.juri_id === juriId && n.peserta_id === pesertaId && n.kriteria_id === k.id),
+      );
+      if (!complete) {
+        setNilaiJuriPreview(null);
+        return;
+      }
+      const { data, error } = await supabase.rpc("hitung_nilai_juri" as any, { _peserta: pesertaId, _juri: juriId });
+      if (cancelled) return;
+      setNilaiJuriPreview(error || data == null ? null : Number(data));
+    }
+    loadNilaiJuriPreview();
+    return () => { cancelled = true; };
+  }, [juriId, pesertaId, kriteria, penilaian]);
 
   // Aturan #7 — polling jumlah juri yang sudah menilai peserta terkunci
   useEffect(() => {
@@ -1837,15 +1860,7 @@ function PenilaianTab() {
 
             // Aturan #5 — Nilai Akhir hanya muncul kalau seluruh kriteria selesai
             const allDone = kriteria.length > 0 && scored.length === kriteria.length;
-            const nilaiAkhir = allDone
-              ? (() => {
-                  const totalBobot = scored.reduce((a, s) => a + Number(s.k.bobot || 0), 0);
-                  if (totalBobot <= 0) {
-                    return scored.reduce((a, s) => a + Number(s.v), 0) / scored.length;
-                  }
-                  return scored.reduce((a, s) => a + Number(s.v) * Number(s.k.bobot || 0), 0) / totalBobot;
-                })()
-              : null;
+            const nilaiAkhir = allDone ? nilaiJuriPreview : null;
 
             function requestKirim() {
               if (!juriId || !pesertaId) return toast.error("Pilih juri dan peserta");
@@ -1854,7 +1869,7 @@ function PenilaianTab() {
                 setConfirmOpen(true);
                 return;
               }
-              if (scored.length === 0) return toast.error("Belum ada nilai yang diberikan");
+              if (!allDone) return toast.warning("Lengkapi semua kriteria terlebih dahulu sebelum mengirim nilai.");
               setConfirmOpen(true);
             }
 
@@ -1975,7 +1990,7 @@ function PenilaianTab() {
                       <div className="text-right">
                         <div className="text-xs uppercase tracking-widest text-accent font-semibold">Nilai Akhir</div>
                         <div className="font-serif text-3xl font-bold text-foreground">
-                          {nilaiAkhir.toFixed(2)}
+                          {nilaiAkhir.toFixed(3)}
                         </div>
                       </div>
                     )}
@@ -1984,7 +1999,7 @@ function PenilaianTab() {
                       onClick={requestKirim}
                       disabled={
                         saving ||
-                        (!editMode && scored.length === 0) ||
+                        (!editMode && !allDone) ||
                         (!editMode && !!pesertaId && mySubmittedIds.has(pesertaId))
                       }
                       className="gap-2 min-w-[160px]"
@@ -2011,7 +2026,7 @@ function PenilaianTab() {
                         )}
                         {allDone && nilaiAkhir !== null && (
                           <span className="block mt-2">
-                            Nilai akhir yang akan dikirim: <b>{nilaiAkhir.toFixed(2)}</b>.
+                            Nilai akhir yang akan dikirim: <b>{nilaiAkhir.toFixed(3)}</b>.
                           </span>
                         )}
                       </DialogDescription>
