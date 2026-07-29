@@ -3487,10 +3487,12 @@ function RincianNilaiTab() {
   const [loading, setLoading] = useState(true);
   const [kategoriFilter, setKategoriFilter] = useState<string>(LIHAT_ALL);
   const [pesertaFilter, setPesertaFilter] = useState<string>(LIHAT_ALL);
+  type MasukanRow = { peserta_id: string; juri_id: string; mazmur_id: string | null; catatan: { ayat: number; teks: string }[] };
+  const [masukanRows, setMasukanRows] = useState<MasukanRow[]>([]);
 
   async function load() {
     setLoading(true);
-    const [p, j, k, n, kt, m, rank, s] = await Promise.all([
+    const [p, j, k, n, kt, m, rank, s, mk] = await Promise.all([
       supabase.from("peserta").select("*").order("nomor_urut"),
       supabase.from("juri_public" as any).select("*").order("created_at"),
       supabase.from("kriteria").select("*").order("created_at"),
@@ -3499,6 +3501,7 @@ function RincianNilaiTab() {
       supabase.from("mazmur").select("*"),
       supabase.rpc("get_ranking" as any),
       supabase.from("penilaian_submission" as any).select("peserta_id, juri_id"),
+      supabase.from("masukan_juri" as any).select("peserta_id, juri_id, mazmur_id, catatan"),
     ]);
     for (const r of [p, j, k, n, kt, m, rank, s]) {
       if ((r as any).error) {
@@ -3512,6 +3515,7 @@ function RincianNilaiTab() {
     setPenilaian((n.data ?? []) as Penilaian[]);
     setKategoriRows((kt.data ?? []) as Kategori[]);
     setMazmur((m.data ?? []) as Mazmur[]);
+    setMasukanRows(((mk as any)?.data ?? []) as MasukanRow[]);
     const map: Record<string, number | null> = {};
     ((rank.data ?? []) as any[]).forEach((r) => { map[r.peserta_id] = r.nilai_akhir != null ? Number(r.nilai_akhir) : null; });
     setNilaiAkhirMap(map);
@@ -3524,6 +3528,12 @@ function RincianNilaiTab() {
     setNilaiJuriMap(Object.fromEntries(nilaiEntries));
     setLoading(false);
   }
+
+  function masukanFor(pesertaId: string, juriId: string): { ayat: number; teks: string }[] {
+    const row = masukanRows.find((r) => r.peserta_id === pesertaId && r.juri_id === juriId);
+    return (row?.catatan ?? []).filter((c) => c && c.teks && c.teks.trim().length > 0);
+  }
+
   useEffect(() => {
     load();
   }, []);
