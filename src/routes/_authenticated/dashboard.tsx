@@ -2841,9 +2841,9 @@ function LihatPenilaianTab() {
       supabase.from("penilaian_submission" as any).select("peserta_id, juri_id"),
       supabase.rpc("get_ranking" as any),
     ]);
-    if (p.error || j.error || k.error || n.error || rank.error) {
+    if (p.error || j.error || k.error || n.error || s.error || rank.error) {
       setLoading(false);
-      return toast.error(p.error?.message || j.error?.message || k.error?.message || n.error?.message || rank.error?.message || "Gagal memuat data");
+      return toast.error(p.error?.message || j.error?.message || k.error?.message || n.error?.message || s.error?.message || rank.error?.message || "Gagal memuat data");
     }
     setPeserta((p.data ?? []) as Peserta[]);
     setJuri(((j.data ?? []) as unknown as Juri[]).filter((x) => x.approved && x.role !== "viewer"));
@@ -3084,12 +3084,12 @@ function RincianNilaiTab() {
       supabase.from("juri_public" as any).select("*").order("created_at"),
       supabase.from("kriteria").select("*").order("created_at"),
       supabase.from("penilaian").select("*"),
-      supabase.from("kategori").select("*").order("created_at"),
+      supabase.from("kategori").select("*").order("updated_at", { ascending: false }).order("created_at", { ascending: false }),
       supabase.from("mazmur").select("*"),
       supabase.rpc("get_ranking" as any),
       supabase.from("penilaian_submission" as any).select("peserta_id, juri_id"),
     ]);
-    for (const r of [p, j, k, n, kt, m, rank]) {
+    for (const r of [p, j, k, n, kt, m, rank, s]) {
       if ((r as any).error) {
         setLoading(false);
         return toast.error((r as any).error.message);
@@ -3132,9 +3132,10 @@ function RincianNilaiTab() {
     [pesertaFiltered, pesertaFilter]
   );
 
-  function kategoriForKriteria(krNama: string) {
+  function kategoriForPeserta(pesertaKategori: string | null) {
+    const target = (pesertaKategori ?? "").toLowerCase().trim();
     return kategoriRows.find(
-      (k) => (k.kriteria_penilaian ?? "").toLowerCase().trim() === krNama.toLowerCase().trim()
+      (k) => (k.kriteria_peserta ?? k.kategori ?? "").toLowerCase().trim() === target
     );
   }
 
@@ -3177,7 +3178,7 @@ function RincianNilaiTab() {
     juriDenganNilai.forEach((j) => {
       const rows = kriteria.map((k) => {
         const rec = penilaian.find((n) => n.peserta_id === p.id && n.juri_id === j.id && n.kriteria_id === k.id);
-        const kat = kategoriForKriteria(k.nama);
+        const kat = kategoriForPeserta(p.kategori);
         const nilai = rec ? Number(rec.nilai) : null;
         const bobot = Number(k.bobot || 0);
         const berbobot = nilai !== null ? (nilai * bobot) : null;
@@ -3341,7 +3342,7 @@ function RincianNilaiTab() {
                     const nilaiJuri = nilaiJuriRentang(j.id, p.id);
                     const rows = kriteria.map((k) => {
                       const rec = penilaian.find((n) => n.peserta_id === p.id && n.juri_id === j.id && n.kriteria_id === k.id);
-                      const kat = kategoriForKriteria(k.nama);
+                      const kat = kategoriForPeserta(p.kategori);
                       const nilai = rec ? Number(rec.nilai) : null;
                       const bobot = Number(k.bobot || 0);
                       const berbobot = nilai !== null ? nilai * bobot : null;
