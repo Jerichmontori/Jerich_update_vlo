@@ -4,15 +4,12 @@ import { BookOpenText, ShieldCheck, Gavel, Trophy } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
-    meta: [
-      { title: "Sistem Penjurian Baca Mazmur" },
-      { name: "description", content: "Aplikasi penilaian dan pemeringkatan lomba baca Mazmur — objektif, transparan, dan mudah digunakan oleh juri." },
-      { property: "og:title", content: "Sistem Penjurian Baca Mazmur" },
-      { property: "og:description", content: "Aplikasi penilaian dan pemeringkatan lomba baca Mazmur — objektif, transparan, dan mudah digunakan oleh juri." },
-    ],
+    links: [{ rel: "canonical", href: "https://bumotik.live/" }],
+    meta: [{ property: "og:url", content: "https://bumotik.live/" }],
   }),
   component: Landing,
 });
+
 
 function Landing() {
   return (

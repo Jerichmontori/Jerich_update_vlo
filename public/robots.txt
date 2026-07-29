@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /auth
+Disallow: /daftar
+Disallow: /dashboard
+Disallow: /operator
+Disallow: /inspektur
+Disallow: /vmix
+
+Sitemap: https://bumotik.live/sitemap.xml
