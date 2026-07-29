@@ -2663,7 +2663,7 @@ function DashboardTab() {
     const juriList = (j.data as unknown as Juri[]) || [];
     const pesertaList = (p.data as Peserta[]) || [];
     const penilaianList = (n.data as unknown as Penilaian[]) || [];
-    const submitted = ((s.data ?? []) as Array<{ peserta_id: string; juri_id: string }>);
+    const submitted = ((s.data ?? []) as unknown as Array<{ peserta_id: string; juri_id: string }>);
     setJuri(juriList);
     setPeserta(pesertaList);
     setPenilaian(penilaianList);
