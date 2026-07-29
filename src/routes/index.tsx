@@ -17,12 +17,15 @@ function Landing() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/40 to-background">
       <header className="mx-auto max-w-6xl px-4 py-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="grid place-items-center size-11 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/20 ring-4 ring-accent/30">
-            <BookOpenText className="size-5" />
-          </div>
-          <span className="font-serif text-lg font-semibold">Sistem Penjurian Baca Mazmur</span>
-        </div>
+        <Link to="/" className="flex items-center gap-3">
+          <img
+            src={bumotikLogo.url}
+            alt="Logo BUMOTIK"
+            className="h-10 sm:h-12 w-auto object-contain"
+            width={480}
+            height={130}
+          />
+        </Link>
         <Button asChild variant="outline">
           <Link to="/auth">Masuk</Link>
         </Button>
