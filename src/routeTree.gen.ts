@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RankingRouteImport } from './routes/ranking'
 import { Route as PosisiRouteImport } from './routes/posisi'
 import { Route as DaftarRouteImport } from './routes/daftar'
@@ -20,6 +21,11 @@ import { Route as AuthenticatedInspekturRouteImport } from './routes/_authentica
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as ApiPublicBootstrapAdminRouteImport } from './routes/api/public/bootstrap-admin'
 
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RankingRoute = RankingRouteImport.update({
   id: '/ranking',
   path: '/ranking',
@@ -76,6 +82,7 @@ export interface FileRoutesByFullPath {
   '/daftar': typeof DaftarRoute
   '/posisi': typeof PosisiRoute
   '/ranking': typeof RankingRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inspektur': typeof AuthenticatedInspekturRoute
   '/operator': typeof AuthenticatedOperatorRoute
@@ -87,6 +94,7 @@ export interface FileRoutesByTo {
   '/daftar': typeof DaftarRoute
   '/posisi': typeof PosisiRoute
   '/ranking': typeof RankingRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inspektur': typeof AuthenticatedInspekturRoute
   '/operator': typeof AuthenticatedOperatorRoute
@@ -100,6 +108,7 @@ export interface FileRoutesById {
   '/daftar': typeof DaftarRoute
   '/posisi': typeof PosisiRoute
   '/ranking': typeof RankingRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/inspektur': typeof AuthenticatedInspekturRoute
   '/_authenticated/operator': typeof AuthenticatedOperatorRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
     | '/daftar'
     | '/posisi'
     | '/ranking'
+    | '/reset-password'
     | '/dashboard'
     | '/inspektur'
     | '/operator'
@@ -124,6 +134,7 @@ export interface FileRouteTypes {
     | '/daftar'
     | '/posisi'
     | '/ranking'
+    | '/reset-password'
     | '/dashboard'
     | '/inspektur'
     | '/operator'
@@ -136,6 +147,7 @@ export interface FileRouteTypes {
     | '/daftar'
     | '/posisi'
     | '/ranking'
+    | '/reset-password'
     | '/_authenticated/dashboard'
     | '/_authenticated/inspektur'
     | '/_authenticated/operator'
@@ -149,11 +161,19 @@ export interface RootRouteChildren {
   DaftarRoute: typeof DaftarRoute
   PosisiRoute: typeof PosisiRoute
   RankingRoute: typeof RankingRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   ApiPublicBootstrapAdminRoute: typeof ApiPublicBootstrapAdminRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/ranking': {
       id: '/ranking'
       path: '/ranking'
@@ -249,6 +269,7 @@ const rootRouteChildren: RootRouteChildren = {
   DaftarRoute: DaftarRoute,
   PosisiRoute: PosisiRoute,
   RankingRoute: RankingRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   ApiPublicBootstrapAdminRoute: ApiPublicBootstrapAdminRoute,
 }
 export const routeTree = rootRouteImport

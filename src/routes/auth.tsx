@@ -5,8 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
-import { BookOpenText } from "lucide-react";
+import { BookOpenText, Eye, EyeOff } from "lucide-react";
+
 
 export const Route = createFileRoute("/auth")({
   head: () => ({
@@ -25,13 +27,40 @@ function AuthPage() {
   const navigate = useNavigate();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   useEffect(() => {
     // Selalu bersihkan sesi lama saat membuka halaman /auth agar tidak
     // ada "login instan" akibat sesi tertinggal dari percobaan sebelumnya.
     supabase.auth.signOut().catch(() => {});
   }, []);
+
+  async function onForgotSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (forgotLoading) return;
+    const email = forgotEmail.trim();
+    if (!email || !email.includes("@")) {
+      toast.error("Masukkan alamat email yang valid.");
+      return;
+    }
+    setForgotLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setForgotLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Tautan pemulihan telah dikirim jika email terdaftar. Periksa kotak masuk Anda.");
+    setForgotOpen(false);
+    setForgotEmail("");
+  }
+
 
 
   async function onSubmit(e: React.FormEvent) {
@@ -123,17 +152,70 @@ function AuthPage() {
                 <Input id="password" type="password" required autoComplete="current-password"
                   value={password} onChange={(e) => setPassword(e.target.value)} />
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="password">Kata Sandi</Label>
+                <div className="relative">
+                  <Input id="password" type={showPassword ? "text" : "password"} required autoComplete="current-password"
+                    className="pr-10"
+                    value={password} onChange={(e) => setPassword(e.target.value)} />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((v) => !v)}
+                    aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                    className="absolute inset-y-0 right-0 grid place-items-center px-3 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
+                </div>
+              </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? "Memproses…" : "Masuk"}
               </Button>
             </form>
 
-            <p className="mt-4 text-center text-sm text-muted-foreground">
-              <Link to="/" className="underline underline-offset-4 hover:text-foreground">Kembali ke beranda</Link>
-            </p>
+            <div className="mt-4 flex flex-col items-center gap-2 text-sm">
+              <button
+                type="button"
+                onClick={() => setForgotOpen(true)}
+                className="text-accent underline underline-offset-4 hover:text-foreground"
+              >
+                Lupa kata sandi?
+              </button>
+              <Link to="/" className="text-muted-foreground underline underline-offset-4 hover:text-foreground">
+                Kembali ke beranda
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={forgotOpen} onOpenChange={setForgotOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Lupa Kata Sandi</DialogTitle>
+            <DialogDescription>
+              Masukkan email akun Anda. Kami akan mengirim tautan untuk mengatur ulang kata sandi.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={onForgotSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="forgot-email">Email</Label>
+              <Input id="forgot-email" type="email" required autoComplete="email"
+                value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)}
+                placeholder="email@contoh.com" />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setForgotOpen(false)} disabled={forgotLoading}>
+                Batal
+              </Button>
+              <Button type="submit" disabled={forgotLoading}>
+                {forgotLoading ? "Mengirim…" : "Kirim Tautan"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
