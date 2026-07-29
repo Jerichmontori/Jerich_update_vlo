@@ -3507,15 +3507,16 @@ function RincianNilaiTab() {
           body = [[d.label, d.desc]];
         } else if (d.type === "catatan") {
           head = [["#", "Aspek", "Clear Text", "Nilai (1–5)"]];
+          head = [["#", "Aspek", "Nilai"]];
           body = d.aspek.map((a, i) => [
             i + 1, a.nama,
-            i === 0 ? (d.clearText ? "Ya" : "Tidak") : "—",
             a.skipped ? "— (dilewati)" : String(a.nilai),
           ]);
         } else if (d.type === "perhatian") {
+          const ctVal = (d as any).clearText ?? (d as any).membacaPerikop;
           head = [["#", "Aspek", "Penanda"]];
           body = [
-            ["1", "Membaca Perikop", d.membacaPerikop === null ? "—" : d.membacaPerikop ? "Ya" : "Tidak"],
+            ["1", "Clear Text", ctVal === null || ctVal === undefined ? "—" : ctVal ? "Ya" : "Tidak"],
             ...d.aspek.map((a, i) => [
               String(i + 2),
               a.nama,
