@@ -172,9 +172,14 @@ function InspekturPage() {
       toast.error(message);
       return;
     }
-    // Override nilai_akhir dengan perhitungan non-linear terbaru (3 desimal)
+    const detail = (data as any) ?? {};
+    const juriIds = Array.from(new Set(((detail.penilaian ?? []) as any[]).map((p) => p.juri_id).filter(Boolean))) as string[];
+    const nilaiJuriEntries = await Promise.all(juriIds.map(async (juriId) => {
+      const { data: nilaiJuri } = await supabase.rpc("hitung_nilai_juri" as any, { _peserta: row.peserta_id, _juri: juriId });
+      return [juriId, nilaiJuri == null ? null : Number(nilaiJuri)] as const;
+    }));
     const { data: nilai } = await supabase.rpc("hitung_nilai_akhir" as any, { _peserta: row.peserta_id });
-    setDetailData({ ...(data as any), nilai_akhir: nilai ?? (data as any)?.nilai_akhir });
+    setDetailData({ ...detail, nilai_akhir: nilai ?? detail.nilai_akhir, nilai_juri_map: Object.fromEntries(nilaiJuriEntries) });
   }
 
   async function simpanCatatan() {
@@ -504,13 +509,42 @@ function InspekturPage() {
 
                 {detailData.penilaian && Array.isArray(detailData.penilaian) && (
                   <div>
-                    <div className="text-sm font-semibold mb-2">Nilai per Juri</div>
+                    <div className="text-sm font-semibold mb-2">Ringkasan Nilai Juri</div>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Juri</TableHead>
+                          <TableHead className="text-right">Nilai Juri</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {Array.from(new Map((detailData.penilaian as any[]).map((p) => [p.juri_id, p.juri_nama ?? p.juri_id])).entries()).map(([juriId, juriNama]) => {
+                          const nilaiJuri = detailData.nilai_juri_map?.[juriId as string];
+                          return (
+                            <TableRow key={juriId as string}>
+                              <TableCell>{juriNama as string}</TableCell>
+                              <TableCell className="text-right font-mono font-semibold text-primary">
+                                {nilaiJuri == null ? <span className="text-muted-foreground italic">belum lengkap</span> : Number(nilaiJuri).toFixed(3)}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                    {detailData.penilaian.length === 0 && (
+                      <div className="text-sm text-muted-foreground">Nilai belum dapat ditampilkan (menunggu semua juri mengirim).</div>
+                    )}
+                  </div>
+                )}
+                {detailData.penilaian && Array.isArray(detailData.penilaian) && detailData.penilaian.length > 0 && (
+                  <div>
+                    <div className="text-sm font-semibold mb-2">Rincian Nilai per Kriteria</div>
                     <Table>
                       <TableHeader>
                         <TableRow>
                           <TableHead>Juri</TableHead>
                           <TableHead>Kriteria</TableHead>
-                          <TableHead className="text-right">Nilai</TableHead>
+                          <TableHead className="text-right">Nilai Mentah</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -518,14 +552,11 @@ function InspekturPage() {
                           <TableRow key={i}>
                             <TableCell>{p.juri_nama ?? p.juri_id}</TableCell>
                             <TableCell>{p.kriteria_nama ?? p.kriteria_id}</TableCell>
-                            <TableCell className="text-right font-mono">{p.nilai}</TableCell>
+                            <TableCell className="text-right font-mono">{Number(p.nilai).toFixed(2)}</TableCell>
                           </TableRow>
                         ))}
                       </TableBody>
                     </Table>
-                    {detailData.penilaian.length === 0 && (
-                      <div className="text-sm text-muted-foreground">Nilai belum dapat ditampilkan (menunggu semua juri mengirim).</div>
-                    )}
                   </div>
                 )}
                 {detailData.nilai_akhir != null && (
