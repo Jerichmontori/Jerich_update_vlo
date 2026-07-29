@@ -1274,6 +1274,10 @@ function PenilaianTab() {
   const [nilaiJuriPreview, setNilaiJuriPreview] = useState<number | null>(null);
   const pollingInFlightRef = useRef(false);
   const resolvingCompletionRef = useRef<string | null>(null);
+  // Waktu overlay mulai tampil — dipakai memastikan overlay tidak "berkedip"
+  // bila juri saat ini kebetulan menjadi juri terakhir yang mengirim.
+  const overlayShownAtRef = useRef<number | null>(null);
+  const OVERLAY_MIN_MS = 1800;
   // Aturan #6 — konfirmasi kirim
   const [confirmOpen, setConfirmOpen] = useState(false);
   // Mode edit: dipicu setelah user menekan OK di dialog perbedaan.
