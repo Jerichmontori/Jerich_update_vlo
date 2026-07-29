@@ -26,8 +26,8 @@ type Kriteria = { id: string; nama: string; bobot: number; batas_atas: number; b
 type Mazmur = { id: string; bacaan: string; jumlah_ayat: number; kategori: string | null };
 type PenilaianDetail =
   | { type: "grade"; grade: number; label: string; desc: string }
-  | { type: "catatan"; clearText: boolean; aspek: { nama: string; nilai: number; skipped?: boolean }[] }
-  | { type: "perhatian"; membacaPerikop: boolean | null; aspek: { nama: string; ayat: boolean[]; ditandai: number[] }[] }
+  | { type: "catatan"; clearText?: boolean; aspek: { nama: string; nilai: number; skipped?: boolean }[] }
+  | { type: "perhatian"; clearText: boolean | null; membacaPerikop?: boolean | null; aspek: { nama: string; ayat: boolean[]; ditandai: number[] }[] }
   | null;
 type Penilaian = { id: string; peserta_id: string; juri_id: string; kriteria_id: string; nilai: number; mazmur_id: string | null; detail?: PenilaianDetail; created_at?: string };
 type Ranking = { peserta_id: string; nomor_urut: number; nama: string; asal: string | null; total_skor: number; rata_rata: number; jumlah_juri: number; nilai_akhir: number | null; var_status?: string | null; juri_total_sum?: number | null; juri_spread?: number | null };
@@ -1145,18 +1145,12 @@ const CATATAN_ASPEK = [
 ];
 
 const PERHATIAN_ASPEK = [
-  "Membaca Perikop",
+  "Clear Text",
   "Salah kata",
-  "Mengubah makna teks",
   "Menambah kata",
   "Mengurangi kata",
-  "Tidak berhenti pada koma",
-  "Tidak berhenti pada titik",
-  "Jeda mengganggu makna",
-  "Suara kurang jelas",
-  "Tempo terlalu cepat",
-  "Tempo terlalu lambat",
 ];
+
 
 function kriteriaKey(nama: string): keyof typeof GRADE_DESCRIPTIONS | "catatan" | "perhatian" | null {
   const n = nama.toLowerCase();
@@ -1225,7 +1219,7 @@ function PenilaianTab() {
   // Snapshot nilai Perhatian saat dialog dibuka (dipakai saat mode Perbaikan Perhatian
   // untuk mengunci baris non-pemicu agar tidak berubah, apapun yang terjadi di UI).
   const perhatianBaselineRef = useRef<boolean[][] | null>(null);
-  const PERHATIAN_VAR_TRIGGER_IDX = new Set([1, 3, 4]);
+  const PERHATIAN_VAR_TRIGGER_IDX = new Set([1, 2, 3]);
   const [saving, setSaving] = useState(false);
   // Aturan #3 — nama juri otomatis dari user yang login (juri tidak bisa memilih juri lain)
   const [myJuriId, setMyJuriId] = useState<string>("");
@@ -1609,11 +1603,8 @@ function PenilaianTab() {
   }
 
 
-  // Pemeriksaan #3 — Perbedaan pilihan pada form Perhatian, khusus Q2, Q4, Q5.
-  // Q1 = Tidak Membaca Perikop (membacaPerikop) → tidak dicek.
-  // Q2 = Salah kata → aspek[0]
-  // Q4 = Menambah kata → aspek[2]
-  // Q5 = Mengurangi kata → aspek[3]
+  // Pemeriksaan #3 — Perbedaan pilihan pada form Perhatian, khusus 3 pemicu VAR.
+  // Aspek pada detail = PERHATIAN_ASPEK.slice(1) → [Salah kata, Menambah kata, Mengurangi kata]
   async function checkPerhatianDiscrepancy(pesertaIdCheck: string): Promise<PerhatianDiscrepancyReport | null> {
     const perhatianKriteria = kriteria.find(k => kriteriaKey(k.nama) === "perhatian");
     if (!perhatianKriteria) return null;
@@ -1632,9 +1623,9 @@ function PenilaianTab() {
     ((juriRows ?? []) as unknown as { id: string; nama: string }[]).forEach(j => juriMap.set(j.id, j.nama));
 
     const targetIdx = [
-      { idx: 0, label: "Q2 — Salah kata" },
-      { idx: 2, label: "Q4 — Menambah kata" },
-      { idx: 3, label: "Q5 — Mengurangi kata" },
+      { idx: 0, label: "Salah kata" },
+      { idx: 1, label: "Menambah kata" },
+      { idx: 2, label: "Mengurangi kata" },
     ];
     const items: PerhatianDiscrepancyReport["items"] = [];
     for (const t of targetIdx) {
@@ -1742,7 +1733,7 @@ function PenilaianTab() {
       if (prevDetail && prevDetail.type === "perhatian") {
         const restored: boolean[][] = PERHATIAN_ASPEK.map((_, i) => {
           if (i === 0) {
-            const v = prevDetail.membacaPerikop;
+            const v = prevDetail.clearText ?? prevDetail.membacaPerikop;
             return v === true || v === false ? [Boolean(v)] : [];
           }
           const aspek = prevDetail.aspek?.[i - 1];
@@ -1792,12 +1783,8 @@ function PenilaianTab() {
   }
 
   async function saveCatatan() {
-    // Semua pilihan opsional. Aspek yang tidak dipilih ditandai skipped dan tidak ikut dihitung.
-    // Aspek 0 juga skipped bila clearText=false atau belum dipilih.
-    const skippedFlags = catatanValues.map((v, i) => {
-      if (i === 0) return catatanClearText !== true || v === null || v === undefined;
-      return v === null || v === undefined;
-    });
+    // Semua pilihan opsional; aspek yang tidak dipilih ditandai skipped dan tidak ikut dihitung.
+    const skippedFlags = catatanValues.map(v => v === null || v === undefined);
     const contributions: number[] = [];
     catatanValues.forEach((v, i) => {
       if (!skippedFlags[i] && v !== null && v !== undefined) contributions.push(v);
@@ -1806,7 +1793,6 @@ function PenilaianTab() {
     const nilai = Math.round(avg * 20 * 100) / 100; // scale 1-5 → 20-100
     const detail: PenilaianDetail = {
       type: "catatan",
-      clearText: catatanClearText === true,
       aspek: CATATAN_ASPEK.map((nama, i) => ({
         nama,
         nilai: skippedFlags[i] ? 0 : (catatanValues[i] as number),
@@ -1816,30 +1802,31 @@ function PenilaianTab() {
     await saveNilai(nilai, detail);
   }
 
-  const perhatianTotal = perhatianChecks.reduce((s, row) => s + row.length, 0);
-  const perhatianChecked = perhatianChecks.reduce((s, row) => s + row.filter(Boolean).length, 0);
+  // Aspek 0 = Clear Text (Ya/Tidak) tidak dihitung sebagai penanda; hanya aspek pemicu VAR (baris 1..) yang menghitung.
+  const perhatianTotal = perhatianChecks.slice(1).reduce((s, row) => s + row.length, 0);
+  const perhatianChecked = perhatianChecks.slice(1).reduce((s, row) => s + row.filter(Boolean).length, 0);
   const perhatianNilai = perhatianTotal === 0
     ? 0
     : Math.round(((perhatianTotal - perhatianChecked) / perhatianTotal) * 100 * 100) / 100;
 
   async function savePerhatian() {
-    // Wajibkan jawaban "Membaca Perikop" (Ya/Tidak) sebelum menyimpan.
+    // Wajibkan jawaban "Clear Text" (Ya/Tidak) sebelum menyimpan.
     if (perhatianChecks[0]?.[0] === undefined) {
-      return toast.warning("Pilih jawaban untuk 'Membaca Perikop' terlebih dahulu.");
+      return toast.warning("Pilih jawaban untuk 'Clear Text' terlebih dahulu.");
     }
-    // Guard: bila mode Perbaikan Perhatian aktif, paksa baris non-pemicu (selain 1/3/4)
-    // kembali ke baseline saat dialog dibuka — jadi hanya 3 parameter pemicu VAR yang benar-benar bisa diubah.
+    // Guard: bila mode Perbaikan Perhatian aktif, paksa baris non-pemicu kembali ke baseline saat dialog dibuka.
     const perbaikanAktifNow = !!(pesertaId && perbaikanPerhatianIds.has(pesertaId));
     const baseline = perhatianBaselineRef.current;
     const effective = (perbaikanAktifNow && baseline)
       ? perhatianChecks.map((row, i) => PERHATIAN_VAR_TRIGGER_IDX.has(i) ? row : (baseline[i] ? [...baseline[i]] : row))
       : perhatianChecks;
-    const totalAll = effective.reduce((s, row) => s + row.length, 0);
-    const checkedAll = effective.reduce((s, row) => s + row.filter(Boolean).length, 0);
+    // Skor hanya berdasarkan 3 pertanyaan pemicu VAR (bukan Clear Text).
+    const totalAll = effective.slice(1).reduce((s, row) => s + row.length, 0);
+    const checkedAll = effective.slice(1).reduce((s, row) => s + row.filter(Boolean).length, 0);
     const nilaiAll = totalAll === 0 ? 0 : Math.round(((totalAll - checkedAll) / totalAll) * 100 * 100) / 100;
     const detail: PenilaianDetail = {
       type: "perhatian",
-      membacaPerikop: (effective[0]?.[0] as unknown as boolean) ?? null,
+      clearText: (effective[0]?.[0] as unknown as boolean) ?? null,
       aspek: PERHATIAN_ASPEK.slice(1).map((nama, idx) => {
         const row = effective[idx + 1] ?? [];
         const ditandai: number[] = [];
@@ -2323,51 +2310,23 @@ function PenilaianTab() {
                     <span className="text-sm font-medium">{i + 1}. {aspek}</span>
                   </div>
 
-                  {i === 0 && (
-                    <div className="mb-3">
-                      <div className="text-xs text-muted-foreground mb-1">Clear text?</div>
-                      <div className="grid grid-cols-2 gap-2">
-                        {[
-                          { label: "Ya", val: true },
-                          { label: "Tidak", val: false },
-                        ].map(opt => (
-                          <button
-                            key={opt.label}
-                            type="button"
-                            onClick={() => setCatatanClearText(opt.val)}
-                            className={[
-                              "rounded-md border-2 py-2 text-sm font-semibold transition",
-                              catatanClearText === opt.val
-                                ? "border-accent bg-accent text-accent-foreground"
-                                : "border-primary/20 bg-background hover:border-accent/60",
-                            ].join(" ")}
-                          >
-                            {opt.label}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {(i !== 0 || catatanClearText) && (
-                    <div className="grid grid-cols-5 gap-2">
-                      {[1, 2, 3, 4, 5].map(v => (
-                        <button
-                          key={v}
-                          type="button"
-                          onClick={() => setCatatanValues(prev => prev.map((x, idx) => idx === i ? v : x))}
-                          className={[
-                            "rounded-md border-2 py-2 text-sm font-semibold transition",
-                            catatanValues[i] === v
-                              ? "border-accent bg-accent text-accent-foreground"
-                              : "border-primary/20 bg-background hover:border-accent/60",
-                          ].join(" ")}
-                        >
-                          {v}
-                        </button>
-                      ))}
-                    </div>
-                  )}
+                  <div className="grid grid-cols-5 gap-2">
+                    {[1, 2, 3, 4, 5].map(v => (
+                      <button
+                        key={v}
+                        type="button"
+                        onClick={() => setCatatanValues(prev => prev.map((x, idx) => idx === i ? v : x))}
+                        className={[
+                          "rounded-md border-2 py-2 text-sm font-semibold transition",
+                          catatanValues[i] === v
+                            ? "border-accent bg-accent text-accent-foreground"
+                            : "border-primary/20 bg-background hover:border-accent/60",
+                        ].join(" ")}
+                      >
+                        {v}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               ))}
               <p className="text-xs text-muted-foreground pt-2">
@@ -2379,7 +2338,7 @@ function PenilaianTab() {
 
           {activeKey === "perhatian" && (() => {
             const perbaikanAktifDlg = !!(pesertaId && perbaikanPerhatianIds.has(pesertaId));
-            const VAR_TRIGGER_IDX = new Set([1, 3, 4]);
+            const VAR_TRIGGER_IDX = new Set([1, 2, 3]);
             return (
             <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
               {perbaikanAktifDlg && (
@@ -2437,8 +2396,8 @@ function PenilaianTab() {
                                 "rounded-md border-2 py-2 text-sm font-semibold transition",
                                 active
                                   ? (opt.val
-                                      ? "border-destructive bg-destructive text-destructive-foreground"
-                                      : "border-accent bg-accent text-accent-foreground")
+                                      ? "border-accent bg-accent text-accent-foreground"
+                                      : "border-destructive bg-destructive text-destructive-foreground")
                                   : "border-primary/20 bg-background hover:border-accent/60",
                                 locked ? "cursor-not-allowed opacity-70 hover:border-primary/20" : "",
                               ].join(" ")}
@@ -3209,7 +3168,8 @@ function LihatPenilaianTab() {
         } else if (nm.includes("perhatian")) {
           const d = detailByKrit[k.id] as any;
           let marks = 0;
-          if (d?.membacaPerikop === true) marks += 1;
+          const ctVal = d?.clearText ?? d?.membacaPerikop;
+          if (ctVal === false) marks += 1;
           (d?.aspek ?? []).forEach((a: any) => (a?.ayat ?? []).forEach((b: any) => { if (b) marks += 1; }));
           const factor = Math.min(1, marks / 15);
           const kontrib = factor * Number(k.bobot || 0);
@@ -3546,16 +3506,16 @@ function RincianNilaiTab() {
           head = [["Pilihan", "Deskripsi"]];
           body = [[d.label, d.desc]];
         } else if (d.type === "catatan") {
-          head = [["#", "Aspek", "Clear Text", "Nilai (1–5)"]];
+          head = [["#", "Aspek", "Nilai (1–5)"]];
           body = d.aspek.map((a, i) => [
             i + 1, a.nama,
-            i === 0 ? (d.clearText ? "Ya" : "Tidak") : "—",
             a.skipped ? "— (dilewati)" : String(a.nilai),
           ]);
         } else if (d.type === "perhatian") {
+          const ctVal = (d as any).clearText ?? (d as any).membacaPerikop;
           head = [["#", "Aspek", "Penanda"]];
           body = [
-            ["1", "Membaca Perikop", d.membacaPerikop === null ? "—" : d.membacaPerikop ? "Ya" : "Tidak"],
+            ["1", "Clear Text", ctVal === null || ctVal === undefined ? "—" : ctVal ? "Ya" : "Tidak"],
             ...d.aspek.map((a, i) => [
               String(i + 2),
               a.nama,
@@ -3729,17 +3689,19 @@ function RincianNilaiTab() {
                                   <div className="grid gap-1 text-xs">
                                     {d.aspek.map((a, i) => (
                                       <div key={i} className="flex justify-between gap-3 border-b last:border-0 py-1">
-                                        <span>{i + 1}. {a.nama}{i === 0 ? ` (Clear text: ${d.clearText ? "Ya" : "Tidak"})` : ""}</span>
+                                        <span>{i + 1}. {a.nama}</span>
                                         <span className="font-mono">{a.skipped ? "—" : a.nilai}</span>
                                       </div>
                                     ))}
                                   </div>
                                 )}
-                                {d.type === "perhatian" && (
+                                {d.type === "perhatian" && (() => {
+                                  const ctVal = (d as any).clearText ?? (d as any).membacaPerikop;
+                                  return (
                                   <div className="grid gap-1 text-xs">
                                     <div className="flex justify-between gap-3 border-b py-1">
-                                      <span>1. Membaca Perikop</span>
-                                      <span className="font-mono">{d.membacaPerikop === null ? "—" : d.membacaPerikop ? "Ya" : "Tidak"}</span>
+                                      <span>1. Clear Text</span>
+                                      <span className="font-mono">{ctVal === null || ctVal === undefined ? "—" : ctVal ? "Ya" : "Tidak"}</span>
                                     </div>
                                     {d.aspek.map((a, i) => (
                                       <div key={i} className="flex justify-between gap-3 border-b last:border-0 py-1">
@@ -3748,7 +3710,8 @@ function RincianNilaiTab() {
                                       </div>
                                     ))}
                                   </div>
-                                )}
+                                  );
+                                })()}
                               </div>
                             );
                           })}
