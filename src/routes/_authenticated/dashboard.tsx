@@ -1603,11 +1603,8 @@ function PenilaianTab() {
   }
 
 
-  // Pemeriksaan #3 — Perbedaan pilihan pada form Perhatian, khusus Q2, Q4, Q5.
-  // Q1 = Tidak Membaca Perikop (membacaPerikop) → tidak dicek.
-  // Q2 = Salah kata → aspek[0]
-  // Q4 = Menambah kata → aspek[2]
-  // Q5 = Mengurangi kata → aspek[3]
+  // Pemeriksaan #3 — Perbedaan pilihan pada form Perhatian, khusus 3 pemicu VAR.
+  // Aspek pada detail = PERHATIAN_ASPEK.slice(1) → [Salah kata, Menambah kata, Mengurangi kata]
   async function checkPerhatianDiscrepancy(pesertaIdCheck: string): Promise<PerhatianDiscrepancyReport | null> {
     const perhatianKriteria = kriteria.find(k => kriteriaKey(k.nama) === "perhatian");
     if (!perhatianKriteria) return null;
@@ -1626,9 +1623,9 @@ function PenilaianTab() {
     ((juriRows ?? []) as unknown as { id: string; nama: string }[]).forEach(j => juriMap.set(j.id, j.nama));
 
     const targetIdx = [
-      { idx: 0, label: "Q2 — Salah kata" },
-      { idx: 2, label: "Q4 — Menambah kata" },
-      { idx: 3, label: "Q5 — Mengurangi kata" },
+      { idx: 0, label: "Salah kata" },
+      { idx: 1, label: "Menambah kata" },
+      { idx: 2, label: "Mengurangi kata" },
     ];
     const items: PerhatianDiscrepancyReport["items"] = [];
     for (const t of targetIdx) {
