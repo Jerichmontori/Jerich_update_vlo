@@ -6,6 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -1256,6 +1258,12 @@ function PenilaianTab() {
   };
   const [perhatianDiscrepancy, setPerhatianDiscrepancy] = useState<PerhatianDiscrepancyReport | null>(null);
 
+  // Masukan Juri per ayat — bukan bagian penilaian, hanya lampiran rincian nilai
+  const [openMasukan, setOpenMasukan] = useState(false);
+  const [masukanValues, setMasukanValues] = useState<string[]>([]);
+  const [savingMasukan, setSavingMasukan] = useState(false);
+
+
   // Sesi aktif dari Panitia/Operator Lomba — juri tidak boleh memilih peserta/mazmur secara manual
   const [activeSession, setActiveSession] = useState<{ id: string; peserta_id: string; mazmur_id: string | null } | null>(null);
   useEffect(() => {
@@ -1756,6 +1764,54 @@ function PenilaianTab() {
     setOpenKriteria(k);
   }
 
+  async function openMasukanDialog() {
+    if (!juriId) return toast.error("Pilih juri terlebih dahulu");
+    if (!pesertaId) return toast.error("Pilih peserta terlebih dahulu");
+    if (!selectedMazmur) return toast.error("Pilih bacaan mazmur terlebih dahulu");
+    const jumlah = selectedMazmur.jumlah_ayat || 0;
+    const empty = Array(jumlah).fill("");
+    const { data } = await supabase
+      .from("masukan_juri" as any)
+      .select("catatan")
+      .eq("peserta_id", pesertaId)
+      .eq("juri_id", juriId)
+      .maybeSingle();
+    const existing = ((data as any)?.catatan ?? []) as { ayat: number; teks: string }[];
+    const values = [...empty];
+    existing.forEach((e) => {
+      if (e && typeof e.ayat === "number" && e.ayat >= 1 && e.ayat <= jumlah) {
+        values[e.ayat - 1] = String(e.teks ?? "");
+      }
+    });
+    setMasukanValues(values);
+    setOpenMasukan(true);
+  }
+
+  async function saveMasukan() {
+    if (!juriId || !pesertaId || !selectedMazmur) { setOpenMasukan(false); return; }
+    setSavingMasukan(true);
+    const catatan = masukanValues
+      .map((teks, i) => ({ ayat: i + 1, teks: (teks || "").trim() }))
+      .filter((x) => x.teks.length > 0);
+    const { error } = await supabase
+      .from("masukan_juri" as any)
+      .upsert(
+        {
+          peserta_id: pesertaId,
+          juri_id: juriId,
+          mazmur_id: mazmurId || null,
+          catatan,
+        } as any,
+        { onConflict: "peserta_id,juri_id" }
+      );
+    setSavingMasukan(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("✦ Masukan juri tersimpan", { description: `${catatan.length} ayat terisi.` });
+    setOpenMasukan(false);
+  }
+
+
+
 
   async function saveNilai(nilai: number, detail: PenilaianDetail = null) {
     if (!openKriteria) return;
@@ -1933,6 +1989,31 @@ function PenilaianTab() {
             })}
 
           </div>
+
+          {/* Masukan Juri (per ayat) — di luar penilaian, hanya lampiran rincian */}
+          {juriId && pesertaId && selectedMazmur && (
+            <div className="mb-6 rounded-xl border-2 border-dashed border-accent/40 bg-accent/5 p-4 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <div className="font-serif text-base font-semibold">Masukan Juri (per ayat)</div>
+                <div className="text-xs text-muted-foreground max-w-xl">
+                  Catatan atau masukan bebas per ayat. Tidak masuk perhitungan nilai — hanya
+                  menjadi lampiran pada rincian nilai peserta.
+                </div>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                className="gap-2"
+                onClick={openMasukanDialog}
+                disabled={savingMasukan}
+              >
+                <FileText className="size-4" />
+                Isi Masukan
+              </Button>
+            </div>
+          )}
+
+
 
           {(() => {
             const scored = kriteria
@@ -2131,6 +2212,59 @@ function PenilaianTab() {
 
         </div>
       )}
+
+      {/* Dialog Masukan Juri per ayat */}
+      <Dialog
+        open={openMasukan}
+        onOpenChange={(v) => {
+          if (savingMasukan) return;
+          if (!v) { saveMasukan(); return; }
+        }}
+      >
+        <DialogContent
+          className="max-w-2xl w-[95vw] max-h-[90dvh] p-4 sm:p-6 flex flex-col overflow-hidden"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl">Masukan Juri per Ayat</DialogTitle>
+            <DialogDescription>
+              Tulis masukan/komentar bebas untuk tiap ayat. Kosongkan bila tidak ada catatan.
+              Perubahan disimpan otomatis saat dialog ditutup.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
+            {masukanValues.map((v, i) => (
+              <div key={i} className="rounded-lg border bg-card p-3">
+                <Label className="text-sm font-medium mb-2 block">Ayat {i + 1}</Label>
+                <Textarea
+                  value={v}
+                  rows={2}
+                  placeholder="Tulis masukan untuk ayat ini…"
+                  onChange={(e) =>
+                    setMasukanValues((prev) => prev.map((x, idx) => idx === i ? e.target.value : x))
+                  }
+                />
+              </div>
+            ))}
+            {masukanValues.length === 0 && (
+              <div className="text-sm text-muted-foreground italic text-center py-6">
+                Jumlah ayat belum tersedia untuk mazmur yang dipilih.
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenMasukan(false)} disabled={savingMasukan}>
+              Batal
+            </Button>
+            <Button onClick={saveMasukan} disabled={savingMasukan} className="gap-1">
+              <Check className="size-4" /> Simpan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
 
       {/* Dialog perbedaan input antar juri — nama peserta & bacaan mazmur */}
       <Dialog open={!!discrepancy} onOpenChange={() => { /* wajib konfirmasi OK */ }}>
@@ -3353,10 +3487,12 @@ function RincianNilaiTab() {
   const [loading, setLoading] = useState(true);
   const [kategoriFilter, setKategoriFilter] = useState<string>(LIHAT_ALL);
   const [pesertaFilter, setPesertaFilter] = useState<string>(LIHAT_ALL);
+  type MasukanRow = { peserta_id: string; juri_id: string; mazmur_id: string | null; catatan: { ayat: number; teks: string }[] };
+  const [masukanRows, setMasukanRows] = useState<MasukanRow[]>([]);
 
   async function load() {
     setLoading(true);
-    const [p, j, k, n, kt, m, rank, s] = await Promise.all([
+    const [p, j, k, n, kt, m, rank, s, mk] = await Promise.all([
       supabase.from("peserta").select("*").order("nomor_urut"),
       supabase.from("juri_public" as any).select("*").order("created_at"),
       supabase.from("kriteria").select("*").order("created_at"),
@@ -3365,6 +3501,7 @@ function RincianNilaiTab() {
       supabase.from("mazmur").select("*"),
       supabase.rpc("get_ranking" as any),
       supabase.from("penilaian_submission" as any).select("peserta_id, juri_id"),
+      supabase.from("masukan_juri" as any).select("peserta_id, juri_id, mazmur_id, catatan"),
     ]);
     for (const r of [p, j, k, n, kt, m, rank, s]) {
       if ((r as any).error) {
@@ -3378,6 +3515,7 @@ function RincianNilaiTab() {
     setPenilaian((n.data ?? []) as Penilaian[]);
     setKategoriRows((kt.data ?? []) as Kategori[]);
     setMazmur((m.data ?? []) as Mazmur[]);
+    setMasukanRows(((mk as any)?.data ?? []) as MasukanRow[]);
     const map: Record<string, number | null> = {};
     ((rank.data ?? []) as any[]).forEach((r) => { map[r.peserta_id] = r.nilai_akhir != null ? Number(r.nilai_akhir) : null; });
     setNilaiAkhirMap(map);
@@ -3390,6 +3528,12 @@ function RincianNilaiTab() {
     setNilaiJuriMap(Object.fromEntries(nilaiEntries));
     setLoading(false);
   }
+
+  function masukanFor(pesertaId: string, juriId: string): { ayat: number; teks: string }[] {
+    const row = masukanRows.find((r) => r.peserta_id === pesertaId && r.juri_id === juriId);
+    return (row?.catatan ?? []).filter((c) => c && c.teks && c.teks.trim().length > 0);
+  }
+
   useEffect(() => {
     load();
   }, []);
@@ -3541,6 +3685,32 @@ function RincianNilaiTab() {
       y += 10;
       if (y > 520) { doc.addPage(); y = 40; }
     });
+
+    // Lampiran: Masukan Juri per ayat (di luar penilaian)
+    const juriDenganMasukan = juri.filter((j) => masukanFor(p.id, j.id).length > 0);
+    if (juriDenganMasukan.length > 0) {
+      doc.addPage();
+      doc.setFontSize(14); doc.text("Lampiran — Masukan Juri per Ayat", 40, 40);
+      doc.setFontSize(10); doc.setTextColor(100);
+      doc.text(`${p.nomor_urut}. ${p.nama}${p.kategori ? " • " + p.kategori : ""}`, 40, 58);
+      doc.setTextColor(0);
+      let y2 = 78;
+      juriDenganMasukan.forEach((j) => {
+        const rows = masukanFor(p.id, j.id).map((c) => [String(c.ayat), c.teks]);
+        doc.setFontSize(11); doc.text(`Juri: ${j.nama}${j.jabatan ? " — " + j.jabatan : ""}`, 40, y2);
+        autoTable(doc, {
+          startY: y2 + 6,
+          head: [["Ayat", "Masukan"]],
+          body: rows,
+          styles: { fontSize: 9, cellPadding: 4, valign: "top" },
+          headStyles: { fillColor: [60, 90, 140], textColor: 255 },
+          columnStyles: { 0: { halign: "center", cellWidth: 50 } },
+        });
+        // @ts-ignore
+        y2 = (doc as any).lastAutoTable.finalY + 14;
+        if (y2 > 520) { doc.addPage(); y2 = 40; }
+      });
+    }
   }
 
   function downloadSatu(p: Peserta) {
@@ -3556,6 +3726,39 @@ function RincianNilaiTab() {
     const suffix = kategoriFilter === LIHAT_ALL ? "semua" : kategoriFilter.replace(/\s+/g, "_");
     doc.save(`rincian-nilai-${suffix}-${stamp}.pdf`);
   }
+
+  function downloadMasukan(p: Peserta) {
+    const juriDenganMasukan = juri.filter((j) => masukanFor(p.id, j.id).length > 0);
+    if (juriDenganMasukan.length === 0) return toast.info("Belum ada masukan juri untuk peserta ini.");
+    const doc = new jsPDF({ orientation: "portrait", unit: "pt", format: "a4" });
+    doc.setFontSize(16); doc.text("Masukan Juri per Ayat", 40, 40);
+    doc.setFontSize(12); doc.setTextColor(60);
+    doc.text(`${p.nomor_urut}. ${p.nama}`, 40, 62);
+    doc.setFontSize(10); doc.setTextColor(100);
+    const meta = [p.kategori && `Kategori: ${p.kategori}`, p.asal && `Asal: ${p.asal}`].filter(Boolean).join("  •  ");
+    if (meta) doc.text(meta, 40, 78);
+    doc.setTextColor(0);
+    let y = meta ? 96 : 82;
+    juriDenganMasukan.forEach((j) => {
+      const rows = masukanFor(p.id, j.id).map((c) => [String(c.ayat), c.teks]);
+      doc.setFontSize(11); doc.text(`Juri: ${j.nama}${j.jabatan ? " — " + j.jabatan : ""}`, 40, y);
+      autoTable(doc, {
+        startY: y + 6,
+        head: [["Ayat", "Masukan"]],
+        body: rows,
+        styles: { fontSize: 9, cellPadding: 4, valign: "top" },
+        headStyles: { fillColor: [60, 90, 140], textColor: 255 },
+        columnStyles: { 0: { halign: "center", cellWidth: 50 } },
+      });
+      // @ts-ignore
+      y = (doc as any).lastAutoTable.finalY + 14;
+      if (y > 760) { doc.addPage(); y = 40; }
+    });
+    const stamp = new Date().toISOString().slice(0, 10);
+    doc.save(`masukan-juri-${p.nomor_urut}-${p.nama.replace(/\s+/g, "_")}-${stamp}.pdf`);
+  }
+
+
 
   return (
     <SectionCard
@@ -3608,6 +3811,16 @@ function RincianNilaiTab() {
                   <Button size="sm" variant="outline" onClick={() => downloadSatu(p)} className="gap-2">
                     <Download className="size-4" /> Unduh PDF
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => downloadMasukan(p)}
+                    disabled={!juri.some((j) => masukanFor(p.id, j.id).length > 0)}
+                    className="gap-2"
+                  >
+                    <FileText className="size-4" /> Unduh Masukan Juri
+                  </Button>
+
                 </div>
               </div>
               {juriDenganNilai.length === 0 ? (
@@ -3715,8 +3928,26 @@ function RincianNilaiTab() {
                               </div>
                             );
                           })}
+                          {(() => {
+                            const list = masukanFor(p.id, j.id);
+                            if (list.length === 0) return null;
+                            return (
+                              <div className="rounded border-2 border-accent/30 bg-accent/5 p-3">
+                                <div className="text-xs font-semibold text-accent mb-2">Masukan Juri per Ayat</div>
+                                <div className="grid gap-1 text-xs">
+                                  {list.map((c, i) => (
+                                    <div key={i} className="flex gap-3 border-b last:border-0 py-1">
+                                      <span className="font-mono w-14 shrink-0">Ayat {c.ayat}</span>
+                                      <span className="flex-1 whitespace-pre-wrap">{c.teks}</span>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+                            );
+                          })()}
                         </div>
                       </div>
+
                     );
                   })}
                 </div>
