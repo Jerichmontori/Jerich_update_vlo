@@ -3089,8 +3089,12 @@ function RincianNilaiTab() {
       supabase.rpc("get_ranking" as any),
       supabase.from("penilaian_submission" as any).select("peserta_id, juri_id"),
     ]);
-    setLoading(false);
-    for (const r of [p, j, k, n, kt, m, rank]) if ((r as any).error) return toast.error((r as any).error.message);
+    for (const r of [p, j, k, n, kt, m, rank]) {
+      if ((r as any).error) {
+        setLoading(false);
+        return toast.error((r as any).error.message);
+      }
+    }
     setPeserta((p.data ?? []) as Peserta[]);
     setJuri(((j.data ?? []) as unknown as Juri[]).filter((x) => x.approved && x.role !== "viewer"));
     setKriteria((k.data ?? []) as Kriteria[]);
@@ -3107,6 +3111,7 @@ function RincianNilaiTab() {
       return [key, data == null ? null : Number(data)] as const;
     }));
     setNilaiJuriMap(Object.fromEntries(nilaiEntries));
+    setLoading(false);
   }
   useEffect(() => {
     load();
