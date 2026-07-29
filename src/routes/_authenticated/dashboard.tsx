@@ -1570,10 +1570,16 @@ function PenilaianTab() {
 
   // Aturan #7 — polling jumlah juri yang sudah menilai peserta terkunci
   useEffect(() => {
-    if (!submittedFor) return;
+    if (!submittedFor) { overlayShownAtRef.current = null; return; }
+    if (overlayShownAtRef.current == null) overlayShownAtRef.current = Date.now();
     const lockedPesertaId = submittedFor;
     resolvingCompletionRef.current = null;
     let stopped = false;
+    async function ensureMinDisplay() {
+      const start = overlayShownAtRef.current ?? Date.now();
+      const wait = OVERLAY_MIN_MS - (Date.now() - start);
+      if (wait > 0) await new Promise(r => setTimeout(r, wait));
+    }
     async function tick() {
       if (pollingInFlightRef.current) return;
       pollingInFlightRef.current = true;
