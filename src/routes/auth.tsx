@@ -30,7 +30,9 @@ function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [forgotOpen, setForgotOpen] = useState(false);
-  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotIdentifier, setForgotIdentifier] = useState("");
+  const [forgotNewPw, setForgotNewPw] = useState("");
+  const [forgotShowPw, setForgotShowPw] = useState(false);
   const [forgotLoading, setForgotLoading] = useState(false);
 
   useEffect(() => {
@@ -42,23 +44,29 @@ function AuthPage() {
   async function onForgotSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (forgotLoading) return;
-    const email = forgotEmail.trim();
-    if (!email || !email.includes("@")) {
-      toast.error("Masukkan alamat email yang valid.");
+    const ident = forgotIdentifier.trim();
+    if (!ident) {
+      toast.error("Masukkan email atau nama akun Anda.");
+      return;
+    }
+    if (forgotNewPw.length < 8) {
+      toast.error("Kata sandi baru minimal 8 karakter.");
       return;
     }
     setForgotLoading(true);
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password`,
-    });
-    setForgotLoading(false);
-    if (error) {
-      toast.error(error.message);
-      return;
+    try {
+      const { requestPasswordReset } = await import("@/lib/password-reset.functions");
+      await requestPasswordReset({ data: { identifier: ident, newPassword: forgotNewPw } });
+      toast.success("Permintaan dikirim. Kata sandi baru akan aktif setelah admin menyetujui.");
+      setForgotOpen(false);
+      setForgotIdentifier("");
+      setForgotNewPw("");
+      setForgotShowPw(false);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Gagal mengirim permintaan");
+    } finally {
+      setForgotLoading(false);
     }
-    toast.success("Tautan pemulihan telah dikirim jika email terdaftar. Periksa kotak masuk Anda.");
-    setForgotOpen(false);
-    setForgotEmail("");
   }
 
 
