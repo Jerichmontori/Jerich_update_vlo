@@ -878,6 +878,7 @@ export type Database = {
         Args: { _mazmur: string; _peserta: string }
         Returns: string
       }
+      public_live_state: { Args: never; Returns: Json }
       submit_klarifikasi_var: {
         Args: { _peserta: string; _responses: Json }
         Returns: Json
