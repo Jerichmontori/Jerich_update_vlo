@@ -149,11 +149,6 @@ function AuthPage() {
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="password">Kata Sandi</Label>
-                <Input id="password" type="password" required autoComplete="current-password"
-                  value={password} onChange={(e) => setPassword(e.target.value)} />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="password">Kata Sandi</Label>
                 <div className="relative">
                   <Input id="password" type={showPassword ? "text" : "password"} required autoComplete="current-password"
                     className="pr-10"
