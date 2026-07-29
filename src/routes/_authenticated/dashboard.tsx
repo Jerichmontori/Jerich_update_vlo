@@ -2211,6 +2211,59 @@ function PenilaianTab() {
         </div>
       )}
 
+      {/* Dialog Masukan Juri per ayat */}
+      <Dialog
+        open={openMasukan}
+        onOpenChange={(v) => {
+          if (savingMasukan) return;
+          if (!v) { saveMasukan(); return; }
+        }}
+      >
+        <DialogContent
+          className="max-w-2xl w-[95vw] max-h-[90dvh] p-4 sm:p-6 flex flex-col overflow-hidden"
+          onPointerDownOutside={(e) => e.preventDefault()}
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          <DialogHeader>
+            <DialogTitle className="font-serif text-2xl">Masukan Juri per Ayat</DialogTitle>
+            <DialogDescription>
+              Tulis masukan/komentar bebas untuk tiap ayat. Kosongkan bila tidak ada catatan.
+              Perubahan disimpan otomatis saat dialog ditutup.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
+            {masukanValues.map((v, i) => (
+              <div key={i} className="rounded-lg border bg-card p-3">
+                <Label className="text-sm font-medium mb-2 block">Ayat {i + 1}</Label>
+                <Textarea
+                  value={v}
+                  rows={2}
+                  placeholder="Tulis masukan untuk ayat ini…"
+                  onChange={(e) =>
+                    setMasukanValues((prev) => prev.map((x, idx) => idx === i ? e.target.value : x))
+                  }
+                />
+              </div>
+            ))}
+            {masukanValues.length === 0 && (
+              <div className="text-sm text-muted-foreground italic text-center py-6">
+                Jumlah ayat belum tersedia untuk mazmur yang dipilih.
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenMasukan(false)} disabled={savingMasukan}>
+              Batal
+            </Button>
+            <Button onClick={saveMasukan} disabled={savingMasukan} className="gap-1">
+              <Check className="size-4" /> Simpan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+
+
       {/* Dialog perbedaan input antar juri — nama peserta & bacaan mazmur */}
       <Dialog open={!!discrepancy} onOpenChange={() => { /* wajib konfirmasi OK */ }}>
         <DialogContent
