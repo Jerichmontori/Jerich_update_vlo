@@ -662,6 +662,8 @@ export type Database = {
         Returns: {
           asal: string
           jumlah_juri: number
+          juri_spread: number
+          juri_total_sum: number
           nama: string
           nilai_akhir: number
           nomor_urut: number
