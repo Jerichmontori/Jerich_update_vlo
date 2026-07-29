@@ -27,13 +27,40 @@ function AuthPage() {
   const navigate = useNavigate();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [forgotLoading, setForgotLoading] = useState(false);
 
   useEffect(() => {
     // Selalu bersihkan sesi lama saat membuka halaman /auth agar tidak
     // ada "login instan" akibat sesi tertinggal dari percobaan sebelumnya.
     supabase.auth.signOut().catch(() => {});
   }, []);
+
+  async function onForgotSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    if (forgotLoading) return;
+    const email = forgotEmail.trim();
+    if (!email || !email.includes("@")) {
+      toast.error("Masukkan alamat email yang valid.");
+      return;
+    }
+    setForgotLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    setForgotLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Tautan pemulihan telah dikirim jika email terdaftar. Periksa kotak masuk Anda.");
+    setForgotOpen(false);
+    setForgotEmail("");
+  }
+
 
 
   async function onSubmit(e: React.FormEvent) {
