@@ -1733,7 +1733,7 @@ function PenilaianTab() {
       if (prevDetail && prevDetail.type === "perhatian") {
         const restored: boolean[][] = PERHATIAN_ASPEK.map((_, i) => {
           if (i === 0) {
-            const v = prevDetail.membacaPerikop;
+            const v = prevDetail.clearText ?? prevDetail.membacaPerikop;
             return v === true || v === false ? [Boolean(v)] : [];
           }
           const aspek = prevDetail.aspek?.[i - 1];
