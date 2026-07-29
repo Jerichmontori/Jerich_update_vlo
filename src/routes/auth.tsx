@@ -197,22 +197,39 @@ function AuthPage() {
           <DialogHeader>
             <DialogTitle>Lupa Kata Sandi</DialogTitle>
             <DialogDescription>
-              Masukkan email akun Anda. Kami akan mengirim tautan untuk mengatur ulang kata sandi.
+              Masukkan email atau nama akun Anda beserta kata sandi baru. Kata sandi baru akan
+              aktif setelah admin menyetujui — data penilaian Anda tetap utuh.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={onForgotSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="forgot-email">Email</Label>
-              <Input id="forgot-email" type="email" required autoComplete="email"
-                value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)}
-                placeholder="email@contoh.com" />
+              <Label htmlFor="forgot-identifier">Email atau Nama</Label>
+              <Input id="forgot-identifier" type="text" required autoComplete="username"
+                value={forgotIdentifier} onChange={(e) => setForgotIdentifier(e.target.value)}
+                placeholder="email@contoh.com atau nama lengkap" />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="forgot-newpw">Kata Sandi Baru (min. 8 karakter)</Label>
+              <div className="relative">
+                <Input id="forgot-newpw" type={forgotShowPw ? "text" : "password"} required
+                  autoComplete="new-password" className="pr-10"
+                  value={forgotNewPw} onChange={(e) => setForgotNewPw(e.target.value)} />
+                <button
+                  type="button"
+                  onClick={() => setForgotShowPw((v) => !v)}
+                  aria-label={forgotShowPw ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                  className="absolute inset-y-0 right-0 grid place-items-center px-3 text-muted-foreground hover:text-foreground"
+                >
+                  {forgotShowPw ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
+              </div>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setForgotOpen(false)} disabled={forgotLoading}>
                 Batal
               </Button>
               <Button type="submit" disabled={forgotLoading}>
-                {forgotLoading ? "Mengirim…" : "Kirim Tautan"}
+                {forgotLoading ? "Mengirim…" : "Kirim Permintaan"}
               </Button>
             </DialogFooter>
           </form>
