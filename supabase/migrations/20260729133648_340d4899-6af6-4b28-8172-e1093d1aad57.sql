@@ -1,0 +1,1 @@
+ALTER TABLE public.password_reset_request DROP COLUMN IF EXISTS new_password;
