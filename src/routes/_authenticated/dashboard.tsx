@@ -3072,13 +3072,14 @@ function RincianNilaiTab() {
   const [kategoriRows, setKategoriRows] = useState<Kategori[]>([]);
   const [mazmur, setMazmur] = useState<Mazmur[]>([]);
   const [nilaiAkhirMap, setNilaiAkhirMap] = useState<Record<string, number | null>>({});
+  const [nilaiJuriMap, setNilaiJuriMap] = useState<Record<string, number | null>>({});
   const [loading, setLoading] = useState(true);
   const [kategoriFilter, setKategoriFilter] = useState<string>(LIHAT_ALL);
   const [pesertaFilter, setPesertaFilter] = useState<string>(LIHAT_ALL);
 
   async function load() {
     setLoading(true);
-    const [p, j, k, n, kt, m, rank] = await Promise.all([
+    const [p, j, k, n, kt, m, rank, s] = await Promise.all([
       supabase.from("peserta").select("*").order("nomor_urut"),
       supabase.from("juri_public" as any).select("*").order("created_at"),
       supabase.from("kriteria").select("*").order("created_at"),
@@ -3086,9 +3087,10 @@ function RincianNilaiTab() {
       supabase.from("kategori").select("*").order("created_at"),
       supabase.from("mazmur").select("*"),
       supabase.rpc("get_ranking" as any),
+      supabase.from("penilaian_submission" as any).select("peserta_id, juri_id"),
     ]);
     setLoading(false);
-    for (const r of [p, j, k, n, kt, m]) if ((r as any).error) return toast.error((r as any).error.message);
+    for (const r of [p, j, k, n, kt, m, rank]) if ((r as any).error) return toast.error((r as any).error.message);
     setPeserta((p.data ?? []) as Peserta[]);
     setJuri(((j.data ?? []) as unknown as Juri[]).filter((x) => x.approved && x.role !== "viewer"));
     setKriteria((k.data ?? []) as Kriteria[]);
@@ -3098,6 +3100,13 @@ function RincianNilaiTab() {
     const map: Record<string, number | null> = {};
     ((rank.data ?? []) as any[]).forEach((r) => { map[r.peserta_id] = r.nilai_akhir != null ? Number(r.nilai_akhir) : null; });
     setNilaiAkhirMap(map);
+    const submitted = ((s.data ?? []) as unknown as Submission[]);
+    const nilaiEntries = await Promise.all(submitted.map(async (row) => {
+      const key = `${row.juri_id}|${row.peserta_id}`;
+      const { data } = await supabase.rpc("hitung_nilai_juri" as any, { _peserta: row.peserta_id, _juri: row.juri_id });
+      return [key, data == null ? null : Number(data)] as const;
+    }));
+    setNilaiJuriMap(Object.fromEntries(nilaiEntries));
   }
   useEffect(() => {
     load();
@@ -3124,6 +3133,11 @@ function RincianNilaiTab() {
     return kategoriRows.find(
       (k) => (k.kriteria_penilaian ?? "").toLowerCase().trim() === krNama.toLowerCase().trim()
     );
+  }
+
+  function nilaiJuriRentang(juriId: string, pesertaId: string): number | null {
+    const value = nilaiJuriMap[`${juriId}|${pesertaId}`];
+    return value == null ? null : value;
   }
 
   function buildPesertaPDF(doc: jsPDF, p: Peserta, startFresh: boolean) {
@@ -3178,6 +3192,7 @@ function RincianNilaiTab() {
       const totalNilai = rows.reduce((s, r) => s + (r[6] === "—" ? 0 : parseFloat(r[6] as string)), 0);
       const totalBerbobot = rows.reduce((s, r) => s + (r[7] === "—" ? 0 : parseFloat(r[7] as string)), 0);
       const rata = totalBobotKriteria > 0 ? totalBerbobot / totalBobotKriteria : 0;
+      const nilaiJuri = nilaiJuriRentang(j.id, p.id);
 
       const mzId = penilaian.find((n) => n.peserta_id === p.id && n.juri_id === j.id)?.mazmur_id;
       const mz = mazmur.find((x) => x.id === mzId);
@@ -3189,8 +3204,8 @@ function RincianNilaiTab() {
         startY: y + (mz ? 18 : 6),
         head: [["Kriteria (Kategori)", "Kriteria Peserta", "Bobot", "Batas", "Tengah", "Standar", "Nilai", "Berbobot"]],
         body: rows,
-        foot: [["", "", "", "", "", "Total", totalNilai.toFixed(2), totalBerbobot.toFixed(2)],
-               ["", "", "", "", "", "Rata-rata Berbobot", "", rata.toFixed(2)]],
+        foot: [["", "", "", "", "", "Total Mentah", totalNilai.toFixed(2), totalBerbobot.toFixed(2)],
+               ["", "", "", "", "", "Nilai Juri", "", nilaiJuri == null ? "—" : nilaiJuri.toFixed(3)]],
         styles: { fontSize: 8, cellPadding: 3 },
         headStyles: { fillColor: [120, 30, 45], textColor: 255 },
         footStyles: { fillColor: [245, 235, 220], textColor: 40, fontStyle: "bold" },
@@ -3321,6 +3336,7 @@ function RincianNilaiTab() {
                 <div className="space-y-4">
                   {juriDenganNilai.map((j) => {
                     let totalNilai = 0, totalBerbobot = 0;
+                    const nilaiJuri = nilaiJuriRentang(j.id, p.id);
                     const rows = kriteria.map((k) => {
                       const rec = penilaian.find((n) => n.peserta_id === p.id && n.juri_id === j.id && n.kriteria_id === k.id);
                       const kat = kategoriForKriteria(k.nama);
@@ -3361,13 +3377,13 @@ function RincianNilaiTab() {
                               </TableRow>
                             ))}
                             <TableRow className="bg-secondary/40 font-semibold">
-                              <TableCell colSpan={6} className="text-right">Total</TableCell>
+                              <TableCell colSpan={6} className="text-right">Total Mentah</TableCell>
                               <TableCell className="text-right font-mono">{totalNilai.toFixed(2)}</TableCell>
                               <TableCell className="text-right font-mono">{totalBerbobot.toFixed(2)}</TableCell>
                             </TableRow>
                             <TableRow className="bg-primary/10 font-semibold">
-                              <TableCell colSpan={7} className="text-right">Rata-rata Berbobot</TableCell>
-                              <TableCell className="text-right font-mono text-primary">{rata.toFixed(2)}</TableCell>
+                              <TableCell colSpan={7} className="text-right">Nilai Juri</TableCell>
+                              <TableCell className="text-right font-mono text-primary">{nilaiJuri == null ? "—" : nilaiJuri.toFixed(3)}</TableCell>
                             </TableRow>
                           </TableBody>
                         </Table>
