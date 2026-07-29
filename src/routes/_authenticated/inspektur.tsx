@@ -709,22 +709,6 @@ function InspekturPage() {
           </div>
 
           <DialogFooter className="flex-wrap gap-2">
-            {detailPeserta && activeSesiPesertaIds.has(detailPeserta.peserta_id) && (
-              <>
-                <Button
-                  className="bg-rose-600 hover:bg-rose-700 text-white"
-                  onClick={() => openAjukanVar(detailPeserta.peserta_id, detailPeserta.nama)}
-                >
-                  <Siren className="size-4 mr-1" /> Ajukan VAR
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => openAkhiri(detailPeserta.peserta_id, detailPeserta.nama)}
-                >
-                  <Square className="size-4 mr-1" /> Akhiri & Finalkan
-                </Button>
-              </>
-            )}
             {detailData?.var_session && (
               <>
                 <Button
