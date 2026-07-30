@@ -15,6 +15,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
 import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight, LayoutDashboard, CheckCircle2, XCircle, FileText, KeyRound, AlertTriangle, Eye, EyeOff } from "lucide-react";
+import JuriLiveRankingApproval from "@/components/JuriLiveRankingApproval";
+import JuriHasilFinalTab from "@/components/JuriHasilFinalTab";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -59,6 +61,7 @@ function App() {
       if (!isAdm) {
         if (isPan && !isJuri && !isInsp && !isKetua) { window.location.href = "/operator"; return; }
         if (isInsp && !isPan && !isJuri && !isKetua) { window.location.href = "/inspektur"; return; }
+        if (!isPan && !isJuri && !isInsp && !isKetua) { window.location.href = "/viewer"; return; }
       }
       setRoles({ isAdm: !!isAdm, isPan: !!isPan, isJuri: !!isJuri, isInsp: !!isInsp, isKetua: !!isKetua });
     })();
@@ -95,13 +98,17 @@ function App() {
         )}
         {juriOnly ? (
           <Tabs defaultValue="penilaian" className="w-full">
-            <TabsList className="grid w-full grid-cols-1 h-auto bg-secondary/60 p-1">
+            <JuriLiveRankingApproval />
+            <TabsList className="grid w-full grid-cols-2 h-auto bg-secondary/60 p-1">
               <TabsTrigger value="penilaian" className="gap-2"><ClipboardCheck className="size-4" />Penilaian</TabsTrigger>
+              <TabsTrigger value="hasil" className="gap-2"><FileText className="size-4" />Hasil Saya</TabsTrigger>
             </TabsList>
             <TabsContent value="penilaian"><PenilaianTab /></TabsContent>
+            <TabsContent value="hasil"><JuriHasilFinalTab /></TabsContent>
           </Tabs>
         ) : (
           <Tabs defaultValue="dashboard" className="w-full">
+            {roles.isJuri && <JuriLiveRankingApproval />}
             <TabsList className="grid w-full grid-cols-3 sm:grid-cols-11 h-auto bg-secondary/60 p-1">
               <TabsTrigger value="dashboard" className="gap-2"><LayoutDashboard className="size-4" />Dashboard</TabsTrigger>
               <TabsTrigger value="ranking" className="gap-2"><Trophy className="size-4" />Ranking</TabsTrigger>
@@ -530,7 +537,7 @@ function JuriTab() {
     }
   }
 
-  async function ubahRole(id: string, role: "admin" | "juri" | "panitia" | "inspektur" | "ketua_juri") {
+  async function ubahRole(id: string, role: "admin" | "juri" | "panitia" | "inspektur" | "ketua_juri" | "viewer") {
     try {
       const { setJuriRole } = await import("@/lib/juri-users.functions");
       await setJuriRole({ data: { juriId: id, role } });
@@ -599,6 +606,7 @@ function JuriTab() {
                   <SelectItem value="panitia">Panitia</SelectItem>
                   <SelectItem value="ketua_juri">Ketua Dewan Juri</SelectItem>
                   <SelectItem value="inspektur">Inspektur Pertandingan</SelectItem>
+                  <SelectItem value="viewer">User (hanya melihat)</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
@@ -657,6 +665,7 @@ function JuriTab() {
                       <SelectItem value="panitia">Panitia</SelectItem>
                       <SelectItem value="ketua_juri">Ketua Dewan Juri</SelectItem>
                       <SelectItem value="inspektur">Inspektur Pertandingan</SelectItem>
+                  <SelectItem value="viewer">User (hanya melihat)</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>
