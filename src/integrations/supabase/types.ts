@@ -122,6 +122,71 @@ export type Database = {
         }
         Relationships: []
       }
+      live_ranking_sesi: {
+        Row: {
+          approved_at: string | null
+          created_at: string
+          requested_at: string | null
+          requested_by: string | null
+          sesi_no: number
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          created_at?: string
+          requested_at?: string | null
+          requested_by?: string | null
+          sesi_no: number
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          created_at?: string
+          requested_at?: string | null
+          requested_by?: string | null
+          sesi_no?: number
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      live_ranking_vote: {
+        Row: {
+          catatan: string | null
+          created_at: string
+          id: string
+          juri_id: string
+          sesi_no: number
+          setuju: boolean
+        }
+        Insert: {
+          catatan?: string | null
+          created_at?: string
+          id?: string
+          juri_id: string
+          sesi_no: number
+          setuju: boolean
+        }
+        Update: {
+          catatan?: string | null
+          created_at?: string
+          id?: string
+          juri_id?: string
+          sesi_no?: number
+          setuju?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "live_ranking_vote_sesi_no_fkey"
+            columns: ["sesi_no"]
+            isOneToOne: false
+            referencedRelation: "live_ranking_sesi"
+            referencedColumns: ["sesi_no"]
+          },
+        ]
+      }
       masukan_juri: {
         Row: {
           catatan: Json
@@ -803,11 +868,16 @@ export type Database = {
         Args: { _juri: string; _peserta: string }
         Returns: number
       }
+      inspektur_ajukan_live_ranking: { Args: { _sesi: number }; Returns: Json }
       inspektur_ajukan_var: {
         Args: { _alasan: string; _peserta: string }
         Returns: string
       }
       inspektur_akhiri_sesi: { Args: { _peserta: string }; Returns: undefined }
+      inspektur_batalkan_live_ranking: {
+        Args: { _sesi: number }
+        Returns: Json
+      }
       inspektur_buka_perhatian: {
         Args: { _catatan?: string; _peserta: string }
         Returns: string
@@ -865,10 +935,18 @@ export type Database = {
         Returns: string
       }
       inspektur_var_detail: { Args: { _peserta: string }; Returns: Json }
+      is_peserta_final: { Args: { _peserta: string }; Returns: boolean }
+      juri_hasil_final: { Args: never; Returns: Json }
+      juri_live_ranking_pending: { Args: never; Returns: Json }
+      juri_vote_live_ranking: {
+        Args: { _catatan?: string; _sesi: number; _setuju: boolean }
+        Returns: Json
+      }
       juri_vote_var: {
         Args: { _session: string; _setuju: boolean }
         Returns: Json
       }
+      live_ranking_sesi_list: { Args: never; Returns: Json }
       lookup_nilai: { Args: { _grade: number }; Returns: number }
       mulai_klarifikasi_var: { Args: { _peserta: string }; Returns: string }
       mulai_sesi: {
@@ -884,6 +962,8 @@ export type Database = {
         Args: { _id: string; _mazmur: string }
         Returns: undefined
       }
+      viewer_catatan_peserta: { Args: { _peserta: string }; Returns: Json }
+      viewer_peserta_list: { Args: never; Returns: Json }
     }
     Enums: {
       app_role:
