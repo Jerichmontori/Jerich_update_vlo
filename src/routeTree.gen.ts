@@ -19,6 +19,7 @@ import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as VmixNowreadingRouteImport } from './routes/vmix.nowreading'
 import { Route as VmixLeaderboardRouteImport } from './routes/vmix.leaderboard'
+import { Route as AuthenticatedViewerRouteImport } from './routes/_authenticated/viewer'
 import { Route as AuthenticatedOperatorRouteImport } from './routes/_authenticated/operator'
 import { Route as AuthenticatedInspekturRouteImport } from './routes/_authenticated/inspektur'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -74,6 +75,11 @@ const VmixLeaderboardRoute = VmixLeaderboardRouteImport.update({
   path: '/vmix/leaderboard',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedViewerRoute = AuthenticatedViewerRouteImport.update({
+  id: '/viewer',
+  path: '/viewer',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedOperatorRoute = AuthenticatedOperatorRouteImport.update({
   id: '/operator',
   path: '/operator',
@@ -111,6 +117,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inspektur': typeof AuthenticatedInspekturRoute
   '/operator': typeof AuthenticatedOperatorRoute
+  '/viewer': typeof AuthenticatedViewerRoute
   '/vmix/leaderboard': typeof VmixLeaderboardRoute
   '/vmix/nowreading': typeof VmixNowreadingRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
@@ -127,6 +134,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inspektur': typeof AuthenticatedInspekturRoute
   '/operator': typeof AuthenticatedOperatorRoute
+  '/viewer': typeof AuthenticatedViewerRoute
   '/vmix/leaderboard': typeof VmixLeaderboardRoute
   '/vmix/nowreading': typeof VmixNowreadingRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
@@ -145,6 +153,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/inspektur': typeof AuthenticatedInspekturRoute
   '/_authenticated/operator': typeof AuthenticatedOperatorRoute
+  '/_authenticated/viewer': typeof AuthenticatedViewerRoute
   '/vmix/leaderboard': typeof VmixLeaderboardRoute
   '/vmix/nowreading': typeof VmixNowreadingRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
@@ -163,6 +172,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/inspektur'
     | '/operator'
+    | '/viewer'
     | '/vmix/leaderboard'
     | '/vmix/nowreading'
     | '/api/public/bootstrap-admin'
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/inspektur'
     | '/operator'
+    | '/viewer'
     | '/vmix/leaderboard'
     | '/vmix/nowreading'
     | '/api/public/bootstrap-admin'
@@ -196,6 +207,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/inspektur'
     | '/_authenticated/operator'
+    | '/_authenticated/viewer'
     | '/vmix/leaderboard'
     | '/vmix/nowreading'
     | '/api/public/bootstrap-admin'
@@ -289,6 +301,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VmixLeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/viewer': {
+      id: '/_authenticated/viewer'
+      path: '/viewer'
+      fullPath: '/viewer'
+      preLoaderRoute: typeof AuthenticatedViewerRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/operator': {
       id: '/_authenticated/operator'
       path: '/operator'
@@ -331,12 +350,14 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedInspekturRoute: typeof AuthenticatedInspekturRoute
   AuthenticatedOperatorRoute: typeof AuthenticatedOperatorRoute
+  AuthenticatedViewerRoute: typeof AuthenticatedViewerRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedInspekturRoute: AuthenticatedInspekturRoute,
   AuthenticatedOperatorRoute: AuthenticatedOperatorRoute,
+  AuthenticatedViewerRoute: AuthenticatedViewerRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
