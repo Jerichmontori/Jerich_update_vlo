@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { Fragment, useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -102,8 +102,8 @@ export default function SesiLiveRanking() {
                 const belum = r.juri_status.filter((j) => !j.sudah_vote);
                 const tolak = r.juri_status.filter((j) => j.sudah_vote && j.setuju === false);
                 return (
-                  <>
-                    <TableRow key={r.sesi_no}>
+                  <Fragment key={r.sesi_no}>
+                    <TableRow>
                       <TableCell className="font-semibold">Sesi {r.sesi_no}</TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         No. {r.peserta[0]?.nomor_urut}–{r.peserta[r.peserta.length - 1]?.nomor_urut} ({r.total} peserta)
@@ -153,7 +153,7 @@ export default function SesiLiveRanking() {
                       </TableCell>
                     </TableRow>
                     {expanded === r.sesi_no && (
-                      <TableRow key={`${r.sesi_no}-detail`}>
+                      <TableRow>
                         <TableCell colSpan={6} className="bg-secondary/40">
                           <div className="grid gap-4 md:grid-cols-2">
                             <div>
@@ -191,7 +191,7 @@ export default function SesiLiveRanking() {
                         </TableCell>
                       </TableRow>
                     )}
-                  </>
+                  </Fragment>
                 );
               })}
             </TableBody>
