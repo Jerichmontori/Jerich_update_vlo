@@ -207,6 +207,7 @@ function Header() {
               Inspektur
             </Button>
           )}
+          <GantiPasswordButton variant="outline" />
           <Button variant="outline" onClick={signOut}>Keluar</Button>
         </div>
       </div>
