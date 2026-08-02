@@ -189,7 +189,8 @@ function LivePublic() {
             Data diperbarui otomatis setiap beberapa detik. Untuk overlay siaran vMix, gunakan{" "}
             <Link to="/vmix/leaderboard" className="underline">/vmix/leaderboard</Link>,{" "}
             <Link to="/vmix/nowreading" className="underline">/vmix/nowreading</Link>, atau data source{" "}
-            <code className="text-[11px]">/api/public/live.json</code>.
+            <code className="text-[11px]">/api/public/live.json</code> /{" "}
+            <code className="text-[11px]">/api/public/nowreading.xml</code> (Title vMix).
           </p>
         </section>
       </main>

@@ -23,6 +23,7 @@ import { Route as AuthenticatedViewerRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedOperatorRouteImport } from './routes/_authenticated/operator'
 import { Route as AuthenticatedInspekturRouteImport } from './routes/_authenticated/inspektur'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as ApiPublicNowreadingDotxmlRouteImport } from './routes/api/public/nowreading[.]xml'
 import { Route as ApiPublicLiveDotjsonRouteImport } from './routes/api/public/live[.]json'
 import { Route as ApiPublicBootstrapAdminRouteImport } from './routes/api/public/bootstrap-admin'
 
@@ -95,6 +96,12 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicNowreadingDotxmlRoute =
+  ApiPublicNowreadingDotxmlRouteImport.update({
+    id: '/api/public/nowreading.xml',
+    path: '/api/public/nowreading.xml',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicLiveDotjsonRoute = ApiPublicLiveDotjsonRouteImport.update({
   id: '/api/public/live.json',
   path: '/api/public/live.json',
@@ -122,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/vmix/nowreading': typeof VmixNowreadingRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/api/public/live.json': typeof ApiPublicLiveDotjsonRoute
+  '/api/public/nowreading.xml': typeof ApiPublicNowreadingDotxmlRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -139,6 +147,7 @@ export interface FileRoutesByTo {
   '/vmix/nowreading': typeof VmixNowreadingRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/api/public/live.json': typeof ApiPublicLiveDotjsonRoute
+  '/api/public/nowreading.xml': typeof ApiPublicNowreadingDotxmlRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -158,6 +167,7 @@ export interface FileRoutesById {
   '/vmix/nowreading': typeof VmixNowreadingRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/api/public/live.json': typeof ApiPublicLiveDotjsonRoute
+  '/api/public/nowreading.xml': typeof ApiPublicNowreadingDotxmlRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -177,6 +187,7 @@ export interface FileRouteTypes {
     | '/vmix/nowreading'
     | '/api/public/bootstrap-admin'
     | '/api/public/live.json'
+    | '/api/public/nowreading.xml'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -194,6 +205,7 @@ export interface FileRouteTypes {
     | '/vmix/nowreading'
     | '/api/public/bootstrap-admin'
     | '/api/public/live.json'
+    | '/api/public/nowreading.xml'
   id:
     | '__root__'
     | '/'
@@ -212,6 +224,7 @@ export interface FileRouteTypes {
     | '/vmix/nowreading'
     | '/api/public/bootstrap-admin'
     | '/api/public/live.json'
+    | '/api/public/nowreading.xml'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -227,6 +240,7 @@ export interface RootRouteChildren {
   VmixNowreadingRoute: typeof VmixNowreadingRoute
   ApiPublicBootstrapAdminRoute: typeof ApiPublicBootstrapAdminRoute
   ApiPublicLiveDotjsonRoute: typeof ApiPublicLiveDotjsonRoute
+  ApiPublicNowreadingDotxmlRoute: typeof ApiPublicNowreadingDotxmlRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -329,6 +343,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/nowreading.xml': {
+      id: '/api/public/nowreading.xml'
+      path: '/api/public/nowreading.xml'
+      fullPath: '/api/public/nowreading.xml'
+      preLoaderRoute: typeof ApiPublicNowreadingDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/live.json': {
       id: '/api/public/live.json'
       path: '/api/public/live.json'
@@ -376,6 +397,7 @@ const rootRouteChildren: RootRouteChildren = {
   VmixNowreadingRoute: VmixNowreadingRoute,
   ApiPublicBootstrapAdminRoute: ApiPublicBootstrapAdminRoute,
   ApiPublicLiveDotjsonRoute: ApiPublicLiveDotjsonRoute,
+  ApiPublicNowreadingDotxmlRoute: ApiPublicNowreadingDotxmlRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
