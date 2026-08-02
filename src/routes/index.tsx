@@ -42,7 +42,7 @@ function Landing() {
           </p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
             <Button asChild size="lg">
-              <Link to="/auth">Masuk sebagai Juri / Admin</Link>
+              <Link to="/auth">Masuk</Link>
             </Button>
             <Button asChild size="lg" variant="secondary">
               <Link to="/daftar">Daftar</Link>
