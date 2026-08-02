@@ -67,6 +67,16 @@ export default function SesiLiveRanking() {
     load();
   }
 
+  async function setHidden(sesi: number, hidden: boolean) {
+    setBusy(sesi);
+    const { error } = await supabase.rpc("inspektur_set_hide_live_ranking" as any, { _sesi: sesi, _hidden: hidden });
+    setBusy(null);
+    if (error) return toast.error(error.message);
+    toast.success(hidden ? `Sesi ${sesi} disembunyikan dari Live Ranking.` : `Sesi ${sesi} ditampilkan kembali.`);
+    load();
+  }
+
+
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
