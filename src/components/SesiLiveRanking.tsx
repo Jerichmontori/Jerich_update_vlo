@@ -157,6 +157,16 @@ export default function SesiLiveRanking() {
                         <Button size="sm" variant="ghost" onClick={() => setExpanded(expanded === r.sesi_no ? null : r.sesi_no)}>
                           {expanded === r.sesi_no ? "Tutup" : "Detail"}
                         </Button>
+                        {r.status === "disetujui" && (
+                          <Button
+                            size="sm"
+                            variant={r.hidden ? "default" : "secondary"}
+                            disabled={busy === r.sesi_no}
+                            onClick={() => setHidden(r.sesi_no, !r.hidden)}
+                          >
+                            {r.hidden ? <><Eye className="size-4 mr-1" />Tampilkan</> : <><EyeOff className="size-4 mr-1" />Sembunyikan</>}
+                          </Button>
+                        )}
                         {r.status === "disetujui" || r.status === "menunggu_persetujuan" ? (
                           <Button size="sm" variant="outline" disabled={busy === r.sesi_no} onClick={() => batalkan(r.sesi_no)}>
                             Tarik
