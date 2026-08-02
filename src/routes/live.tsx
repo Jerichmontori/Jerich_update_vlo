@@ -20,6 +20,7 @@ const ALL = "__all__";
 function LivePublic() {
   const { state, error } = useLiveState(4000);
   const [kategori, setKategori] = useState<string>(ALL);
+  const [sesi, setSesi] = useState<string>(ALL);
 
   const kategoriList = useMemo(() => {
     const set = new Set<string>();
@@ -27,13 +28,25 @@ function LivePublic() {
     return Array.from(set).sort();
   }, [state]);
 
+  const sesiList = useMemo(() => {
+    const set = new Set<number>();
+    (state?.sesi_tayang ?? []).forEach((s) => set.add(Number(s)));
+    (state?.ranking ?? []).forEach((r) => r.sesi_no != null && set.add(Number(r.sesi_no)));
+    return Array.from(set).sort((a, b) => a - b);
+  }, [state]);
+
   const ranking = useMemo(() => {
-    const rows = (state?.ranking ?? []).filter((r) => kategori === ALL || (r.kategori ?? "") === kategori);
+    const rows = (state?.ranking ?? []).filter(
+      (r) =>
+        (kategori === ALL || (r.kategori ?? "") === kategori) &&
+        (sesi === ALL || String(r.sesi_no ?? "") === sesi),
+    );
     return sortRanking(rows);
-  }, [state, kategori]);
+  }, [state, kategori, sesi]);
 
   const active = state?.active ?? [];
   const medals = ["🥇", "🥈", "🥉"];
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/40 to-background">
