@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Radio, RefreshCw, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Radio, RefreshCw, CheckCircle2, XCircle, Clock, Eye, EyeOff } from "lucide-react";
 
 type JuriStatus = { juri_id: string; nama: string; sudah_vote: boolean; setuju: boolean | null };
 export type SesiRow = {
