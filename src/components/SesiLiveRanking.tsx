@@ -124,7 +124,12 @@ export default function SesiLiveRanking() {
                           {r.final_count}/{r.total}
                         </span>
                       </TableCell>
-                      <TableCell><Badge className={sb.className}>{sb.label}</Badge></TableCell>
+                      <TableCell className="space-y-1">
+                        <Badge className={sb.className}>{sb.label}</Badge>
+                        {r.status === "disetujui" && r.hidden && (
+                          <div><Badge className="bg-slate-500 text-white">Disembunyikan</Badge></div>
+                        )}
+                      </TableCell>
                       <TableCell className="text-xs">
                         {r.status === "draft" ? (
                           <span className="text-muted-foreground">—</span>
