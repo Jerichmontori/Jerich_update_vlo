@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { toast } from "sonner";
-import { Radio, RefreshCw, CheckCircle2, XCircle, Clock } from "lucide-react";
+import { Radio, RefreshCw, CheckCircle2, XCircle, Clock, Eye, EyeOff } from "lucide-react";
 
 type JuriStatus = { juri_id: string; nama: string; sudah_vote: boolean; setuju: boolean | null };
 export type SesiRow = {
@@ -14,6 +14,7 @@ export type SesiRow = {
   final_count: number;
   peserta: { nomor_urut: number; nama: string; final: boolean }[];
   status: "draft" | "menunggu_persetujuan" | "disetujui" | "ditolak" | string;
+  hidden?: boolean;
   requested_at: string | null;
   approved_at: string | null;
   juri_total: number;
@@ -66,6 +67,16 @@ export default function SesiLiveRanking() {
     load();
   }
 
+  async function setHidden(sesi: number, hidden: boolean) {
+    setBusy(sesi);
+    const { error } = await supabase.rpc("inspektur_set_hide_live_ranking" as any, { _sesi: sesi, _hidden: hidden });
+    setBusy(null);
+    if (error) return toast.error(error.message);
+    toast.success(hidden ? `Sesi ${sesi} disembunyikan dari Live Ranking.` : `Sesi ${sesi} ditampilkan kembali.`);
+    load();
+  }
+
+
   return (
     <Card>
       <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
@@ -113,7 +124,12 @@ export default function SesiLiveRanking() {
                           {r.final_count}/{r.total}
                         </span>
                       </TableCell>
-                      <TableCell><Badge className={sb.className}>{sb.label}</Badge></TableCell>
+                      <TableCell className="space-y-1">
+                        <Badge className={sb.className}>{sb.label}</Badge>
+                        {r.status === "disetujui" && r.hidden && (
+                          <div><Badge className="bg-slate-500 text-white">Disembunyikan</Badge></div>
+                        )}
+                      </TableCell>
                       <TableCell className="text-xs">
                         {r.status === "draft" ? (
                           <span className="text-muted-foreground">—</span>
@@ -141,6 +157,16 @@ export default function SesiLiveRanking() {
                         <Button size="sm" variant="ghost" onClick={() => setExpanded(expanded === r.sesi_no ? null : r.sesi_no)}>
                           {expanded === r.sesi_no ? "Tutup" : "Detail"}
                         </Button>
+                        {r.status === "disetujui" && (
+                          <Button
+                            size="sm"
+                            variant={r.hidden ? "default" : "secondary"}
+                            disabled={busy === r.sesi_no}
+                            onClick={() => setHidden(r.sesi_no, !r.hidden)}
+                          >
+                            {r.hidden ? <><Eye className="size-4 mr-1" />Tampilkan</> : <><EyeOff className="size-4 mr-1" />Sembunyikan</>}
+                          </Button>
+                        )}
                         {r.status === "disetujui" || r.status === "menunggu_persetujuan" ? (
                           <Button size="sm" variant="outline" disabled={busy === r.sesi_no} onClick={() => batalkan(r.sesi_no)}>
                             Tarik

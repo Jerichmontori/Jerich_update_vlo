@@ -20,6 +20,7 @@ const ALL = "__all__";
 function LivePublic() {
   const { state, error } = useLiveState(4000);
   const [kategori, setKategori] = useState<string>(ALL);
+  const [sesi, setSesi] = useState<string>(ALL);
 
   const kategoriList = useMemo(() => {
     const set = new Set<string>();
@@ -27,13 +28,25 @@ function LivePublic() {
     return Array.from(set).sort();
   }, [state]);
 
+  const sesiList = useMemo(() => {
+    const set = new Set<number>();
+    (state?.sesi_tayang ?? []).forEach((s) => set.add(Number(s)));
+    (state?.ranking ?? []).forEach((r) => r.sesi_no != null && set.add(Number(r.sesi_no)));
+    return Array.from(set).sort((a, b) => a - b);
+  }, [state]);
+
   const ranking = useMemo(() => {
-    const rows = (state?.ranking ?? []).filter((r) => kategori === ALL || (r.kategori ?? "") === kategori);
+    const rows = (state?.ranking ?? []).filter(
+      (r) =>
+        (kategori === ALL || (r.kategori ?? "") === kategori) &&
+        (sesi === ALL || String(r.sesi_no ?? "") === sesi),
+    );
     return sortRanking(rows);
-  }, [state, kategori]);
+  }, [state, kategori, sesi]);
 
   const active = state?.active ?? [];
   const medals = ["🥇", "🥈", "🥉"];
+
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/40 to-background">
@@ -97,23 +110,45 @@ function LivePublic() {
         {/* Ranking */}
         <section>
           <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
-            <div className="flex items-center gap-2">
-              <Trophy className="size-5 text-accent" />
-              <h2 className="font-serif text-2xl font-semibold">Live Ranking</h2>
+            <div>
+              <div className="flex items-center gap-2">
+                <Trophy className="size-5 text-accent" />
+                <h2 className="font-serif text-2xl font-semibold">Live Ranking</h2>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
+                Peringkat sementara seluruh peserta yang sudah tampil &amp; disetujui juri
+                {sesi === ALL ? " (semua sesi tayang)" : ` — Sesi ${sesi}`}
+                {kategori === ALL ? "" : ` · ${kategori}`}.
+              </p>
             </div>
-            {kategoriList.length > 0 && (
-              <select
-                value={kategori}
-                onChange={(e) => setKategori(e.target.value)}
-                className="text-sm rounded-md border border-border bg-background px-3 py-1.5"
-              >
-                <option value={ALL}>Semua Kategori</option>
-                {kategoriList.map((k) => (
-                  <option key={k} value={k}>{k}</option>
-                ))}
-              </select>
-            )}
+            <div className="flex items-center gap-2 flex-wrap">
+              {sesiList.length > 0 && (
+                <select
+                  value={sesi}
+                  onChange={(e) => setSesi(e.target.value)}
+                  className="text-sm rounded-md border border-border bg-background px-3 py-1.5"
+                >
+                  <option value={ALL}>Semua Sesi</option>
+                  {sesiList.map((s) => (
+                    <option key={s} value={String(s)}>Sesi {s}</option>
+                  ))}
+                </select>
+              )}
+              {kategoriList.length > 0 && (
+                <select
+                  value={kategori}
+                  onChange={(e) => setKategori(e.target.value)}
+                  className="text-sm rounded-md border border-border bg-background px-3 py-1.5"
+                >
+                  <option value={ALL}>Semua Kategori</option>
+                  {kategoriList.map((k) => (
+                    <option key={k} value={k}>{k}</option>
+                  ))}
+                </select>
+              )}
+            </div>
           </div>
+
 
           <div className="rounded-2xl border border-border/60 bg-card/60 backdrop-blur overflow-hidden">
             <div className="grid grid-cols-[56px_60px_1fr_120px_140px] items-center px-4 py-2 text-[11px] uppercase tracking-widest text-muted-foreground bg-secondary/40">
