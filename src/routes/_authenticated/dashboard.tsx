@@ -17,6 +17,7 @@ import { Toaster, toast } from "sonner";
 import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight, LayoutDashboard, CheckCircle2, XCircle, FileText, KeyRound, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import JuriLiveRankingApproval from "@/components/JuriLiveRankingApproval";
 import JuriHasilFinalTab from "@/components/JuriHasilFinalTab";
+import GantiPasswordButton from "@/components/GantiPasswordButton";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
@@ -207,6 +208,7 @@ function Header() {
               Inspektur
             </Button>
           )}
+          <GantiPasswordButton variant="outline" />
           <Button variant="outline" onClick={signOut}>Keluar</Button>
         </div>
       </div>

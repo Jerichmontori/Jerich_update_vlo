@@ -11,6 +11,7 @@ import { BookOpenText, RefreshCw, Mic, FileText, Search } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { catatanToRows } from "@/components/JuriHasilFinalTab";
+import GantiPasswordButton from "@/components/GantiPasswordButton";
 
 export const Route = createFileRoute("/_authenticated/viewer")({
   component: ViewerPage,
@@ -125,6 +126,7 @@ function ViewerPage() {
           <div className="flex items-center gap-2">
             <span className="hidden sm:block text-sm text-muted-foreground">{nama}</span>
             <Button variant="outline" size="sm" onClick={load}><RefreshCw className="size-4 mr-1" />Muat Ulang</Button>
+            <GantiPasswordButton variant="outline" size="sm" />
             <Button variant="ghost" size="sm" onClick={signOut}>Keluar</Button>
           </div>
         </div>
