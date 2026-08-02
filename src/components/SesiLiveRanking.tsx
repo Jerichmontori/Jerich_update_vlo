@@ -14,6 +14,7 @@ export type SesiRow = {
   final_count: number;
   peserta: { nomor_urut: number; nama: string; final: boolean }[];
   status: "draft" | "menunggu_persetujuan" | "disetujui" | "ditolak" | string;
+  hidden?: boolean;
   requested_at: string | null;
   approved_at: string | null;
   juri_total: number;
