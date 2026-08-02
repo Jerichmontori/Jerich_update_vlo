@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
 import SesiLiveRanking from "@/components/SesiLiveRanking";
+import GantiPasswordButton from "@/components/GantiPasswordButton";
 import { Shield, RefreshCw, BookOpenText, AlertTriangle, Eye, Square, Siren, CheckCircle2, XCircle } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/inspektur")({
@@ -359,6 +360,7 @@ function InspekturPage() {
             <RefreshCw className={"size-4 mr-2 " + (loading ? "animate-spin" : "")} /> Muat Ulang
           </Button>
           <Button variant="outline" onClick={() => (window.location.href = "/dashboard")}>Ke Dashboard</Button>
+          <GantiPasswordButton variant="outline" />
           <Button variant="ghost" onClick={signOut}>Keluar</Button>
         </div>
       </header>
