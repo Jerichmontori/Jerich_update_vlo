@@ -126,6 +126,7 @@ export type Database = {
         Row: {
           approved_at: string | null
           created_at: string
+          hidden: boolean
           requested_at: string | null
           requested_by: string | null
           sesi_no: number
@@ -135,6 +136,7 @@ export type Database = {
         Insert: {
           approved_at?: string | null
           created_at?: string
+          hidden?: boolean
           requested_at?: string | null
           requested_by?: string | null
           sesi_no: number
@@ -144,6 +146,7 @@ export type Database = {
         Update: {
           approved_at?: string | null
           created_at?: string
+          hidden?: boolean
           requested_at?: string | null
           requested_by?: string | null
           sesi_no?: number
@@ -929,6 +932,10 @@ export type Database = {
       inspektur_selesaikan_var: {
         Args: { _catatan: string; _keputusan: string; _peserta: string }
         Returns: string
+      }
+      inspektur_set_hide_live_ranking: {
+        Args: { _hidden: boolean; _sesi: number }
+        Returns: Json
       }
       inspektur_terapkan_perbaikan: {
         Args: { _catatan?: string; _peserta: string }
