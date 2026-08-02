@@ -22,12 +22,14 @@ export type RankingRow = {
   jumlah_juri: number | null;
   juri_total_sum: number | null;
   juri_spread: number | null;
+  sesi_no?: number | null;
 };
 
 export type LiveState = {
   now: string;
   active: ActiveSession[];
   ranking: RankingRow[];
+  sesi_tayang?: number[];
 };
 
 export function useLiveState(intervalMs = 4000) {
