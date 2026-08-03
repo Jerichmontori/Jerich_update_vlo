@@ -26,11 +26,38 @@ export default function GantiPasswordButton({ variant = "outline", size = "defau
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const kuat =
+    pw1.length >= 8 &&
+    /[a-z]/.test(pw1) &&
+    /[A-Z]/.test(pw1) &&
+    /[0-9]/.test(pw1) &&
+    /[^A-Za-z0-9]/.test(pw1);
+
+  function terjemahkanError(msg: string) {
+    const m = msg.toLowerCase();
+    if (m.includes("weak") || m.includes("easy to guess") || m.includes("pwned") || m.includes("leaked")) {
+      return "Kata sandi terlalu mudah ditebak (pernah bocor di internet). Gunakan kombinasi huruf besar, huruf kecil, angka, dan simbol — hindari kata umum, nama, atau tanggal lahir.";
+    }
+    if (m.includes("should be at least") || m.includes("at least 6")) {
+      return "Kata sandi terlalu pendek. Gunakan minimal 8 karakter.";
+    }
+    if (m.includes("same as the old") || m.includes("different from the old")) {
+      return "Kata sandi baru harus berbeda dari kata sandi lama.";
+    }
+    return msg;
+  }
+
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (loading) return;
     if (pw1.length < 8) {
       toast.error("Kata sandi baru minimal 8 karakter.");
+      return;
+    }
+    if (!kuat) {
+      toast.error(
+        "Kata sandi kurang kuat. Wajib memuat huruf besar, huruf kecil, angka, dan simbol (contoh pola: Mazmur#2026)."
+      );
       return;
     }
     if (pw1 !== pw2) {
@@ -40,7 +67,7 @@ export default function GantiPasswordButton({ variant = "outline", size = "defau
     setLoading(true);
     try {
       const { error } = await supabase.auth.updateUser({ password: pw1 });
-      if (error) throw new Error(error.message);
+      if (error) throw new Error(terjemahkanError(error.message));
       toast.success("Kata sandi berhasil diganti. Gunakan kata sandi baru saat masuk berikutnya.");
       setOpen(false);
       setPw1("");
@@ -65,7 +92,7 @@ export default function GantiPasswordButton({ variant = "outline", size = "defau
             <DialogTitle>Ganti Kata Sandi</DialogTitle>
             <DialogDescription>
               Setelah admin mereset kata sandi Anda, gantilah dengan kata sandi pribadi Anda sendiri.
-              Minimal 8 karakter.
+              Minimal 8 karakter dan tidak boleh kata sandi umum yang mudah ditebak.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={onSubmit} className="space-y-4">
@@ -90,6 +117,15 @@ export default function GantiPasswordButton({ variant = "outline", size = "defau
                   {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
+              <ul className="text-xs text-muted-foreground space-y-0.5 pt-1">
+                <li className={pw1.length >= 8 ? "text-emerald-600" : ""}>• Minimal 8 karakter</li>
+                <li className={/[A-Z]/.test(pw1) && /[a-z]/.test(pw1) ? "text-emerald-600" : ""}>
+                  • Ada huruf besar dan huruf kecil
+                </li>
+                <li className={/[0-9]/.test(pw1) ? "text-emerald-600" : ""}>• Ada angka</li>
+                <li className={/[^A-Za-z0-9]/.test(pw1) ? "text-emerald-600" : ""}>• Ada simbol (misal # @ !)</li>
+                <li>• Hindari kata umum seperti “password”, “12345678”, atau nama sendiri</li>
+              </ul>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="pw-ulang">Ulangi Kata Sandi Baru</Label>
