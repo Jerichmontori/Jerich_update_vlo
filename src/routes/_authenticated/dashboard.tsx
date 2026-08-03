@@ -161,6 +161,7 @@ function Header() {
       ]);
       setCanOperate(!!isPan || !!isAdm);
       setCanInspect(!!isInsp || !!isAdm);
+      setCanAnnounce(!!isAdm);
       // Inspektur-only users are read-only observers; send them to their own page.
       if (isInsp && !isAdm && !isPan && !isJuri && !isKetua) {
         window.location.href = "/inspektur";
@@ -207,6 +208,11 @@ function Header() {
           {canInspect && (
             <Button variant="secondary" onClick={() => (window.location.href = "/inspektur")}>
               Inspektur
+            </Button>
+          )}
+          {canAnnounce && (
+            <Button variant="secondary" onClick={() => (window.location.href = "/skor")}>
+              Pengumuman Nilai
             </Button>
           )}
           <GantiPasswordButton variant="outline" />
