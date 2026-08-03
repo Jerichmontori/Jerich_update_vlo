@@ -173,6 +173,8 @@ function SkorFinalPage() {
 
   const juriDelay = 200;
   const finalDelay = juriDelay + juri.length * 500 + 1800;
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+
 
   return (
     <div className="min-h-screen bg-background">
