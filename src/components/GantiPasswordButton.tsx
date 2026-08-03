@@ -92,7 +92,7 @@ export default function GantiPasswordButton({ variant = "outline", size = "defau
             <DialogTitle>Ganti Kata Sandi</DialogTitle>
             <DialogDescription>
               Setelah admin mereset kata sandi Anda, gantilah dengan kata sandi pribadi Anda sendiri.
-              Minimal 8 karakter.
+              Minimal 8 karakter dan tidak boleh kata sandi umum yang mudah ditebak.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={onSubmit} className="space-y-4">
