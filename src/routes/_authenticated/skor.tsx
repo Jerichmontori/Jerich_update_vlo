@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Toaster, toast } from "sonner";
-import { Trophy, RefreshCw, Play, ArrowLeft, Sparkles } from "lucide-react";
+import { Trophy, RefreshCw, Play, ArrowLeft, Sparkles, MonitorX, Link2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/skor")({
   component: SkorFinalPage,
