@@ -20,6 +20,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as VmixNowreadingRouteImport } from './routes/vmix.nowreading'
 import { Route as VmixLeaderboardRouteImport } from './routes/vmix.leaderboard'
 import { Route as AuthenticatedViewerRouteImport } from './routes/_authenticated/viewer'
+import { Route as AuthenticatedSkorRouteImport } from './routes/_authenticated/skor'
 import { Route as AuthenticatedOperatorRouteImport } from './routes/_authenticated/operator'
 import { Route as AuthenticatedInspekturRouteImport } from './routes/_authenticated/inspektur'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -81,6 +82,11 @@ const AuthenticatedViewerRoute = AuthenticatedViewerRouteImport.update({
   path: '/viewer',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedSkorRoute = AuthenticatedSkorRouteImport.update({
+  id: '/skor',
+  path: '/skor',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedOperatorRoute = AuthenticatedOperatorRouteImport.update({
   id: '/operator',
   path: '/operator',
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inspektur': typeof AuthenticatedInspekturRoute
   '/operator': typeof AuthenticatedOperatorRoute
+  '/skor': typeof AuthenticatedSkorRoute
   '/viewer': typeof AuthenticatedViewerRoute
   '/vmix/leaderboard': typeof VmixLeaderboardRoute
   '/vmix/nowreading': typeof VmixNowreadingRoute
@@ -142,6 +149,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inspektur': typeof AuthenticatedInspekturRoute
   '/operator': typeof AuthenticatedOperatorRoute
+  '/skor': typeof AuthenticatedSkorRoute
   '/viewer': typeof AuthenticatedViewerRoute
   '/vmix/leaderboard': typeof VmixLeaderboardRoute
   '/vmix/nowreading': typeof VmixNowreadingRoute
@@ -162,6 +170,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/inspektur': typeof AuthenticatedInspekturRoute
   '/_authenticated/operator': typeof AuthenticatedOperatorRoute
+  '/_authenticated/skor': typeof AuthenticatedSkorRoute
   '/_authenticated/viewer': typeof AuthenticatedViewerRoute
   '/vmix/leaderboard': typeof VmixLeaderboardRoute
   '/vmix/nowreading': typeof VmixNowreadingRoute
@@ -182,6 +191,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/inspektur'
     | '/operator'
+    | '/skor'
     | '/viewer'
     | '/vmix/leaderboard'
     | '/vmix/nowreading'
@@ -200,6 +210,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/inspektur'
     | '/operator'
+    | '/skor'
     | '/viewer'
     | '/vmix/leaderboard'
     | '/vmix/nowreading'
@@ -219,6 +230,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/inspektur'
     | '/_authenticated/operator'
+    | '/_authenticated/skor'
     | '/_authenticated/viewer'
     | '/vmix/leaderboard'
     | '/vmix/nowreading'
@@ -322,6 +334,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedViewerRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/skor': {
+      id: '/_authenticated/skor'
+      path: '/skor'
+      fullPath: '/skor'
+      preLoaderRoute: typeof AuthenticatedSkorRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/operator': {
       id: '/_authenticated/operator'
       path: '/operator'
@@ -371,6 +390,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedInspekturRoute: typeof AuthenticatedInspekturRoute
   AuthenticatedOperatorRoute: typeof AuthenticatedOperatorRoute
+  AuthenticatedSkorRoute: typeof AuthenticatedSkorRoute
   AuthenticatedViewerRoute: typeof AuthenticatedViewerRoute
 }
 
@@ -378,6 +398,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedInspekturRoute: AuthenticatedInspekturRoute,
   AuthenticatedOperatorRoute: AuthenticatedOperatorRoute,
+  AuthenticatedSkorRoute: AuthenticatedSkorRoute,
   AuthenticatedViewerRoute: AuthenticatedViewerRoute,
 }
 
@@ -402,3 +423,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

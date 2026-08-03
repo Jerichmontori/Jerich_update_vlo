@@ -145,6 +145,7 @@ function App() {
 function Header() {
   const [canOperate, setCanOperate] = useState(false);
   const [canInspect, setCanInspect] = useState(false);
+  const [canAnnounce, setCanAnnounce] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ nama: string; email: string; role: string } | null>(null);
   useEffect(() => {
     (async () => {
