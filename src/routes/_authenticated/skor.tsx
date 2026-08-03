@@ -279,6 +279,38 @@ function SkorFinalPage() {
             )}
           </CardContent>
         </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Link2 className="size-4" /> Koneksi vMix
+            </CardTitle>
+            <CardDescription>
+              Apa yang Anda pilih & animasikan di halaman ini langsung tampil di vMix.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div>
+              <div className="font-medium">1. Browser Input (overlay siap pakai)</div>
+              <code className="mt-1 block rounded bg-muted px-2 py-1 break-all">
+                {origin}/vmix/skor?bg=transparent
+              </code>
+            </div>
+            <div>
+              <div className="font-medium">2. Data Source XML (untuk Title sendiri)</div>
+              <code className="mt-1 block rounded bg-muted px-2 py-1 break-all">{origin}/api/public/skor.xml</code>
+              <p className="text-muted-foreground mt-1">
+                Field: nama, nomor_urut, asal, juri1_nama…juri5_nama, juri1_nilai…juri5_nilai, nilai_akhir, status.
+                Set <em>Auto Refresh</em> 1–2 detik.
+              </p>
+            </div>
+            <div>
+              <div className="font-medium">3. Data Source JSON</div>
+              <code className="mt-1 block rounded bg-muted px-2 py-1 break-all">{origin}/api/public/skor.json</code>
+            </div>
+          </CardContent>
+        </Card>
+
       </main>
     </div>
   );
