@@ -237,15 +237,15 @@ function SkorFinalPage() {
                 {selected ? `${selected.kategori ?? "—"} · ${selected.bacaan ?? "—"}` : "Nilai tiap juri dan nilai akhir akan ditampilkan dengan animasi."}
               </CardDescription>
             </div>
-            <Button
-              disabled={!selected || loading || juri.length === 0}
-              onClick={() => {
-                setRunning(false);
-                setTimeout(() => setRunning(true), 60);
-              }}
-            >
-              <Play className="size-4 mr-1" /> Mulai Animasi
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={bersihkanLayar}>
+                <MonitorX className="size-4 mr-1" /> Kosongkan vMix
+              </Button>
+              <Button disabled={!selected || loading || juri.length === 0} onClick={mulaiAnimasi}>
+                <Play className="size-4 mr-1" /> Mulai Animasi
+              </Button>
+            </div>
+
           </CardHeader>
           <CardContent className="space-y-4">
             {!selected ? (
