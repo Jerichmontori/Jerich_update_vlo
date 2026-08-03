@@ -117,6 +117,15 @@ export default function GantiPasswordButton({ variant = "outline", size = "defau
                   {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
                 </button>
               </div>
+              <ul className="text-xs text-muted-foreground space-y-0.5 pt-1">
+                <li className={pw1.length >= 8 ? "text-emerald-600" : ""}>• Minimal 8 karakter</li>
+                <li className={/[A-Z]/.test(pw1) && /[a-z]/.test(pw1) ? "text-emerald-600" : ""}>
+                  • Ada huruf besar dan huruf kecil
+                </li>
+                <li className={/[0-9]/.test(pw1) ? "text-emerald-600" : ""}>• Ada angka</li>
+                <li className={/[^A-Za-z0-9]/.test(pw1) ? "text-emerald-600" : ""}>• Ada simbol (misal # @ !)</li>
+                <li>• Hindari kata umum seperti “password”, “12345678”, atau nama sendiri</li>
+              </ul>
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="pw-ulang">Ulangi Kata Sandi Baru</Label>
