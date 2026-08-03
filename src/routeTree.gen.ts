@@ -17,6 +17,7 @@ import { Route as DaftarRouteImport } from './routes/daftar'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VmixSkorRouteImport } from './routes/vmix.skor'
 import { Route as VmixNowreadingRouteImport } from './routes/vmix.nowreading'
 import { Route as VmixLeaderboardRouteImport } from './routes/vmix.leaderboard'
 import { Route as AuthenticatedViewerRouteImport } from './routes/_authenticated/viewer'
@@ -24,6 +25,8 @@ import { Route as AuthenticatedSkorRouteImport } from './routes/_authenticated/s
 import { Route as AuthenticatedOperatorRouteImport } from './routes/_authenticated/operator'
 import { Route as AuthenticatedInspekturRouteImport } from './routes/_authenticated/inspektur'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as ApiPublicSkorDotxmlRouteImport } from './routes/api/public/skor[.]xml'
+import { Route as ApiPublicSkorDotjsonRouteImport } from './routes/api/public/skor[.]json'
 import { Route as ApiPublicNowreadingDotxmlRouteImport } from './routes/api/public/nowreading[.]xml'
 import { Route as ApiPublicLiveDotjsonRouteImport } from './routes/api/public/live[.]json'
 import { Route as ApiPublicBootstrapAdminRouteImport } from './routes/api/public/bootstrap-admin'
@@ -67,6 +70,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VmixSkorRoute = VmixSkorRouteImport.update({
+  id: '/vmix/skor',
+  path: '/vmix/skor',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VmixNowreadingRoute = VmixNowreadingRouteImport.update({
   id: '/vmix/nowreading',
   path: '/vmix/nowreading',
@@ -102,6 +110,16 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicSkorDotxmlRoute = ApiPublicSkorDotxmlRouteImport.update({
+  id: '/api/public/skor.xml',
+  path: '/api/public/skor.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicSkorDotjsonRoute = ApiPublicSkorDotjsonRouteImport.update({
+  id: '/api/public/skor.json',
+  path: '/api/public/skor.json',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicNowreadingDotxmlRoute =
   ApiPublicNowreadingDotxmlRouteImport.update({
     id: '/api/public/nowreading.xml',
@@ -134,9 +152,12 @@ export interface FileRoutesByFullPath {
   '/viewer': typeof AuthenticatedViewerRoute
   '/vmix/leaderboard': typeof VmixLeaderboardRoute
   '/vmix/nowreading': typeof VmixNowreadingRoute
+  '/vmix/skor': typeof VmixSkorRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/api/public/live.json': typeof ApiPublicLiveDotjsonRoute
   '/api/public/nowreading.xml': typeof ApiPublicNowreadingDotxmlRoute
+  '/api/public/skor.json': typeof ApiPublicSkorDotjsonRoute
+  '/api/public/skor.xml': typeof ApiPublicSkorDotxmlRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -153,9 +174,12 @@ export interface FileRoutesByTo {
   '/viewer': typeof AuthenticatedViewerRoute
   '/vmix/leaderboard': typeof VmixLeaderboardRoute
   '/vmix/nowreading': typeof VmixNowreadingRoute
+  '/vmix/skor': typeof VmixSkorRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/api/public/live.json': typeof ApiPublicLiveDotjsonRoute
   '/api/public/nowreading.xml': typeof ApiPublicNowreadingDotxmlRoute
+  '/api/public/skor.json': typeof ApiPublicSkorDotjsonRoute
+  '/api/public/skor.xml': typeof ApiPublicSkorDotxmlRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -174,9 +198,12 @@ export interface FileRoutesById {
   '/_authenticated/viewer': typeof AuthenticatedViewerRoute
   '/vmix/leaderboard': typeof VmixLeaderboardRoute
   '/vmix/nowreading': typeof VmixNowreadingRoute
+  '/vmix/skor': typeof VmixSkorRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/api/public/live.json': typeof ApiPublicLiveDotjsonRoute
   '/api/public/nowreading.xml': typeof ApiPublicNowreadingDotxmlRoute
+  '/api/public/skor.json': typeof ApiPublicSkorDotjsonRoute
+  '/api/public/skor.xml': typeof ApiPublicSkorDotxmlRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -195,9 +222,12 @@ export interface FileRouteTypes {
     | '/viewer'
     | '/vmix/leaderboard'
     | '/vmix/nowreading'
+    | '/vmix/skor'
     | '/api/public/bootstrap-admin'
     | '/api/public/live.json'
     | '/api/public/nowreading.xml'
+    | '/api/public/skor.json'
+    | '/api/public/skor.xml'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -214,9 +244,12 @@ export interface FileRouteTypes {
     | '/viewer'
     | '/vmix/leaderboard'
     | '/vmix/nowreading'
+    | '/vmix/skor'
     | '/api/public/bootstrap-admin'
     | '/api/public/live.json'
     | '/api/public/nowreading.xml'
+    | '/api/public/skor.json'
+    | '/api/public/skor.xml'
   id:
     | '__root__'
     | '/'
@@ -234,9 +267,12 @@ export interface FileRouteTypes {
     | '/_authenticated/viewer'
     | '/vmix/leaderboard'
     | '/vmix/nowreading'
+    | '/vmix/skor'
     | '/api/public/bootstrap-admin'
     | '/api/public/live.json'
     | '/api/public/nowreading.xml'
+    | '/api/public/skor.json'
+    | '/api/public/skor.xml'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -250,9 +286,12 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   VmixLeaderboardRoute: typeof VmixLeaderboardRoute
   VmixNowreadingRoute: typeof VmixNowreadingRoute
+  VmixSkorRoute: typeof VmixSkorRoute
   ApiPublicBootstrapAdminRoute: typeof ApiPublicBootstrapAdminRoute
   ApiPublicLiveDotjsonRoute: typeof ApiPublicLiveDotjsonRoute
   ApiPublicNowreadingDotxmlRoute: typeof ApiPublicNowreadingDotxmlRoute
+  ApiPublicSkorDotjsonRoute: typeof ApiPublicSkorDotjsonRoute
+  ApiPublicSkorDotxmlRoute: typeof ApiPublicSkorDotxmlRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -313,6 +352,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/vmix/skor': {
+      id: '/vmix/skor'
+      path: '/vmix/skor'
+      fullPath: '/vmix/skor'
+      preLoaderRoute: typeof VmixSkorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/vmix/nowreading': {
       id: '/vmix/nowreading'
       path: '/vmix/nowreading'
@@ -361,6 +407,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/public/skor.xml': {
+      id: '/api/public/skor.xml'
+      path: '/api/public/skor.xml'
+      fullPath: '/api/public/skor.xml'
+      preLoaderRoute: typeof ApiPublicSkorDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/skor.json': {
+      id: '/api/public/skor.json'
+      path: '/api/public/skor.json'
+      fullPath: '/api/public/skor.json'
+      preLoaderRoute: typeof ApiPublicSkorDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/nowreading.xml': {
       id: '/api/public/nowreading.xml'
@@ -416,9 +476,12 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   VmixLeaderboardRoute: VmixLeaderboardRoute,
   VmixNowreadingRoute: VmixNowreadingRoute,
+  VmixSkorRoute: VmixSkorRoute,
   ApiPublicBootstrapAdminRoute: ApiPublicBootstrapAdminRoute,
   ApiPublicLiveDotjsonRoute: ApiPublicLiveDotjsonRoute,
   ApiPublicNowreadingDotxmlRoute: ApiPublicNowreadingDotxmlRoute,
+  ApiPublicSkorDotjsonRoute: ApiPublicSkorDotjsonRoute,
+  ApiPublicSkorDotxmlRoute: ApiPublicSkorDotxmlRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -342,6 +342,35 @@ export type Database = {
         }
         Relationships: []
       }
+      pengumuman_state: {
+        Row: {
+          id: number
+          peserta_id: string | null
+          running: boolean
+          updated_at: string
+        }
+        Insert: {
+          id?: number
+          peserta_id?: string | null
+          running?: boolean
+          updated_at?: string
+        }
+        Update: {
+          id?: number
+          peserta_id?: string | null
+          running?: boolean
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pengumuman_state_peserta_id_fkey"
+            columns: ["peserta_id"]
+            isOneToOne: false
+            referencedRelation: "peserta"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       penilaian: {
         Row: {
           created_at: string
@@ -961,6 +990,11 @@ export type Database = {
         Returns: string
       }
       public_live_state: { Args: never; Returns: Json }
+      public_pengumuman_state: { Args: never; Returns: Json }
+      set_pengumuman_state: {
+        Args: { _peserta: string; _running: boolean }
+        Returns: undefined
+      }
       submit_klarifikasi_var: {
         Args: { _peserta: string; _responses: Json }
         Returns: Json

@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Toaster, toast } from "sonner";
-import { Trophy, RefreshCw, Play, ArrowLeft, Sparkles } from "lucide-react";
+import { Trophy, RefreshCw, Play, ArrowLeft, Sparkles, MonitorX, Link2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/skor")({
   component: SkorFinalPage,
@@ -143,7 +143,28 @@ function SkorFinalPage() {
     setJuri(list);
     const r = ((rank as any[]) ?? []).find((x) => x.peserta_id === row.peserta_id);
     setNilaiAkhir(r?.nilai_akhir != null ? Number(r.nilai_akhir) : null);
+    // Kirim ke layar vMix (siap, belum animasi)
+    await supabase.rpc("set_pengumuman_state" as any, { _peserta: row.peserta_id, _running: false });
   }
+
+  async function mulaiAnimasi() {
+    if (!selected) return;
+    setRunning(false);
+    setTimeout(() => setRunning(true), 60);
+    const { error } = await supabase.rpc("set_pengumuman_state" as any, {
+      _peserta: selected.peserta_id,
+      _running: true,
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Animasi dikirim ke layar vMix");
+  }
+
+  async function bersihkanLayar() {
+    const { error } = await supabase.rpc("set_pengumuman_state" as any, { _peserta: null, _running: false });
+    if (error) toast.error(error.message);
+    else toast.success("Layar vMix dikosongkan");
+  }
+
 
   if (allowed === null) {
     return <div className="min-h-screen grid place-items-center text-muted-foreground">Memeriksa akses…</div>;
@@ -152,6 +173,8 @@ function SkorFinalPage() {
 
   const juriDelay = 200;
   const finalDelay = juriDelay + juri.length * 500 + 1800;
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+
 
   return (
     <div className="min-h-screen bg-background">
@@ -216,15 +239,15 @@ function SkorFinalPage() {
                 {selected ? `${selected.kategori ?? "—"} · ${selected.bacaan ?? "—"}` : "Nilai tiap juri dan nilai akhir akan ditampilkan dengan animasi."}
               </CardDescription>
             </div>
-            <Button
-              disabled={!selected || loading || juri.length === 0}
-              onClick={() => {
-                setRunning(false);
-                setTimeout(() => setRunning(true), 60);
-              }}
-            >
-              <Play className="size-4 mr-1" /> Mulai Animasi
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={bersihkanLayar}>
+                <MonitorX className="size-4 mr-1" /> Kosongkan vMix
+              </Button>
+              <Button disabled={!selected || loading || juri.length === 0} onClick={mulaiAnimasi}>
+                <Play className="size-4 mr-1" /> Mulai Animasi
+              </Button>
+            </div>
+
           </CardHeader>
           <CardContent className="space-y-4">
             {!selected ? (
@@ -258,6 +281,38 @@ function SkorFinalPage() {
             )}
           </CardContent>
         </Card>
+
+        <Card className="lg:col-span-2">
+          <CardHeader>
+            <CardTitle className="text-base flex items-center gap-2">
+              <Link2 className="size-4" /> Koneksi vMix
+            </CardTitle>
+            <CardDescription>
+              Apa yang Anda pilih & animasikan di halaman ini langsung tampil di vMix.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div>
+              <div className="font-medium">1. Browser Input (overlay siap pakai)</div>
+              <code className="mt-1 block rounded bg-muted px-2 py-1 break-all">
+                {origin}/vmix/skor?bg=transparent
+              </code>
+            </div>
+            <div>
+              <div className="font-medium">2. Data Source XML (untuk Title sendiri)</div>
+              <code className="mt-1 block rounded bg-muted px-2 py-1 break-all">{origin}/api/public/skor.xml</code>
+              <p className="text-muted-foreground mt-1">
+                Field: nama, nomor_urut, asal, juri1_nama…juri5_nama, juri1_nilai…juri5_nilai, nilai_akhir, status.
+                Set <em>Auto Refresh</em> 1–2 detik.
+              </p>
+            </div>
+            <div>
+              <div className="font-medium">3. Data Source JSON</div>
+              <code className="mt-1 block rounded bg-muted px-2 py-1 break-all">{origin}/api/public/skor.json</code>
+            </div>
+          </CardContent>
+        </Card>
+
       </main>
     </div>
   );
