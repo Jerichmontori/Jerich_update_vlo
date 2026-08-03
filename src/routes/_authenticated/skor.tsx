@@ -143,7 +143,28 @@ function SkorFinalPage() {
     setJuri(list);
     const r = ((rank as any[]) ?? []).find((x) => x.peserta_id === row.peserta_id);
     setNilaiAkhir(r?.nilai_akhir != null ? Number(r.nilai_akhir) : null);
+    // Kirim ke layar vMix (siap, belum animasi)
+    await supabase.rpc("set_pengumuman_state" as any, { _peserta: row.peserta_id, _running: false });
   }
+
+  async function mulaiAnimasi() {
+    if (!selected) return;
+    setRunning(false);
+    setTimeout(() => setRunning(true), 60);
+    const { error } = await supabase.rpc("set_pengumuman_state" as any, {
+      _peserta: selected.peserta_id,
+      _running: true,
+    });
+    if (error) toast.error(error.message);
+    else toast.success("Animasi dikirim ke layar vMix");
+  }
+
+  async function bersihkanLayar() {
+    const { error } = await supabase.rpc("set_pengumuman_state" as any, { _peserta: null, _running: false });
+    if (error) toast.error(error.message);
+    else toast.success("Layar vMix dikosongkan");
+  }
+
 
   if (allowed === null) {
     return <div className="min-h-screen grid place-items-center text-muted-foreground">Memeriksa akses…</div>;
