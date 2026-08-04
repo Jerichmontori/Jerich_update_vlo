@@ -407,7 +407,7 @@ function InspekturPage() {
                 {monitor.length === 0 && (
                   <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Belum ada data</TableCell></TableRow>
                 )}
-                {monitor.map((r) => {
+                {monitor.slice((monitorPage - 1) * MONITOR_PAGE_SIZE, monitorPage * MONITOR_PAGE_SIZE).map((r) => {
                   const v = statusVariant(r.status);
                   const hasActiveVar = r.status === "Potensi VAR" || r.status === "Perbaikan Perhatian" || vars.some((vr) => vr.peserta_id === r.peserta_id);
                   return (
