@@ -1471,12 +1471,42 @@ function PenilaianTab() {
   type VarManualPending = { session_id: string; peserta_id: string; peserta_nama: string; nomor_urut: number; alasan: string; sudah_vote: boolean };
   const [varManualPending, setVarManualPending] = useState<VarManualPending[]>([]);
   const [varManualLoading, setVarManualLoading] = useState<string | null>(null);
+  const varManualSeen = useRef<Set<string>>(new Set());
   useEffect(() => {
     let stopped = false;
     async function poll() {
       const { data, error } = await supabase.rpc("get_var_manual_pending" as any);
-      if (stopped || error) return;
-      setVarManualPending(((data as any[]) ?? []) as VarManualPending[]);
+      if (stopped) return;
+      if (error) { console.error("get_var_manual_pending", error.message); return; }
+      const rows = ((data as any[]) ?? []) as VarManualPending[];
+      setVarManualPending(rows);
+      // Notifikasi saat ada pengajuan VAR baru yang belum Anda tanggapi
+      const baru = rows.filter((r) => !r.sudah_vote && !varManualSeen.current.has(r.session_id));
+      if (baru.length > 0) {
+        baru.forEach((r) => {
+          varManualSeen.current.add(r.session_id);
+          toast.warning("⚠ Inspektur mengajukan VAR", {
+            description: `Peserta No. ${r.nomor_urut} — ${r.peserta_nama}. Mohon berikan persetujuan Anda.`,
+            duration: 10000,
+          });
+        });
+        try {
+          const AC = (window as any).AudioContext || (window as any).webkitAudioContext;
+          if (AC) {
+            const ctx = new AC();
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = "sine";
+            osc.frequency.value = 880;
+            gain.gain.value = 0.08;
+            osc.connect(gain).connect(ctx.destination);
+            osc.start();
+            osc.stop(ctx.currentTime + 0.35);
+          }
+        } catch { /* abaikan */ }
+      }
+      const aktif = new Set(rows.map((r) => r.session_id));
+      varManualSeen.current.forEach((id) => { if (!aktif.has(id)) varManualSeen.current.delete(id); });
     }
     poll();
     const id = setInterval(poll, 3000);
