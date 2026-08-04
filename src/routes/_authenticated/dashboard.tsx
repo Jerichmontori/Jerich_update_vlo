@@ -3565,9 +3565,9 @@ function LihatPenilaianTab() {
     const hasAny = juri.some((j) => scoreMap[p.id]?.[j.id]);
     if (!hasAny) return toast.error("Peserta ini belum memiliki penilaian");
 
-    const bV = bobotFor("vokal", kriteria, 25) || bobotFor("vocal", kriteria, 25);
+    const bV = bobotFor("interpretasi", kriteria, 0) || bobotFor("vokal", kriteria, 25) || bobotFor("vocal", kriteria, 25);
     const bPn = bobotFor("penghayatan", kriteria, 20);
-    const bIt = bobotFor("intonasi", kriteria, 30);
+    const bIt = bobotFor("artikulasi", kriteria, 0) || bobotFor("intonasi", kriteria, 30);
     const bPl = bobotFor("penampilan", kriteria, 25);
     const bCat = bobotFor("catatan", kriteria, 10);
     const bPer = bobotFor("perhatian", kriteria, -10);
