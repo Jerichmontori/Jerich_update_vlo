@@ -2012,15 +2012,20 @@ function PenilaianTab() {
       }
     });
     setMasukanValues(values);
+    setMasukanUmum(String(existing.find((e) => e && e.ayat === 0)?.teks ?? ""));
     setOpenMasukan(true);
   }
 
   async function saveMasukan() {
     if (!juriId || !pesertaId || !selectedMazmur) { setOpenMasukan(false); return; }
     setSavingMasukan(true);
-    const catatan = masukanValues
-      .map((teks, i) => ({ ayat: i + 1, teks: (teks || "").trim() }))
-      .filter((x) => x.teks.length > 0);
+    const umum = (masukanUmum || "").trim();
+    const catatan = [
+      ...(umum ? [{ ayat: 0, teks: umum }] : []),
+      ...masukanValues
+        .map((teks, i) => ({ ayat: i + 1, teks: (teks || "").trim() }))
+        .filter((x) => x.teks.length > 0),
+    ];
     const { error } = await supabase
       .from("masukan_juri" as any)
       .upsert(
@@ -2034,7 +2039,9 @@ function PenilaianTab() {
       );
     setSavingMasukan(false);
     if (error) { toast.error(error.message); return; }
-    toast.success("✦ Masukan juri tersimpan", { description: `${catatan.length} ayat terisi.` });
+    toast.success("✦ Masukan juri tersimpan", {
+      description: `${catatan.filter((c) => c.ayat > 0).length} ayat terisi${umum ? " + catatan umum" : ""}.`,
+    });
     setOpenMasukan(false);
   }
 
