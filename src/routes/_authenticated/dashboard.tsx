@@ -2507,6 +2507,18 @@ function PenilaianTab() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
+            <div className="rounded-lg border-2 border-accent/40 bg-accent/5 p-3">
+              <Label className="text-sm font-semibold mb-2 block">Catatan Umum</Label>
+              <Textarea
+                value={masukanUmum}
+                rows={3}
+                placeholder="Tulis catatan umum untuk peserta ini (opsional)…"
+                onChange={(e) => setMasukanUmum(e.target.value)}
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Berlaku untuk keseluruhan bacaan, di luar catatan per ayat.
+              </p>
+            </div>
             {masukanValues.map((v, i) => (
               <div key={i} className="rounded-lg border bg-card p-3">
                 <Label className="text-sm font-medium mb-2 block">Ayat {i + 1}</Label>
