@@ -1845,6 +1845,24 @@ function PenilaianTab() {
       { idx: 2, label: "Mengurangi kata" },
     ];
     const items: PerhatianDiscrepancyReport["items"] = [];
+
+    // Parameter wajib sama: Clear Text
+    {
+      const perJuriCT: { juriNama: string; ayat: number[]; teks: string }[] = [];
+      for (const r of rows as any[]) {
+        const d = r.detail;
+        if (!d || d.type !== "perhatian") continue;
+        const val = d.clearText ?? d.membacaPerikop ?? null;
+        perJuriCT.push({
+          juriNama: juriMap.get(r.juri_id) ?? "—",
+          ayat: [],
+          teks: val === true ? "Ya" : val === false ? "Tidak" : "—",
+        });
+      }
+      const sigCT = new Set(perJuriCT.map(x => x.teks));
+      if (sigCT.size > 1) items.push({ pertanyaan: "Clear Text", rows: perJuriCT });
+    }
+
     for (const t of targetIdx) {
       const perJuri: { juriNama: string; ayat: number[] }[] = [];
       for (const r of rows as any[]) {
