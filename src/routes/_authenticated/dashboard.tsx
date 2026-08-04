@@ -2761,7 +2761,7 @@ function PenilaianTab() {
 
           {activeKey === "perhatian" && (() => {
             const perbaikanAktifDlg = !!(pesertaId && perbaikanPerhatianIds.has(pesertaId));
-            const VAR_TRIGGER_IDX = new Set([1, 2, 3]);
+            const VAR_TRIGGER_IDX = new Set([0, 1, 2, 3]);
             return (
             <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
               {perbaikanAktifDlg && (
@@ -2770,7 +2770,7 @@ function PenilaianTab() {
                     <AlertTriangle className="size-4" /> Mode Perbaikan Perhatian
                   </div>
                   <div className="text-amber-800 dark:text-amber-200/90 mt-1">
-                    Hanya <b>Salah kata</b>, <b>Menambah kata</b>, dan <b>Mengurangi kata</b> yang dapat diubah. Pilihan lain dikunci dan menampilkan jawaban Anda sebelumnya.
+                    Hanya <b>Clear Text</b>, <b>Salah kata</b>, <b>Menambah kata</b>, dan <b>Mengurangi kata</b> yang dapat diubah. Pilihan lain dikunci dan menampilkan jawaban Anda sebelumnya.
                   </div>
                 </div>
               )}
