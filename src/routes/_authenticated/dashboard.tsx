@@ -2810,7 +2810,7 @@ function PenilaianTab() {
       </Dialog>
 
       {/* Dialog Persetujuan VAR Manual dari Inspektur */}
-      <Dialog open={varManualPending.length > 0} onOpenChange={() => { /* modal — tidak bisa ditutup manual */ }}>
+      <Dialog open={varManualPending.some((v) => !v.sudah_vote)} onOpenChange={() => { /* modal — tidak bisa ditutup manual */ }}>
         <DialogContent className="max-w-lg" onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-rose-800">
@@ -2821,7 +2821,7 @@ function PenilaianTab() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
-            {varManualPending.map((v) => (
+            {varManualPending.filter((v) => !v.sudah_vote).map((v) => (
               <div key={v.session_id} className="rounded-lg border border-rose-200 bg-rose-50/50 p-4 space-y-3">
                 <div>
                   <div className="text-xs uppercase tracking-wide text-rose-700 font-semibold">Peserta No. {v.nomor_urut}</div>
