@@ -30,6 +30,7 @@ import { Route as ApiPublicSkorDotjsonRouteImport } from './routes/api/public/sk
 import { Route as ApiPublicNowreadingDotxmlRouteImport } from './routes/api/public/nowreading[.]xml'
 import { Route as ApiPublicLiveDotjsonRouteImport } from './routes/api/public/live[.]json'
 import { Route as ApiPublicBootstrapAdminRouteImport } from './routes/api/public/bootstrap-admin'
+import { Route as ApiPublicVmixNowreadingDothtmlRouteImport } from './routes/api/public/vmix/nowreading[.]html'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -136,6 +137,12 @@ const ApiPublicBootstrapAdminRoute = ApiPublicBootstrapAdminRouteImport.update({
   path: '/api/public/bootstrap-admin',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicVmixNowreadingDothtmlRoute =
+  ApiPublicVmixNowreadingDothtmlRouteImport.update({
+    id: '/api/public/vmix/nowreading.html',
+    path: '/api/public/vmix/nowreading.html',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -158,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/api/public/nowreading.xml': typeof ApiPublicNowreadingDotxmlRoute
   '/api/public/skor.json': typeof ApiPublicSkorDotjsonRoute
   '/api/public/skor.xml': typeof ApiPublicSkorDotxmlRoute
+  '/api/public/vmix/nowreading.html': typeof ApiPublicVmixNowreadingDothtmlRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -180,6 +188,7 @@ export interface FileRoutesByTo {
   '/api/public/nowreading.xml': typeof ApiPublicNowreadingDotxmlRoute
   '/api/public/skor.json': typeof ApiPublicSkorDotjsonRoute
   '/api/public/skor.xml': typeof ApiPublicSkorDotxmlRoute
+  '/api/public/vmix/nowreading.html': typeof ApiPublicVmixNowreadingDothtmlRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -204,6 +213,7 @@ export interface FileRoutesById {
   '/api/public/nowreading.xml': typeof ApiPublicNowreadingDotxmlRoute
   '/api/public/skor.json': typeof ApiPublicSkorDotjsonRoute
   '/api/public/skor.xml': typeof ApiPublicSkorDotxmlRoute
+  '/api/public/vmix/nowreading.html': typeof ApiPublicVmixNowreadingDothtmlRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -228,6 +238,7 @@ export interface FileRouteTypes {
     | '/api/public/nowreading.xml'
     | '/api/public/skor.json'
     | '/api/public/skor.xml'
+    | '/api/public/vmix/nowreading.html'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -250,6 +261,7 @@ export interface FileRouteTypes {
     | '/api/public/nowreading.xml'
     | '/api/public/skor.json'
     | '/api/public/skor.xml'
+    | '/api/public/vmix/nowreading.html'
   id:
     | '__root__'
     | '/'
@@ -273,6 +285,7 @@ export interface FileRouteTypes {
     | '/api/public/nowreading.xml'
     | '/api/public/skor.json'
     | '/api/public/skor.xml'
+    | '/api/public/vmix/nowreading.html'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -292,6 +305,7 @@ export interface RootRouteChildren {
   ApiPublicNowreadingDotxmlRoute: typeof ApiPublicNowreadingDotxmlRoute
   ApiPublicSkorDotjsonRoute: typeof ApiPublicSkorDotjsonRoute
   ApiPublicSkorDotxmlRoute: typeof ApiPublicSkorDotxmlRoute
+  ApiPublicVmixNowreadingDothtmlRoute: typeof ApiPublicVmixNowreadingDothtmlRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -443,6 +457,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicBootstrapAdminRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/vmix/nowreading.html': {
+      id: '/api/public/vmix/nowreading.html'
+      path: '/api/public/vmix/nowreading.html'
+      fullPath: '/api/public/vmix/nowreading.html'
+      preLoaderRoute: typeof ApiPublicVmixNowreadingDothtmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -482,6 +503,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicNowreadingDotxmlRoute: ApiPublicNowreadingDotxmlRoute,
   ApiPublicSkorDotjsonRoute: ApiPublicSkorDotjsonRoute,
   ApiPublicSkorDotxmlRoute: ApiPublicSkorDotxmlRoute,
+  ApiPublicVmixNowreadingDothtmlRoute: ApiPublicVmixNowreadingDothtmlRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
