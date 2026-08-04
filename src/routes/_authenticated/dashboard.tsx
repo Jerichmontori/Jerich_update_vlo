@@ -238,6 +238,8 @@ function PesertaTab() {
   const [resetting, setResetting] = useState(false);
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 10;
 
   const sesiDari = (n: number) => `Sesi ${Math.ceil(n / 10)}`;
 
@@ -255,6 +257,11 @@ function PesertaTab() {
     setKategoriList(uniq);
   }
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    const maxPage = Math.max(0, Math.ceil(items.length / PAGE_SIZE) - 1);
+    if (page > maxPage) setPage(maxPage);
+  }, [items.length]);
 
   async function resetSemua() {
     if (!confirm("Yakin ingin menghapus SEMUA daftar peserta beserta seluruh nilainya? Tindakan ini tidak dapat dibatalkan.")) return;
@@ -449,6 +456,12 @@ function PesertaTab() {
   }
 
 
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const paginatedItems = useMemo(() => {
+    const start = page * PAGE_SIZE;
+    return items.slice(start, start + PAGE_SIZE);
+  }, [items, page]);
+
   return (
     <SectionCard
       title="Daftar Peserta"
@@ -490,7 +503,7 @@ function PesertaTab() {
           </TableHeader>
           <TableBody>
             {items.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Belum ada peserta.</TableCell></TableRow>}
-            {items.map(p => (
+            {paginatedItems.map(p => (
               <TableRow key={p.id}>
                 <TableCell className="font-mono">{p.nomor_urut}</TableCell>
                 <TableCell className="font-medium"><button type="button" onClick={()=>pilihUntukEdit(p)} className="text-left hover:underline hover:text-primary transition-colors">{p.nama}</button></TableCell>
@@ -503,6 +516,20 @@ function PesertaTab() {
           </TableBody>
         </Table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between gap-4 mt-4">
+          <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => Math.max(0, p - 1))}>
+            <ChevronLeft className="size-4" /> Sebelumnya
+          </Button>
+          <div className="text-sm text-muted-foreground">
+            Halaman {page + 1} dari {totalPages}
+          </div>
+          <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}>
+            Berikutnya <ChevronRight className="size-4" />
+          </Button>
+        </div>
+      )}
 
     </SectionCard>
   );
