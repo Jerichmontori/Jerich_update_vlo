@@ -2606,7 +2606,7 @@ function PenilaianTab() {
                     <li key={j} className="flex justify-between gap-2">
                       <span className="text-muted-foreground">{r.juriNama}</span>
                       <span className="font-medium text-right">
-                        {r.ayat.length ? `Ayat: ${r.ayat.join(", ")}` : "—"}
+                        {r.teks ? r.teks : r.ayat.length ? `Ayat: ${r.ayat.join(", ")}` : "—"}
                       </span>
                     </li>
                   ))}
