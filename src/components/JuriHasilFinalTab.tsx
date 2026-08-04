@@ -25,7 +25,7 @@ export function catatanToRows(masukan: any): [string, string][] {
   if (!masukan) return [];
   if (Array.isArray(masukan)) {
     return masukan.map((m: any, i: number) => [
-      String(m?.ayat ?? m?.label ?? i + 1),
+      m?.ayat === 0 ? "Umum" : String(m?.ayat ?? m?.label ?? i + 1),
       String(m?.catatan ?? m?.teks ?? ""),
     ]);
   }
