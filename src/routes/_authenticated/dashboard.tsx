@@ -1466,6 +1466,7 @@ function PenilaianTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [varAktifList]);
   const KOMP_LABEL: Record<string, string> = {
+    clear_text: "Clear Text",
     salah_kata: "Salah kata",
     menambah_kata: "Menambah kata",
     mengurangi_kata: "Mengurangi kata",
