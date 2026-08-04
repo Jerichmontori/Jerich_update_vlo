@@ -223,6 +223,18 @@ export default function SesiLiveRanking() {
             </TableBody>
           </Table>
         )}
+        {rows && rows.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between pt-3 text-sm">
+            <span className="text-muted-foreground">
+              Menampilkan {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, rows.length)} dari {rows.length} sesi
+            </span>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Sebelumnya</Button>
+              <span className="text-muted-foreground">Hal. {page} / {totalPages}</span>
+              <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Berikutnya</Button>
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
