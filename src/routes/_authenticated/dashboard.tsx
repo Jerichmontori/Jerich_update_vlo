@@ -1447,7 +1447,10 @@ function PenilaianTab() {
     const id = setInterval(poll, 3000);
     return () => { stopped = true; clearInterval(id); };
   }, []);
-  const perbaikanPerhatianIds = new Set(varAktifList.filter(v => v.status === "perbaikan_perhatian").map(v => v.peserta_id));
+  // Saat VAR sedang berjalan (perbaikan perhatian, klarifikasi VAR dibuka Inspektur,
+  // atau perbaikan VAR manual), juri hanya boleh membuka kriteria Perhatian.
+  const PERHATIAN_ONLY_STATUS = new Set(["perbaikan_perhatian", "klarifikasi_var", "musyawarah", "perbaikan_var_manual"]);
+  const perbaikanPerhatianIds = new Set(varAktifList.filter(v => PERHATIAN_ONLY_STATUS.has(v.status)).map(v => v.peserta_id));
   useEffect(() => {
     // Saat siklus Perbaikan Perhatian selesai untuk suatu peserta,
     // bersihkan pula catatan "sudah kirim-ulang" agar siklus berikutnya bisa dibuka lagi.
