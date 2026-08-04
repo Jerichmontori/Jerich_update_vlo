@@ -456,6 +456,12 @@ function PesertaTab() {
   }
 
 
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const paginatedItems = useMemo(() => {
+    const start = page * PAGE_SIZE;
+    return items.slice(start, start + PAGE_SIZE);
+  }, [items, page]);
+
   return (
     <SectionCard
       title="Daftar Peserta"
