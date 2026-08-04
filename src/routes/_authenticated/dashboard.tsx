@@ -4031,7 +4031,7 @@ function RincianNilaiTab() {
       doc.setTextColor(0);
       let y2 = 78;
       juriDenganMasukan.forEach((j) => {
-        const rows = masukanFor(p.id, j.id).map((c) => [String(c.ayat), c.teks]);
+        const rows = masukanFor(p.id, j.id).map((c) => [c.ayat === 0 ? "Umum" : String(c.ayat), c.teks]);
         doc.setFontSize(11); doc.text(`Juri: ${j.nama}${j.jabatan ? " — " + j.jabatan : ""}`, 40, y2);
         autoTable(doc, {
           startY: y2 + 6,
@@ -4075,7 +4075,7 @@ function RincianNilaiTab() {
     doc.setTextColor(0);
     let y = meta ? 96 : 82;
     juriDenganMasukan.forEach((j) => {
-      const rows = masukanFor(p.id, j.id).map((c) => [String(c.ayat), c.teks]);
+      const rows = masukanFor(p.id, j.id).map((c) => [c.ayat === 0 ? "Umum" : String(c.ayat), c.teks]);
       doc.setFontSize(11); doc.text(`Juri: ${j.nama}${j.jabatan ? " — " + j.jabatan : ""}`, 40, y);
       autoTable(doc, {
         startY: y + 6,
@@ -4272,7 +4272,7 @@ function RincianNilaiTab() {
                                 <div className="grid gap-1 text-xs">
                                   {list.map((c, i) => (
                                     <div key={i} className="flex gap-3 border-b last:border-0 py-1">
-                                      <span className="font-mono w-14 shrink-0">Ayat {c.ayat}</span>
+                                      <span className="font-mono w-14 shrink-0">{c.ayat === 0 ? "Umum" : `Ayat ${c.ayat}`}</span>
                                       <span className="flex-1 whitespace-pre-wrap">{c.teks}</span>
                                     </div>
                                   ))}
