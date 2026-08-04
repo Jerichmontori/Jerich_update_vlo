@@ -656,7 +656,7 @@ function InspekturPage() {
                             <TableRow>
                               <TableHead>Juri</TableHead>
                               {komps.map((k) => (
-                                <TableHead key={k}>{KOMP_LABEL[k] ?? k} <span className="text-[10px] text-muted-foreground">(ayat)</span></TableHead>
+                                <TableHead key={k}>{KOMP_LABEL[k] ?? k} {k !== "clear_text" && <span className="text-[10px] text-muted-foreground">(ayat)</span>}</TableHead>
                               ))}
                             </TableRow>
                           </TableHeader>
