@@ -60,6 +60,7 @@ type VarRow = {
 };
 
 const KOMP_LABEL: Record<string, string> = {
+  clear_text: "Clear Text",
   salah_kata: "Salah kata",
   menambah_kata: "Menambah kata",
   mengurangi_kata: "Mengurangi kata",
@@ -655,7 +656,7 @@ function InspekturPage() {
                             <TableRow>
                               <TableHead>Juri</TableHead>
                               {komps.map((k) => (
-                                <TableHead key={k}>{KOMP_LABEL[k] ?? k} <span className="text-[10px] text-muted-foreground">(ayat)</span></TableHead>
+                                <TableHead key={k}>{KOMP_LABEL[k] ?? k} {k !== "clear_text" && <span className="text-[10px] text-muted-foreground">(ayat)</span>}</TableHead>
                               ))}
                             </TableRow>
                           </TableHeader>
@@ -667,6 +668,15 @@ function InspekturPage() {
                                 <TableRow key={jid as string}>
                                   <TableCell className="font-medium">{jnama as string}</TableCell>
                                   {komps.map((k) => {
+                                    if (k === "clear_text") {
+                                      const ct = row?.detail?.clearText ?? row?.detail?.membacaPerikop ?? null;
+                                      const val = ct === true ? "Ya" : ct === false ? "Tidak" : "—";
+                                      return (
+                                        <TableCell key={k} className={val === "—" ? "text-muted-foreground" : "font-mono text-rose-700"}>
+                                          {val}
+                                        </TableCell>
+                                      );
+                                    }
                                     const idx = KOMP_IDX[k];
                                     const marks = aspek?.[idx]?.ditandai;
                                     const val = fmt(marks);

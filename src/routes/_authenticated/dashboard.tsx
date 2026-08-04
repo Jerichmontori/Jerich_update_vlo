@@ -985,9 +985,9 @@ function MazmurTab() {
 
 /* KATEGORI */
 const KRITERIA_PENILAIAN_OPTIONS = [
-  "Vocal dan Artikulasi",
+  "Interpretasi",
   "Penghayatan",
-  "Intonasi & Pelafalan",
+  "Artikulasi",
   "Penampilan",
   "Catatan Juri",
   "Perhatian",
@@ -1252,9 +1252,9 @@ function kriteriaKey(nama: string): keyof typeof GRADE_DESCRIPTIONS | "catatan" 
   const n = nama.toLowerCase();
   if (n.includes("perhatian")) return "perhatian";
   if (n.includes("catatan")) return "catatan";
-  if (n.includes("vokal") || n.includes("vocal") || n.includes("artikulasi")) return "vokal";
+  if (n.includes("interpretasi") || n.includes("vokal") || n.includes("vocal")) return "vokal";
   if (n.includes("hayat")) return "penghayatan";
-  if (n.includes("intonasi") || n.includes("pelafalan")) return "intonasi";
+  if (n.includes("artikulasi") || n.includes("intonasi") || n.includes("pelafalan")) return "intonasi";
   if (n.includes("penampilan")) return "penampilan";
   return null;
 }
@@ -1447,7 +1447,10 @@ function PenilaianTab() {
     const id = setInterval(poll, 3000);
     return () => { stopped = true; clearInterval(id); };
   }, []);
-  const perbaikanPerhatianIds = new Set(varAktifList.filter(v => v.status === "perbaikan_perhatian").map(v => v.peserta_id));
+  // Saat VAR sedang berjalan (perbaikan perhatian, klarifikasi VAR dibuka Inspektur,
+  // atau perbaikan VAR manual), juri hanya boleh membuka kriteria Perhatian.
+  const PERHATIAN_ONLY_STATUS = new Set(["perbaikan_perhatian", "klarifikasi_var", "musyawarah", "perbaikan_var_manual"]);
+  const perbaikanPerhatianIds = new Set(varAktifList.filter(v => PERHATIAN_ONLY_STATUS.has(v.status)).map(v => v.peserta_id));
   useEffect(() => {
     // Saat siklus Perbaikan Perhatian selesai untuk suatu peserta,
     // bersihkan pula catatan "sudah kirim-ulang" agar siklus berikutnya bisa dibuka lagi.
@@ -1463,6 +1466,7 @@ function PenilaianTab() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [varAktifList]);
   const KOMP_LABEL: Record<string, string> = {
+    clear_text: "Clear Text",
     salah_kata: "Salah kata",
     menambah_kata: "Menambah kata",
     mengurangi_kata: "Mengurangi kata",
@@ -2757,7 +2761,7 @@ function PenilaianTab() {
 
           {activeKey === "perhatian" && (() => {
             const perbaikanAktifDlg = !!(pesertaId && perbaikanPerhatianIds.has(pesertaId));
-            const VAR_TRIGGER_IDX = new Set([1, 2, 3]);
+            const VAR_TRIGGER_IDX = new Set([0, 1, 2, 3]);
             return (
             <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
               {perbaikanAktifDlg && (
@@ -2766,7 +2770,7 @@ function PenilaianTab() {
                     <AlertTriangle className="size-4" /> Mode Perbaikan Perhatian
                   </div>
                   <div className="text-amber-800 dark:text-amber-200/90 mt-1">
-                    Hanya <b>Salah kata</b>, <b>Menambah kata</b>, dan <b>Mengurangi kata</b> yang dapat diubah. Pilihan lain dikunci dan menampilkan jawaban Anda sebelumnya.
+                    Hanya <b>Clear Text</b>, <b>Salah kata</b>, <b>Menambah kata</b>, dan <b>Mengurangi kata</b> yang dapat diubah. Pilihan lain dikunci dan menampilkan jawaban Anda sebelumnya.
                   </div>
                 </div>
               )}
@@ -2871,7 +2875,7 @@ function PenilaianTab() {
 
           {!activeKey && openKriteria && (
             <div className="py-4 text-sm text-muted-foreground">
-              Kriteria ini belum memiliki panduan grade khusus. Tutup dialog dan gunakan kriteria standar (Vokal, Penghayatan, Intonasi, Penampilan, atau Catatan Juri).
+              Kriteria ini belum memiliki panduan grade khusus. Tutup dialog dan gunakan kriteria standar (Interpretasi, Penghayatan, Artikulasi, Penampilan, atau Catatan Juri).
             </div>
           )}
         </DialogContent>
@@ -3561,9 +3565,9 @@ function LihatPenilaianTab() {
     const hasAny = juri.some((j) => scoreMap[p.id]?.[j.id]);
     if (!hasAny) return toast.error("Peserta ini belum memiliki penilaian");
 
-    const bV = bobotFor("vokal", kriteria, 25) || bobotFor("vocal", kriteria, 25);
+    const bV = bobotFor("interpretasi", kriteria, 0) || bobotFor("vokal", kriteria, 25) || bobotFor("vocal", kriteria, 25);
     const bPn = bobotFor("penghayatan", kriteria, 20);
-    const bIt = bobotFor("intonasi", kriteria, 30);
+    const bIt = bobotFor("artikulasi", kriteria, 0) || bobotFor("intonasi", kriteria, 30);
     const bPl = bobotFor("penampilan", kriteria, 25);
     const bCat = bobotFor("catatan", kriteria, 10);
     const bPer = bobotFor("perhatian", kriteria, -10);
@@ -3595,7 +3599,7 @@ function LihatPenilaianTab() {
       body: [
         ["1. Lookup non-linear (grade → bobot)", "1.0=0.050  1.5=0.120  2.0=0.220  2.5=0.360  3.0=0.520  3.5=0.680  4.0=0.810  4.5=0.910  5.0=1.000"],
         ["2. Skor mentah (raw)", "Σ lookup(grade)×bobot untuk V/Pn/It/Pl  +  rata²(lookup aspek Catatan)×bobotCat  +  min(1, marks/15)×bobotPer"],
-        ["3. Bobot dipakai", `Vokal ${bV} · Penghayatan ${bPn} · Intonasi ${bIt} · Penampilan ${bPl} · Catatan ${bCat} · Perhatian ${bPer}`],
+        ["3. Bobot dipakai", `Interpretasi ${bV} · Penghayatan ${bPn} · Artikulasi ${bIt} · Penampilan ${bPl} · Catatan ${bCat} · Perhatian ${bPer}`],
         ["4. Normalisasi n∈[0,1]", `n = (raw − ${rawMin}) / (${rawMax} − ${rawMin})`],
         ["5. Pemetaan kurva 2-segmen", `n≤0.5 → out = BB + (TG−BB)·(2n)^1.15\nn>0.5 → out = TG + (BA−TG)·(1 − (2(1−n))^1.15)`],
         ["6. Jitter deterministik", "hash(peserta|juri) → ±0.0009 (mencegah kembar)"],
