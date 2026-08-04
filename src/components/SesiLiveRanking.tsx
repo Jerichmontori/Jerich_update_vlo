@@ -36,6 +36,11 @@ export default function SesiLiveRanking() {
   const [rows, setRows] = useState<SesiRow[] | null>(null);
   const [busy, setBusy] = useState<number | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
+  const PAGE_SIZE = 10;
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil((rows?.length ?? 0) / PAGE_SIZE));
+  useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
+  const pageRows = (rows ?? []).slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc("live_ranking_sesi_list" as any);
@@ -107,7 +112,7 @@ export default function SesiLiveRanking() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((r) => {
+              {pageRows.map((r) => {
                 const sb = statusBadge(r.status);
                 const lengkap = r.final_count >= r.total;
                 const belum = r.juri_status.filter((j) => !j.sudah_vote);
@@ -222,6 +227,18 @@ export default function SesiLiveRanking() {
               })}
             </TableBody>
           </Table>
+        )}
+        {rows && rows.length > PAGE_SIZE && (
+          <div className="flex items-center justify-between pt-3 text-sm">
+            <span className="text-muted-foreground">
+              Menampilkan {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, rows.length)} dari {rows.length} sesi
+            </span>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>Sebelumnya</Button>
+              <span className="text-muted-foreground">Hal. {page} / {totalPages}</span>
+              <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage((p) => p + 1)}>Berikutnya</Button>
+            </div>
+          </div>
         )}
       </CardContent>
     </Card>
