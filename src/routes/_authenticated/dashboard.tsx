@@ -497,7 +497,7 @@ function PesertaTab() {
           </TableHeader>
           <TableBody>
             {items.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Belum ada peserta.</TableCell></TableRow>}
-            {items.map(p => (
+            {paginatedItems.map(p => (
               <TableRow key={p.id}>
                 <TableCell className="font-mono">{p.nomor_urut}</TableCell>
                 <TableCell className="font-medium"><button type="button" onClick={()=>pilihUntukEdit(p)} className="text-left hover:underline hover:text-primary transition-colors">{p.nama}</button></TableCell>
@@ -510,6 +510,20 @@ function PesertaTab() {
           </TableBody>
         </Table>
       </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between gap-4 mt-4">
+          <Button variant="outline" size="sm" disabled={page === 0} onClick={() => setPage(p => Math.max(0, p - 1))}>
+            <ChevronLeft className="size-4" /> Sebelumnya
+          </Button>
+          <div className="text-sm text-muted-foreground">
+            Halaman {page + 1} dari {totalPages}
+          </div>
+          <Button variant="outline" size="sm" disabled={page >= totalPages - 1} onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}>
+            Berikutnya <ChevronRight className="size-4" />
+          </Button>
+        </div>
+      )}
 
     </SectionCard>
   );
