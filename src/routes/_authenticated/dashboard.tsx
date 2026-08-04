@@ -1362,6 +1362,7 @@ function PenilaianTab() {
   // Masukan Juri per ayat — bukan bagian penilaian, hanya lampiran rincian nilai
   const [openMasukan, setOpenMasukan] = useState(false);
   const [masukanValues, setMasukanValues] = useState<string[]>([]);
+  const [masukanUmum, setMasukanUmum] = useState("");
   const [savingMasukan, setSavingMasukan] = useState(false);
 
 
@@ -2011,15 +2012,20 @@ function PenilaianTab() {
       }
     });
     setMasukanValues(values);
+    setMasukanUmum(String(existing.find((e) => e && e.ayat === 0)?.teks ?? ""));
     setOpenMasukan(true);
   }
 
   async function saveMasukan() {
     if (!juriId || !pesertaId || !selectedMazmur) { setOpenMasukan(false); return; }
     setSavingMasukan(true);
-    const catatan = masukanValues
-      .map((teks, i) => ({ ayat: i + 1, teks: (teks || "").trim() }))
-      .filter((x) => x.teks.length > 0);
+    const umum = (masukanUmum || "").trim();
+    const catatan = [
+      ...(umum ? [{ ayat: 0, teks: umum }] : []),
+      ...masukanValues
+        .map((teks, i) => ({ ayat: i + 1, teks: (teks || "").trim() }))
+        .filter((x) => x.teks.length > 0),
+    ];
     const { error } = await supabase
       .from("masukan_juri" as any)
       .upsert(
@@ -2033,7 +2039,9 @@ function PenilaianTab() {
       );
     setSavingMasukan(false);
     if (error) { toast.error(error.message); return; }
-    toast.success("✦ Masukan juri tersimpan", { description: `${catatan.length} ayat terisi.` });
+    toast.success("✦ Masukan juri tersimpan", {
+      description: `${catatan.filter((c) => c.ayat > 0).length} ayat terisi${umum ? " + catatan umum" : ""}.`,
+    });
     setOpenMasukan(false);
   }
 
@@ -2499,6 +2507,18 @@ function PenilaianTab() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
+            <div className="rounded-lg border-2 border-accent/40 bg-accent/5 p-3">
+              <Label className="text-sm font-semibold mb-2 block">Catatan Umum</Label>
+              <Textarea
+                value={masukanUmum}
+                rows={3}
+                placeholder="Tulis catatan umum untuk peserta ini (opsional)…"
+                onChange={(e) => setMasukanUmum(e.target.value)}
+              />
+              <p className="text-[11px] text-muted-foreground mt-1">
+                Berlaku untuk keseluruhan bacaan, di luar catatan per ayat.
+              </p>
+            </div>
             {masukanValues.map((v, i) => (
               <div key={i} className="rounded-lg border bg-card p-3">
                 <Label className="text-sm font-medium mb-2 block">Ayat {i + 1}</Label>
@@ -4011,7 +4031,7 @@ function RincianNilaiTab() {
       doc.setTextColor(0);
       let y2 = 78;
       juriDenganMasukan.forEach((j) => {
-        const rows = masukanFor(p.id, j.id).map((c) => [String(c.ayat), c.teks]);
+        const rows = masukanFor(p.id, j.id).map((c) => [c.ayat === 0 ? "Umum" : String(c.ayat), c.teks]);
         doc.setFontSize(11); doc.text(`Juri: ${j.nama}${j.jabatan ? " — " + j.jabatan : ""}`, 40, y2);
         autoTable(doc, {
           startY: y2 + 6,
@@ -4055,7 +4075,7 @@ function RincianNilaiTab() {
     doc.setTextColor(0);
     let y = meta ? 96 : 82;
     juriDenganMasukan.forEach((j) => {
-      const rows = masukanFor(p.id, j.id).map((c) => [String(c.ayat), c.teks]);
+      const rows = masukanFor(p.id, j.id).map((c) => [c.ayat === 0 ? "Umum" : String(c.ayat), c.teks]);
       doc.setFontSize(11); doc.text(`Juri: ${j.nama}${j.jabatan ? " — " + j.jabatan : ""}`, 40, y);
       autoTable(doc, {
         startY: y + 6,
@@ -4252,7 +4272,7 @@ function RincianNilaiTab() {
                                 <div className="grid gap-1 text-xs">
                                   {list.map((c, i) => (
                                     <div key={i} className="flex gap-3 border-b last:border-0 py-1">
-                                      <span className="font-mono w-14 shrink-0">Ayat {c.ayat}</span>
+                                      <span className="font-mono w-14 shrink-0">{c.ayat === 0 ? "Umum" : `Ayat ${c.ayat}`}</span>
                                       <span className="flex-1 whitespace-pre-wrap">{c.teks}</span>
                                     </div>
                                   ))}
