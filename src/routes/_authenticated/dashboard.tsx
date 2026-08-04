@@ -985,9 +985,9 @@ function MazmurTab() {
 
 /* KATEGORI */
 const KRITERIA_PENILAIAN_OPTIONS = [
-  "Vocal dan Artikulasi",
+  "Interpretasi",
   "Penghayatan",
-  "Intonasi & Pelafalan",
+  "Artikulasi",
   "Penampilan",
   "Catatan Juri",
   "Perhatian",
