@@ -238,6 +238,8 @@ function PesertaTab() {
   const [resetting, setResetting] = useState(false);
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 10;
 
   const sesiDari = (n: number) => `Sesi ${Math.ceil(n / 10)}`;
 
@@ -255,6 +257,11 @@ function PesertaTab() {
     setKategoriList(uniq);
   }
   useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    const maxPage = Math.max(0, Math.ceil(items.length / PAGE_SIZE) - 1);
+    if (page > maxPage) setPage(maxPage);
+  }, [items.length]);
 
   async function resetSemua() {
     if (!confirm("Yakin ingin menghapus SEMUA daftar peserta beserta seluruh nilainya? Tindakan ini tidak dapat dibatalkan.")) return;
