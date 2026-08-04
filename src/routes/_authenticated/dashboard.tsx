@@ -1252,9 +1252,9 @@ function kriteriaKey(nama: string): keyof typeof GRADE_DESCRIPTIONS | "catatan" 
   const n = nama.toLowerCase();
   if (n.includes("perhatian")) return "perhatian";
   if (n.includes("catatan")) return "catatan";
-  if (n.includes("vokal") || n.includes("vocal") || n.includes("artikulasi")) return "vokal";
+  if (n.includes("interpretasi") || n.includes("vokal") || n.includes("vocal")) return "vokal";
   if (n.includes("hayat")) return "penghayatan";
-  if (n.includes("intonasi") || n.includes("pelafalan")) return "intonasi";
+  if (n.includes("artikulasi") || n.includes("intonasi") || n.includes("pelafalan")) return "intonasi";
   if (n.includes("penampilan")) return "penampilan";
   return null;
 }
