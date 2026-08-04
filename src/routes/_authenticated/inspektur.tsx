@@ -668,6 +668,15 @@ function InspekturPage() {
                                 <TableRow key={jid as string}>
                                   <TableCell className="font-medium">{jnama as string}</TableCell>
                                   {komps.map((k) => {
+                                    if (k === "clear_text") {
+                                      const ct = row?.detail?.clearText ?? row?.detail?.membacaPerikop ?? null;
+                                      const val = ct === true ? "Ya" : ct === false ? "Tidak" : "—";
+                                      return (
+                                        <TableCell key={k} className={val === "—" ? "text-muted-foreground" : "font-mono text-rose-700"}>
+                                          {val}
+                                        </TableCell>
+                                      );
+                                    }
                                     const idx = KOMP_IDX[k];
                                     const marks = aspek?.[idx]?.ditandai;
                                     const val = fmt(marks);
