@@ -2875,7 +2875,7 @@ function PenilaianTab() {
 
           {!activeKey && openKriteria && (
             <div className="py-4 text-sm text-muted-foreground">
-              Kriteria ini belum memiliki panduan grade khusus. Tutup dialog dan gunakan kriteria standar (Vokal, Penghayatan, Intonasi, Penampilan, atau Catatan Juri).
+              Kriteria ini belum memiliki panduan grade khusus. Tutup dialog dan gunakan kriteria standar (Interpretasi, Penghayatan, Artikulasi, Penampilan, atau Catatan Juri).
             </div>
           )}
         </DialogContent>
