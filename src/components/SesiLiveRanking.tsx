@@ -112,7 +112,7 @@ export default function SesiLiveRanking() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {rows.map((r) => {
+              {pageRows.map((r) => {
                 const sb = statusBadge(r.status);
                 const lengkap = r.final_count >= r.total;
                 const belum = r.juri_status.filter((j) => !j.sudah_vote);
