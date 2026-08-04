@@ -1173,10 +1173,13 @@ function KriteriaTab() {
                       className="h-9 w-24"
                       value={edits[k.id] ?? ""}
                       onChange={e => setEdits(prev => ({ ...prev, [k.id]: e.target.value }))}
+                      onBlur={() => simpanBobot(k)}
+                      onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); (e.target as HTMLInputElement).blur(); } }}
                     />
                   </div>
 
                 </TableCell>
+
                 <TableCell className="text-right">
                   <Button size="icon" variant="ghost" onClick={() => hapus(k.id)}>
                     <Trash2 className="size-4 text-destructive" />
