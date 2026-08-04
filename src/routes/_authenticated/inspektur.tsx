@@ -82,6 +82,8 @@ function InspekturPage() {
   const [currentUser, setCurrentUser] = useState<{ nama: string; email: string; role: string } | null>(null);
   const [ringkasan, setRingkasan] = useState<Ringkasan | null>(null);
   const [monitor, setMonitor] = useState<MonitorRow[]>([]);
+  const MONITOR_PAGE_SIZE = 10;
+  const [monitorPage, setMonitorPage] = useState(1);
   const [vars, setVars] = useState<VarRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -405,7 +407,7 @@ function InspekturPage() {
                 {monitor.length === 0 && (
                   <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Belum ada data</TableCell></TableRow>
                 )}
-                {monitor.map((r) => {
+                {monitor.slice((monitorPage - 1) * MONITOR_PAGE_SIZE, monitorPage * MONITOR_PAGE_SIZE).map((r) => {
                   const v = statusVariant(r.status);
                   const hasActiveVar = r.status === "Potensi VAR" || r.status === "Perbaikan Perhatian" || vars.some((vr) => vr.peserta_id === r.peserta_id);
                   return (
@@ -452,6 +454,22 @@ function InspekturPage() {
                 })}
               </TableBody>
             </Table>
+            {monitor.length > MONITOR_PAGE_SIZE && (() => {
+              const totalPages = Math.max(1, Math.ceil(monitor.length / MONITOR_PAGE_SIZE));
+              const page = Math.min(monitorPage, totalPages);
+              return (
+                <div className="flex items-center justify-between pt-3 text-sm">
+                  <span className="text-muted-foreground">
+                    Menampilkan {(page - 1) * MONITOR_PAGE_SIZE + 1}–{Math.min(page * MONITOR_PAGE_SIZE, monitor.length)} dari {monitor.length} peserta
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setMonitorPage(page - 1)}>Sebelumnya</Button>
+                    <span className="text-muted-foreground">Hal. {page} / {totalPages}</span>
+                    <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setMonitorPage(page + 1)}>Berikutnya</Button>
+                  </div>
+                </div>
+              );
+            })()}
           </CardContent>
         </Card>
 

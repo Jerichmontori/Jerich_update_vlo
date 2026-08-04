@@ -1315,7 +1315,7 @@ function PenilaianTab() {
   // Snapshot nilai Perhatian saat dialog dibuka (dipakai saat mode Perbaikan Perhatian
   // untuk mengunci baris non-pemicu agar tidak berubah, apapun yang terjadi di UI).
   const perhatianBaselineRef = useRef<boolean[][] | null>(null);
-  const PERHATIAN_VAR_TRIGGER_IDX = new Set([1, 2, 3]);
+  const PERHATIAN_VAR_TRIGGER_IDX = new Set([0, 1, 2, 3]);
   const [saving, setSaving] = useState(false);
   // Aturan #3 — nama juri otomatis dari user yang login (juri tidak bisa memilih juri lain)
   const [myJuriId, setMyJuriId] = useState<string>("");
@@ -1355,7 +1355,7 @@ function PenilaianTab() {
   type PerhatianDiscrepancyReport = {
     pesertaId: string;
     pesertaNama: string;
-    items: { pertanyaan: string; rows: { juriNama: string; ayat: number[] }[] }[];
+    items: { pertanyaan: string; rows: { juriNama: string; ayat: number[]; teks?: string }[] }[];
   };
   const [perhatianDiscrepancy, setPerhatianDiscrepancy] = useState<PerhatianDiscrepancyReport | null>(null);
 
@@ -1845,6 +1845,24 @@ function PenilaianTab() {
       { idx: 2, label: "Mengurangi kata" },
     ];
     const items: PerhatianDiscrepancyReport["items"] = [];
+
+    // Parameter wajib sama: Clear Text
+    {
+      const perJuriCT: { juriNama: string; ayat: number[]; teks: string }[] = [];
+      for (const r of rows as any[]) {
+        const d = r.detail;
+        if (!d || d.type !== "perhatian") continue;
+        const val = d.clearText ?? d.membacaPerikop ?? null;
+        perJuriCT.push({
+          juriNama: juriMap.get(r.juri_id) ?? "—",
+          ayat: [],
+          teks: val === true ? "Ya" : val === false ? "Tidak" : "—",
+        });
+      }
+      const sigCT = new Set(perJuriCT.map(x => x.teks));
+      if (sigCT.size > 1) items.push({ pertanyaan: "Clear Text", rows: perJuriCT });
+    }
+
     for (const t of targetIdx) {
       const perJuri: { juriNama: string; ayat: number[] }[] = [];
       for (const r of rows as any[]) {
@@ -2588,7 +2606,7 @@ function PenilaianTab() {
                     <li key={j} className="flex justify-between gap-2">
                       <span className="text-muted-foreground">{r.juriNama}</span>
                       <span className="font-medium text-right">
-                        {r.ayat.length ? `Ayat: ${r.ayat.join(", ")}` : "—"}
+                        {r.teks ? r.teks : r.ayat.length ? `Ayat: ${r.ayat.join(", ")}` : "—"}
                       </span>
                     </li>
                   ))}
