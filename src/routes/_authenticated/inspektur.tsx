@@ -82,6 +82,8 @@ function InspekturPage() {
   const [currentUser, setCurrentUser] = useState<{ nama: string; email: string; role: string } | null>(null);
   const [ringkasan, setRingkasan] = useState<Ringkasan | null>(null);
   const [monitor, setMonitor] = useState<MonitorRow[]>([]);
+  const MONITOR_PAGE_SIZE = 10;
+  const [monitorPage, setMonitorPage] = useState(1);
   const [vars, setVars] = useState<VarRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [detailOpen, setDetailOpen] = useState(false);
