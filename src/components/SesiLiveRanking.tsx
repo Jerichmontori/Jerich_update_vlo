@@ -36,6 +36,11 @@ export default function SesiLiveRanking() {
   const [rows, setRows] = useState<SesiRow[] | null>(null);
   const [busy, setBusy] = useState<number | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
+  const PAGE_SIZE = 10;
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil((rows?.length ?? 0) / PAGE_SIZE));
+  useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
+  const pageRows = (rows ?? []).slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc("live_ranking_sesi_list" as any);
