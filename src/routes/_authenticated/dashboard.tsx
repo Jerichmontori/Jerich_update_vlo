@@ -1128,6 +1128,23 @@ function KriteriaTab() {
     setNama(""); setBobot(""); load();
   }
 
+  async function simpanBobot(k: Kriteria) {
+    const raw = edits[k.id];
+    const val = Number(raw);
+    if (raw === undefined || raw === "" || Number.isNaN(val)) {
+      setEdits(prev => ({ ...prev, [k.id]: String(Number(k.bobot)) }));
+      return;
+    }
+    if (val === Number(k.bobot)) return;
+    const { error } = await supabase.from("kriteria").update({ bobot: val }).eq("id", k.id);
+    if (error) {
+      setEdits(prev => ({ ...prev, [k.id]: String(Number(k.bobot)) }));
+      return toast.error(error.message);
+    }
+    setItems(prev => prev.map(i => (i.id === k.id ? { ...i, bobot: val } : i)));
+    toast.success(`Bobot ${k.nama} disimpan`);
+  }
+
   async function hapus(id: string) {
     if (!confirm("Hapus kriteria ini?")) return;
     const { error } = await supabase.from("kriteria").delete().eq("id", id);
@@ -1135,6 +1152,8 @@ function KriteriaTab() {
     toast.success("Kriteria dihapus");
     load();
   }
+
+
 
 
   return (
@@ -1173,10 +1192,13 @@ function KriteriaTab() {
                       className="h-9 w-24"
                       value={edits[k.id] ?? ""}
                       onChange={e => setEdits(prev => ({ ...prev, [k.id]: e.target.value }))}
+                      onBlur={() => simpanBobot(k)}
+                      onKeyDown={e => { if (e.key === "Enter") { e.preventDefault(); (e.target as HTMLInputElement).blur(); } }}
                     />
                   </div>
 
                 </TableCell>
+
                 <TableCell className="text-right">
                   <Button size="icon" variant="ghost" onClick={() => hapus(k.id)}>
                     <Trash2 className="size-4 text-destructive" />
