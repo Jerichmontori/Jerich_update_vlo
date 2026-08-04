@@ -1355,7 +1355,7 @@ function PenilaianTab() {
   type PerhatianDiscrepancyReport = {
     pesertaId: string;
     pesertaNama: string;
-    items: { pertanyaan: string; rows: { juriNama: string; ayat: number[] }[] }[];
+    items: { pertanyaan: string; rows: { juriNama: string; ayat: number[]; teks?: string }[] }[];
   };
   const [perhatianDiscrepancy, setPerhatianDiscrepancy] = useState<PerhatianDiscrepancyReport | null>(null);
 
