@@ -36,6 +36,7 @@ function RankingPublic() {
 
   async function load() {
     setLoading(true);
+    setPage(1);
     const [{ data: rankData, error: rankErr }, { data: pesertaData, error: pesertaErr }] = await Promise.all([
       supabase.rpc("get_ranking" as any),
       supabase.from("peserta").select("id, kategori"),
@@ -47,6 +48,7 @@ function RankingPublic() {
     setPeserta((pesertaData ?? []) as Peserta[]);
   }
   useEffect(() => { load(); }, []);
+  useEffect(() => { setPage(1); }, [kategori]);
 
   const kategoriMap = useMemo(() => {
     const m: Record<string, string | null> = {};
