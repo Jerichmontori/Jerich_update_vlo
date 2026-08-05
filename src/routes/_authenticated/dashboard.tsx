@@ -2762,7 +2762,10 @@ function PenilaianTab() {
             <DialogTitle className="font-serif text-2xl">{openKriteria?.nama}</DialogTitle>
             <DialogDescription>
               {activeKey === "catatan"
-                ? "Beri nilai 1–5 untuk setiap aspek berikut."
+                ? (catatanWajib
+                    ? "Clear Text = \"Tidak\" → seluruh aspek WAJIB diisi (nilai 1–5)."
+                    : "Clear Text = \"Ya\" → pengisian bersifat opsional. Beri nilai 1–5 pada aspek yang ingin dinilai.")
+
                 : activeKey === "perhatian"
                 ? "Centang setiap ayat yang mengalami masalah pada aspek terkait."
                 : "Pilih grade yang paling sesuai dengan penampilan peserta."}
