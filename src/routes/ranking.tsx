@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Toaster, toast } from "sonner";
-import { BookOpenText, ArrowLeft, Filter } from "lucide-react";
+import { ArrowLeft, Filter } from "lucide-react";
 import brandLogo from "@/assets/bumotik-black.png.asset.json";
 
 export const Route = createFileRoute("/ranking")({

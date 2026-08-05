@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Toaster, toast } from "sonner";
-import { BookOpenText } from "lucide-react";
 import { registerJuri } from "@/lib/juri-register.functions";
 import brandLogo from "@/assets/bumotik-black.png.asset.json";
 

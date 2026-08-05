@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { BookOpenText, Trophy, Radio, Mic } from "lucide-react";
+import { Trophy, Radio, Mic } from "lucide-react";
 import { useLiveState, sortRanking } from "@/lib/liveState";
 import brandLogo from "@/assets/bumotik-black.png.asset.json";
 
