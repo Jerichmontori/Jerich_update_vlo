@@ -7,7 +7,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Toaster, toast } from "sonner";
-import { ArrowUp, ArrowDown, Play, RefreshCw, BookOpenText, Users, Gavel } from "lucide-react";
+import { ArrowUp, ArrowDown, Play, RefreshCw, Users, Gavel } from "lucide-react";
+import brandLogo from "@/assets/bumotik-black.png.asset.json";
 
 export const Route = createFileRoute("/_authenticated/operator")({
   component: OperatorPage,
@@ -235,9 +236,7 @@ function OperatorPage() {
       <Toaster richColors position="top-center" />
       <header className="border-b bg-card/60 backdrop-blur mb-8">
         <div className="mx-auto max-w-6xl px-4 py-6 flex items-center gap-4">
-          <div className="grid place-items-center size-12 shrink-0 rounded-full bg-primary text-primary-foreground shadow ring-4 ring-accent/30">
-            <BookOpenText className="size-6" />
-          </div>
+          <img src={brandLogo.url} alt="Logo BUMOTIK" className="h-10 sm:h-12 w-auto shrink-0 object-contain" width={480} height={130} />
           <div className="min-w-0 flex-1">
             <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">Panitia</p>
             <h1 className="text-2xl font-serif font-semibold">Operator Lomba</h1>
