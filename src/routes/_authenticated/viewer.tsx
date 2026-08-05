@@ -86,11 +86,41 @@ function ViewerPage() {
     doc.text(`Peserta: ${r.nomor_urut}. ${r.nama}${r.asal ? ` — ${r.asal}` : ""}`, 14, 24);
     doc.text(`Kategori: ${r.kategori ?? "—"}   |   Bacaan: ${d?.bacaan ?? "—"}`, 14, 30);
 
+    const juriList: any[] = Array.isArray(d?.juri) ? d.juri : [];
     const catatan: any[] = Array.isArray(d?.catatan) ? d.catatan : [];
-    if (catatan.length === 0) {
-      doc.text("Belum ada catatan juri untuk peserta ini.", 14, 42);
+
+    if (d?.nilai_akhir != null) {
+      doc.text(`Nilai Akhir Peserta: ${Number(d.nilai_akhir).toFixed(3)}`, 14, 36);
+    }
+
+    let y = d?.nilai_akhir != null ? 44 : 38;
+
+    if (juriList.length > 0) {
+      juriList.forEach((j) => {
+        const penilaian: any[] = Array.isArray(j.penilaian) ? j.penilaian : [];
+        autoTable(doc, {
+          startY: y,
+          head: [[
+            `Juri: ${j.juri_nama ?? "—"}`,
+            `Nilai Juri: ${j.nilai_juri != null ? Number(j.nilai_juri).toFixed(3) : "—"}`,
+          ]],
+          body: penilaian.length > 0
+            ? penilaian.map((p) => [String(p.kriteria ?? "—"), String(p.nilai)])
+            : [["—", "Belum ada nilai"]],
+        });
+        y = ((doc as any).lastAutoTable?.finalY ?? y) + 4;
+
+        const rowsCat = catatanToRows(j.catatan);
+        autoTable(doc, {
+          startY: y,
+          head: [["Ayat / Bagian", "Masukan Juri"]],
+          body: rowsCat.length > 0 ? rowsCat : [["—", "Tidak ada catatan"]],
+        });
+        y = ((doc as any).lastAutoTable?.finalY ?? y) + 8;
+      });
+    } else if (catatan.length === 0) {
+      doc.text("Belum ada catatan juri untuk peserta ini.", 14, y);
     } else {
-      let y = 38;
       catatan.forEach((c) => {
         const rowsCat = catatanToRows(c.catatan);
         autoTable(doc, {
