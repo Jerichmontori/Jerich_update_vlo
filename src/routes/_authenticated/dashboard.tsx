@@ -1973,6 +1973,21 @@ function PenilaianTab() {
     return row ? Number(row.nilai) : null;
   }
 
+  // Clear Text pada kriteria Perhatian menentukan apakah Catatan Juri wajib diisi.
+  // Clear Text = "Ya" → Catatan Juri opsional. Clear Text = "Tidak" → wajib diisi lengkap.
+  const clearTextSaya: boolean | null = (() => {
+    if (!juriId || !pesertaId) return null;
+    const kPerhatian = kriteria.find(k => kriteriaKey(k.nama) === "perhatian");
+    if (!kPerhatian) return null;
+    const row = penilaian.find(x => x.juri_id === juriId && x.peserta_id === pesertaId && x.kriteria_id === kPerhatian.id);
+    const d: any = row?.detail ?? null;
+    if (!d || d.type !== "perhatian") return null;
+    const v = d.clearText ?? d.membacaPerikop;
+    return v === true || v === false ? Boolean(v) : null;
+  })();
+  const catatanWajib = clearTextSaya === false;
+
+
   function openDialog(k: Kriteria) {
     if (editMode) return toast.warning("Mode perubahan aktif — hanya Peserta & Bacaan Mazmur yang dapat diubah.");
     if (!juriId) return toast.error("Pilih juri terlebih dahulu");
@@ -2115,8 +2130,15 @@ function PenilaianTab() {
   }
 
   async function saveCatatan() {
-    // Semua pilihan opsional; aspek yang tidak dipilih ditandai skipped dan tidak ikut dihitung.
+    // Clear Text = "Tidak" → seluruh aspek Catatan Juri wajib diisi.
     const skippedFlags = catatanValues.map(v => v === null || v === undefined);
+    if (catatanWajib && skippedFlags.some(Boolean)) {
+      toast.warning("Catatan Juri wajib diisi", {
+        description: "Karena Clear Text dijawab \"Tidak\", seluruh aspek Catatan Juri harus diberi nilai 1–5.",
+      });
+      return; // dialog tetap terbuka
+    }
+
     const contributions: number[] = [];
     catatanValues.forEach((v, i) => {
       if (!skippedFlags[i] && v !== null && v !== undefined) contributions.push(v);
@@ -2740,7 +2762,10 @@ function PenilaianTab() {
             <DialogTitle className="font-serif text-2xl">{openKriteria?.nama}</DialogTitle>
             <DialogDescription>
               {activeKey === "catatan"
-                ? "Beri nilai 1–5 untuk setiap aspek berikut."
+                ? (catatanWajib
+                    ? "Clear Text = \"Tidak\" → seluruh aspek WAJIB diisi (nilai 1–5)."
+                    : "Clear Text = \"Ya\" → pengisian bersifat opsional. Beri nilai 1–5 pada aspek yang ingin dinilai.")
+
                 : activeKey === "perhatian"
                 ? "Centang setiap ayat yang mengalami masalah pada aspek terkait."
                 : "Pilih grade yang paling sesuai dengan penampilan peserta."}
@@ -2787,10 +2812,14 @@ function PenilaianTab() {
           {activeKey === "catatan" && (
             <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
               {CATATAN_ASPEK.map((aspek, i) => (
-                <div key={aspek} className="rounded-lg border bg-card p-3">
-                  <div className="mb-2">
+                <div key={aspek} className={["rounded-lg border bg-card p-3", catatanWajib && catatanValues[i] == null ? "border-destructive/60" : ""].join(" ")}>
+                  <div className="mb-2 flex items-center justify-between gap-2">
                     <span className="text-sm font-medium">{i + 1}. {aspek}</span>
+                    <span className="text-[10px] font-semibold rounded-full px-2 py-0.5 bg-muted text-muted-foreground">
+                      {catatanWajib ? "Wajib" : "Opsional"}
+                    </span>
                   </div>
+
 
                   <div className="grid grid-cols-5 gap-2">
                     {[1, 2, 3, 4, 5].map(v => (
