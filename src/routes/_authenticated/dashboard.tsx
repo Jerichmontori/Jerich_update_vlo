@@ -1981,8 +1981,8 @@ function PenilaianTab() {
     if (pesertaId && mySubmittedIds.has(pesertaId) && !perbaikanPerhatianIds.has(pesertaId)) {
       return toast.warning("Penilaian sudah dikirim — nilai tidak dapat diubah lagi.");
     }
-    if (pesertaId && perbaikanPerhatianIds.has(pesertaId) && key !== "perhatian") {
-      return toast.warning("Mode Perbaikan Perhatian aktif — hanya kriteria Perhatian yang dapat diubah.");
+    if (pesertaId && perbaikanPerhatianIds.has(pesertaId) && key !== "perhatian" && key !== "catatan") {
+      return toast.warning("Mode Perbaikan aktif — hanya kriteria Perhatian dan Catatan Juri yang dapat diubah.");
     }
     if (key === "catatan") {
       setCatatanValues(CATATAN_ASPEK.map(() => null));
@@ -2287,7 +2287,7 @@ function PenilaianTab() {
                   {kriteria.map(k => {
                     const val = currentNilai(k.id);
                     const key = kriteriaKey(k.nama);
-                    const isDisabled = perbaikanAktifNow && key !== "perhatian";
+                    const isDisabled = perbaikanAktifNow && key !== "perhatian" && key !== "catatan";
                     return (
                       <div key={k.id} className="relative">
                         <CriteriaPillButton
