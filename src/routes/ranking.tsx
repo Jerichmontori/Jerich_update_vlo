@@ -31,6 +31,8 @@ function RankingPublic() {
   const [peserta, setPeserta] = useState<Peserta[]>([]);
   const [loading, setLoading] = useState(true);
   const [kategori, setKategori] = useState<string>(ALL);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   async function load() {
     setLoading(true);
