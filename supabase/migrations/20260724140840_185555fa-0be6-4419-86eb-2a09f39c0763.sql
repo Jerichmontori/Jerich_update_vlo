@@ -1,1 +1,0 @@
-ALTER TABLE public.mazmur ADD COLUMN IF NOT EXISTS kategori TEXT;

@@ -1,1 +1,0 @@
-DROP POLICY IF EXISTS "authenticated read approved juri" ON public.juri;

@@ -1,1 +1,0 @@
-ALTER TABLE public.juri ADD COLUMN IF NOT EXISTS bacaan_mazmur text, ADD COLUMN IF NOT EXISTS jumlah_ayat integer;

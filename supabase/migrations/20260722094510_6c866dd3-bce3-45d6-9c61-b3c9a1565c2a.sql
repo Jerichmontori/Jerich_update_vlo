@@ -1,1 +1,0 @@
-ALTER TABLE public.peserta ADD COLUMN IF NOT EXISTS sesi text;

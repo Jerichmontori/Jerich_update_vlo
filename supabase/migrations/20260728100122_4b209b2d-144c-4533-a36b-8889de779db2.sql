@@ -1,2 +1,0 @@
-ALTER TABLE public.var_clarification_session DROP CONSTRAINT IF EXISTS var_status_check;
-ALTER TABLE public.var_clarification_session ADD CONSTRAINT var_status_check CHECK (status IN ('potensi_var','klarifikasi_var','musyawarah','final','perbaikan_perhatian'));
