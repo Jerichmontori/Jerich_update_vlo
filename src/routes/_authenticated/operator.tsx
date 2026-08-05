@@ -400,7 +400,7 @@ function OperatorPage() {
                   {peserta.length === 0 && (
                     <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Belum ada peserta.</TableCell></TableRow>
                   )}
-                  {peserta.map(p => {
+                  {peserta.slice((pesertaPage - 1) * PESERTA_PAGE_SIZE, pesertaPage * PESERTA_PAGE_SIZE).map(p => {
                     const done = submissionCounts[p.id] ?? 0;
                     const sudahDinilai = juriTotal > 0 && done >= juriTotal;
                     return (
