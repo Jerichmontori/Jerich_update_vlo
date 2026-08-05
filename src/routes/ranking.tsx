@@ -81,6 +81,10 @@ function RankingPublic() {
 
   const medals = ["🥇", "🥈", "🥉"];
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/40 to-background">
       <Toaster richColors position="top-center" />
