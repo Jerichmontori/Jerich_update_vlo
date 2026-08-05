@@ -1973,6 +1973,21 @@ function PenilaianTab() {
     return row ? Number(row.nilai) : null;
   }
 
+  // Clear Text pada kriteria Perhatian menentukan apakah Catatan Juri wajib diisi.
+  // Clear Text = "Ya" → Catatan Juri opsional. Clear Text = "Tidak" → wajib diisi lengkap.
+  const clearTextSaya: boolean | null = (() => {
+    if (!juriId || !pesertaId) return null;
+    const kPerhatian = kriteria.find(k => kriteriaKey(k.nama) === "perhatian");
+    if (!kPerhatian) return null;
+    const row = penilaian.find(x => x.juri_id === juriId && x.peserta_id === pesertaId && x.kriteria_id === kPerhatian.id);
+    const d: any = row?.detail ?? null;
+    if (!d || d.type !== "perhatian") return null;
+    const v = d.clearText ?? d.membacaPerikop;
+    return v === true || v === false ? Boolean(v) : null;
+  })();
+  const catatanWajib = clearTextSaya === false;
+
+
   function openDialog(k: Kriteria) {
     if (editMode) return toast.warning("Mode perubahan aktif — hanya Peserta & Bacaan Mazmur yang dapat diubah.");
     if (!juriId) return toast.error("Pilih juri terlebih dahulu");
