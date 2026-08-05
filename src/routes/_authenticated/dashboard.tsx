@@ -1996,10 +1996,10 @@ function PenilaianTab() {
     if (!juriId) return toast.error("Pilih juri terlebih dahulu");
     if (!pesertaId) return toast.error("Pilih peserta terlebih dahulu");
     const key = kriteriaKey(k.nama);
-    if (pesertaId && mySubmittedIds.has(pesertaId) && !perbaikanPerhatianIds.has(pesertaId)) {
+    if (pesertaId && mySubmittedIds.has(pesertaId) && !perbaikanAktifIds.has(pesertaId)) {
       return toast.warning("Penilaian sudah dikirim — nilai tidak dapat diubah lagi.");
     }
-    if (pesertaId && perbaikanPerhatianIds.has(pesertaId) && key !== "perhatian" && key !== "catatan") {
+    if (pesertaId && perbaikanAktifIds.has(pesertaId) && key !== "perhatian" && key !== "catatan") {
       return toast.warning("Mode Perbaikan aktif — hanya kriteria Perhatian dan Catatan Juri yang dapat diubah.");
     }
     if (key === "catatan") {
@@ -2020,7 +2020,7 @@ function PenilaianTab() {
     }
     if (key === "perhatian") {
       if (!selectedMazmur) return toast.error("Pilih bacaan mazmur terlebih dahulu");
-      const isPerbaikan = !!(pesertaId && perbaikanPerhatianIds.has(pesertaId));
+      const isPerbaikan = !!(pesertaId && perbaikanAktifIds.has(pesertaId));
       const prevRow = penilaian.find(x => x.juri_id === juriId && x.peserta_id === pesertaId && x.kriteria_id === k.id);
       const prevDetail: any = prevRow?.detail ?? null;
       // Selalu tampilkan pilihan terakhir juri bila baris penilaian sebelumnya masih ada
@@ -2172,7 +2172,7 @@ function PenilaianTab() {
       return toast.warning("Pilih jawaban untuk 'Clear Text' terlebih dahulu.");
     }
     // Guard: bila mode Perbaikan Perhatian aktif, paksa baris non-pemicu kembali ke baseline saat dialog dibuka.
-    const perbaikanAktifNow = !!(pesertaId && perbaikanPerhatianIds.has(pesertaId));
+    const perbaikanAktifNow = !!(pesertaId && perbaikanAktifIds.has(pesertaId));
     const baseline = perhatianBaselineRef.current;
     const effective = (perbaikanAktifNow && baseline)
       ? perhatianChecks.map((row, i) => PERHATIAN_VAR_TRIGGER_IDX.has(i) ? row : (baseline[i] ? [...baseline[i]] : row))
@@ -2298,7 +2298,7 @@ function PenilaianTab() {
 
 
           {(() => {
-            const perbaikanAktifNow = !!pesertaId && perbaikanPerhatianIds.has(pesertaId);
+            const perbaikanAktifNow = !!pesertaId && perbaikanAktifIds.has(pesertaId);
             // Setelah juri menekan Kirim untuk peserta ini, pilihan kriteria disembunyikan
             // agar nilai tidak bisa diubah. Terbuka lagi saat peserta berikutnya dimulai,
             // atau saat VAR dari Inspektur disetujui (mode perbaikan aktif).
@@ -2851,7 +2851,7 @@ function PenilaianTab() {
           )}
 
           {activeKey === "perhatian" && (() => {
-            const perbaikanAktifDlg = !!(pesertaId && perbaikanPerhatianIds.has(pesertaId));
+            const perbaikanAktifDlg = !!(pesertaId && perbaikanAktifIds.has(pesertaId));
             const VAR_TRIGGER_IDX = new Set([0, 1, 2, 3]);
             return (
             <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
