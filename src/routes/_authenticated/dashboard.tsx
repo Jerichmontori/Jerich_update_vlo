@@ -1985,7 +1985,19 @@ function PenilaianTab() {
       return toast.warning("Mode Perbaikan aktif — hanya kriteria Perhatian dan Catatan Juri yang dapat diubah.");
     }
     if (key === "catatan") {
-      setCatatanValues(CATATAN_ASPEK.map(() => null));
+      // Tampilkan kembali pilihan terakhir juri agar dapat diubah (mis. saat mode Perbaikan).
+      const prevRow = penilaian.find(x => x.juri_id === juriId && x.peserta_id === pesertaId && x.kriteria_id === k.id);
+      const prevDetail: any = prevRow?.detail ?? null;
+      if (prevDetail && prevDetail.type === "catatan" && Array.isArray(prevDetail.aspek)) {
+        setCatatanValues(CATATAN_ASPEK.map((_, i) => {
+          const a = prevDetail.aspek[i];
+          if (!a || a.skipped) return null;
+          const v = Number(a.nilai);
+          return Number.isFinite(v) && v > 0 ? v : null;
+        }));
+      } else {
+        setCatatanValues(CATATAN_ASPEK.map(() => null));
+      }
       setCatatanClearText(null);
     }
     if (key === "perhatian") {
