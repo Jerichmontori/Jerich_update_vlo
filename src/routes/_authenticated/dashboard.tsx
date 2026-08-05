@@ -1473,6 +1473,9 @@ function PenilaianTab() {
   // atau perbaikan VAR manual), juri hanya boleh membuka kriteria Perhatian.
   const PERHATIAN_ONLY_STATUS = new Set(["perbaikan_perhatian", "klarifikasi_var", "musyawarah", "perbaikan_var_manual"]);
   const perbaikanPerhatianIds = new Set(varAktifList.filter(v => PERHATIAN_ONLY_STATUS.has(v.status)).map(v => v.peserta_id));
+  // Setelah juri mengirim ulang nilai pada mode Perbaikan, kriteria Perhatian & Catatan Juri
+  // disembunyikan/dikunci kembali sampai Inspektur membuka perbaikan berikutnya.
+  const perbaikanAktifIds = new Set([...perbaikanPerhatianIds].filter(id => !perbaikanResubmittedIds.has(id)));
   useEffect(() => {
     // Saat siklus Perbaikan Perhatian selesai untuk suatu peserta,
     // bersihkan pula catatan "sudah kirim-ulang" agar siklus berikutnya bisa dibuka lagi.
