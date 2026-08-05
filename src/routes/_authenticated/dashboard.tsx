@@ -1978,6 +1978,9 @@ function PenilaianTab() {
     if (!juriId) return toast.error("Pilih juri terlebih dahulu");
     if (!pesertaId) return toast.error("Pilih peserta terlebih dahulu");
     const key = kriteriaKey(k.nama);
+    if (pesertaId && mySubmittedIds.has(pesertaId) && !perbaikanPerhatianIds.has(pesertaId)) {
+      return toast.warning("Penilaian sudah dikirim — nilai tidak dapat diubah lagi.");
+    }
     if (pesertaId && perbaikanPerhatianIds.has(pesertaId) && key !== "perhatian") {
       return toast.warning("Mode Perbaikan Perhatian aktif — hanya kriteria Perhatian yang dapat diubah.");
     }
