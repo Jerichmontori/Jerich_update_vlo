@@ -2257,28 +2257,50 @@ function PenilaianTab() {
           )}
 
 
-          <div className="mb-2">
-            <Label className="text-base">Pilih Kriteria</Label>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mb-8 pb-4">
-            {kriteria.map(k => {
-              const val = currentNilai(k.id);
-              const key = kriteriaKey(k.nama);
-              const perbaikanAktif = !!pesertaId && perbaikanPerhatianIds.has(pesertaId);
-              const isDisabled = perbaikanAktif && key !== "perhatian";
+          {(() => {
+            const perbaikanAktifNow = !!pesertaId && perbaikanPerhatianIds.has(pesertaId);
+            // Setelah juri menekan Kirim untuk peserta ini, pilihan kriteria disembunyikan
+            // agar nilai tidak bisa diubah. Terbuka lagi saat peserta berikutnya dimulai,
+            // atau saat VAR dari Inspektur disetujui (mode perbaikan aktif).
+            const terkunciSetelahKirim = !!pesertaId && mySubmittedIds.has(pesertaId) && !perbaikanAktifNow;
+            if (terkunciSetelahKirim) {
               return (
-                <div key={k.id} className="relative">
-                  <CriteriaPillButton
-                    label={k.nama}
-                    active={val !== null}
-                    disabled={isDisabled}
-                    onClick={() => openDialog(k)}
-                  />
+                <div className="mb-8 rounded-xl border-2 border-dashed border-primary/40 bg-primary/5 p-5 text-center">
+                  <div className="text-xs uppercase tracking-[0.25em] text-primary font-semibold">Penilaian Terkunci</div>
+                  <div className="mt-2 text-sm text-muted-foreground max-w-lg mx-auto">
+                    Anda sudah mengirim penilaian untuk peserta ini, sehingga nilai tidak dapat diubah lagi.
+                    Pilihan kriteria akan aktif kembali saat penilaian peserta berikutnya dimulai, atau bila
+                    Inspektur mengajukan VAR dan disetujui para juri.
+                  </div>
                 </div>
               );
-            })}
+            }
+            return (
+              <>
+                <div className="mb-2">
+                  <Label className="text-base">Pilih Kriteria</Label>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 mb-8 pb-4">
+                  {kriteria.map(k => {
+                    const val = currentNilai(k.id);
+                    const key = kriteriaKey(k.nama);
+                    const isDisabled = perbaikanAktifNow && key !== "perhatian";
+                    return (
+                      <div key={k.id} className="relative">
+                        <CriteriaPillButton
+                          label={k.nama}
+                          active={val !== null}
+                          disabled={isDisabled}
+                          onClick={() => openDialog(k)}
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            );
+          })()}
 
-          </div>
 
           {/* Masukan Juri (per ayat) — di luar penilaian, hanya lampiran rincian */}
           {juriId && pesertaId && selectedMazmur && (
