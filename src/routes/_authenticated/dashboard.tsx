@@ -2812,10 +2812,14 @@ function PenilaianTab() {
           {activeKey === "catatan" && (
             <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
               {CATATAN_ASPEK.map((aspek, i) => (
-                <div key={aspek} className="rounded-lg border bg-card p-3">
-                  <div className="mb-2">
+                <div key={aspek} className={["rounded-lg border bg-card p-3", catatanWajib && catatanValues[i] == null ? "border-destructive/60" : ""].join(" ")}>
+                  <div className="mb-2 flex items-center justify-between gap-2">
                     <span className="text-sm font-medium">{i + 1}. {aspek}</span>
+                    <span className="text-[10px] font-semibold rounded-full px-2 py-0.5 bg-muted text-muted-foreground">
+                      {catatanWajib ? "Wajib" : "Opsional"}
+                    </span>
                   </div>
+
 
                   <div className="grid grid-cols-5 gap-2">
                     {[1, 2, 3, 4, 5].map(v => (
