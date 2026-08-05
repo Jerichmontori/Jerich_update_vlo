@@ -441,6 +441,22 @@ function OperatorPage() {
                 </TableBody>
 
               </Table>
+              {peserta.length > PESERTA_PAGE_SIZE && (() => {
+                const totalPages = Math.max(1, Math.ceil(peserta.length / PESERTA_PAGE_SIZE));
+                const page = Math.min(pesertaPage, totalPages);
+                return (
+                  <div className="flex items-center justify-between pt-3 text-sm">
+                    <span className="text-muted-foreground">
+                      Menampilkan {(page - 1) * PESERTA_PAGE_SIZE + 1}–{Math.min(page * PESERTA_PAGE_SIZE, peserta.length)} dari {peserta.length} peserta
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPesertaPage(page - 1)}>Sebelumnya</Button>
+                      <span className="text-muted-foreground">Hal. {page} / {totalPages}</span>
+                      <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPesertaPage(page + 1)}>Berikutnya</Button>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           </CardContent>
         </Card>
