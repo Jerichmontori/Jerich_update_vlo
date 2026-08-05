@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
 import { BookOpenText, Eye, EyeOff } from "lucide-react";
+import brandLogo from "@/assets/bumotik-black.png.asset.json";
 
 
 export const Route = createFileRoute("/auth")({
@@ -127,9 +128,7 @@ function AuthPage() {
       <Toaster richColors position="top-center" />
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center text-center mb-6">
-          <div className="grid place-items-center size-16 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/20 ring-4 ring-accent/30 mb-4">
-            <BookOpenText className="size-8" />
-          </div>
+          <img src={brandLogo.url} alt="Logo BUMOTIK" className="h-12 sm:h-14 w-auto shrink-0 object-contain" width={480} height={130} />
           <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">Lomba Rohani</p>
           <h1 className="text-2xl sm:text-3xl font-serif font-semibold mt-1">Sistem Penjurian Baca Mazmur</h1>
         </div>

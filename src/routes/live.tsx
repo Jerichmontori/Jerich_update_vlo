@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { BookOpenText, Trophy, Radio, Mic } from "lucide-react";
 import { useLiveState, sortRanking } from "@/lib/liveState";
+import brandLogo from "@/assets/bumotik-black.png.asset.json";
 
 export const Route = createFileRoute("/live")({
   head: () => ({
@@ -52,9 +53,7 @@ function LivePublic() {
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/40 to-background">
       <header className="mx-auto max-w-6xl px-4 py-6 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-3">
-          <div className="grid place-items-center size-11 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/20 ring-4 ring-accent/30">
-            <BookOpenText className="size-5" />
-          </div>
+          <img src={brandLogo.url} alt="Logo BUMOTIK" className="h-9 sm:h-10 w-auto shrink-0 object-contain" width={480} height={130} />
           <span className="font-serif text-lg font-semibold">Lomba Baca Mazmur</span>
         </Link>
         <div className="flex items-center gap-2 text-xs uppercase tracking-widest text-accent font-semibold">

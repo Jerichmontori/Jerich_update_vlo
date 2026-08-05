@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Toaster, toast } from "sonner";
 import { BookOpenText, ArrowLeft, Filter } from "lucide-react";
+import brandLogo from "@/assets/bumotik-black.png.asset.json";
 
 export const Route = createFileRoute("/ranking")({
   head: () => ({
@@ -82,9 +83,7 @@ function RankingPublic() {
       <header className="border-b bg-card/60 backdrop-blur">
         <div className="mx-auto max-w-6xl px-4 py-6 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="grid place-items-center size-11 shrink-0 rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/20 ring-4 ring-accent/30">
-              <BookOpenText className="size-5" />
-            </div>
+            <img src={brandLogo.url} alt="Logo BUMOTIK" className="h-9 sm:h-10 w-auto shrink-0 object-contain" width={480} height={130} />
             <div className="min-w-0">
               <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">Viewer</p>
               <h1 className="truncate text-xl sm:text-2xl font-serif font-semibold">Daftar Nilai Peserta</h1>
