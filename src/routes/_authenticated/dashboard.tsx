@@ -2595,6 +2595,51 @@ function PenilaianTab() {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
+            {/* Hasil penilaian semua juri untuk peserta ini (tidak memengaruhi masukan) */}
+            {(() => {
+              const rows = juri
+                .map((j) => {
+                  const nilai = kriteria.map((k) => {
+                    const r = penilaian.find(
+                      (x) => x.juri_id === j.id && x.peserta_id === pesertaId && x.kriteria_id === k.id
+                    );
+                    return { kriteria: k.nama, nilai: r ? Number(r.nilai) : null };
+                  });
+                  return { juri: j, nilai, ada: nilai.some((n) => n.nilai !== null) };
+                })
+                .filter((r) => r.ada);
+              if (rows.length === 0) return null;
+              return (
+                <div className="rounded-lg border bg-muted/30 p-3">
+                  <Label className="text-sm font-semibold mb-2 block">Hasil Penilaian Semua Juri</Label>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-xs">
+                      <thead>
+                        <tr className="text-left text-muted-foreground">
+                          <th className="py-1 pr-2 font-medium">Juri</th>
+                          {kriteria.map((k) => (
+                            <th key={k.id} className="py-1 px-2 font-medium whitespace-nowrap">{k.nama}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rows.map((r) => (
+                          <tr key={r.juri.id} className="border-t">
+                            <td className="py-1 pr-2 font-medium whitespace-nowrap">{r.juri.nama}</td>
+                            {r.nilai.map((n, i) => (
+                              <td key={i} className="py-1 px-2 tabular-nums">{n.nilai ?? "—"}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground mt-1">
+                    Hanya referensi — masukan pada form ini tidak masuk perhitungan nilai.
+                  </p>
+                </div>
+              );
+            })()}
             <div className="rounded-lg border-2 border-accent/40 bg-accent/5 p-3">
               <Label className="text-sm font-semibold mb-2 block">Catatan Umum</Label>
               <Textarea
