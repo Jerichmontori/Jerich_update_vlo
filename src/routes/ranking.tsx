@@ -31,9 +31,12 @@ function RankingPublic() {
   const [peserta, setPeserta] = useState<Peserta[]>([]);
   const [loading, setLoading] = useState(true);
   const [kategori, setKategori] = useState<string>(ALL);
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
 
   async function load() {
     setLoading(true);
+    setPage(1);
     const [{ data: rankData, error: rankErr }, { data: pesertaData, error: pesertaErr }] = await Promise.all([
       supabase.rpc("get_ranking" as any),
       supabase.from("peserta").select("id, kategori"),
@@ -45,6 +48,7 @@ function RankingPublic() {
     setPeserta((pesertaData ?? []) as Peserta[]);
   }
   useEffect(() => { load(); }, []);
+  useEffect(() => { setPage(1); }, [kategori]);
 
   const kategoriMap = useMemo(() => {
     const m: Record<string, string | null> = {};
@@ -76,6 +80,10 @@ function RankingPublic() {
   }, [rows, kategori, kategoriMap]);
 
   const medals = ["🥇", "🥈", "🥉"];
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const paginated = filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-secondary/40 to-background">
@@ -137,12 +145,13 @@ function RankingPublic() {
                 <TableBody>
                   {loading && <TableRow><TableCell colSpan={7} className="text-center py-10 text-muted-foreground">Memuat…</TableCell></TableRow>}
                   {!loading && filtered.length === 0 && <TableRow><TableCell colSpan={7} className="text-center py-10 text-muted-foreground">Belum ada penilaian.</TableCell></TableRow>}
-                  {filtered.map((r, i) => {
+                  {!loading && paginated.map((r, i) => {
+                    const globalIndex = (currentPage - 1) * PAGE_SIZE + i;
                     const belum = r.nilai_akhir == null || Number(r.jumlah_juri) === 0;
                     const kat = kategoriMap[r.peserta_id];
                     return (
-                    <TableRow key={r.peserta_id} className={!belum && i < 3 ? "bg-accent/10" : ""}>
-                      <TableCell className="text-center text-2xl">{belum ? "—" : (medals[i] ?? i + 1)}</TableCell>
+                    <TableRow key={r.peserta_id} className={!belum && globalIndex < 3 ? "bg-accent/10" : ""}>
+                      <TableCell className="text-center text-2xl">{belum ? "—" : (medals[globalIndex] ?? globalIndex + 1)}</TableCell>
                       <TableCell className="font-mono">{r.nomor_urut}</TableCell>
                       <TableCell className="font-semibold">{r.nama}</TableCell>
                       <TableCell className="text-muted-foreground">{r.asal || "—"}</TableCell>
@@ -155,6 +164,18 @@ function RankingPublic() {
                 </TableBody>
               </Table>
             </div>
+            {!loading && filtered.length > 0 && (
+              <div className="flex items-center justify-between mt-4">
+                <p className="text-sm text-muted-foreground">
+                  Menampilkan {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, filtered.length)} dari {filtered.length} peserta
+                </p>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={currentPage <= 1}>Sebelumnya</Button>
+                  <span className="text-sm px-2">Halaman {currentPage} dari {totalPages}</span>
+                  <Button variant="outline" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={currentPage >= totalPages}>Berikutnya</Button>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </main>
