@@ -2130,8 +2130,15 @@ function PenilaianTab() {
   }
 
   async function saveCatatan() {
-    // Semua pilihan opsional; aspek yang tidak dipilih ditandai skipped dan tidak ikut dihitung.
+    // Clear Text = "Tidak" → seluruh aspek Catatan Juri wajib diisi.
     const skippedFlags = catatanValues.map(v => v === null || v === undefined);
+    if (catatanWajib && skippedFlags.some(Boolean)) {
+      toast.warning("Catatan Juri wajib diisi", {
+        description: "Karena Clear Text dijawab \"Tidak\", seluruh aspek Catatan Juri harus diberi nilai 1–5.",
+      });
+      return; // dialog tetap terbuka
+    }
+
     const contributions: number[] = [];
     catatanValues.forEach((v, i) => {
       if (!skippedFlags[i] && v !== null && v !== undefined) contributions.push(v);
