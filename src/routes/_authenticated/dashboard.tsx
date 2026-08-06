@@ -573,7 +573,7 @@ function JuriTab() {
     }
   }
 
-  async function ubahRole(id: string, role: "admin" | "juri" | "panitia" | "inspektur" | "ketua_juri" | "viewer") {
+  async function ubahRole(id: string, role: "admin" | "juri" | "panitia" | "inspektur" | "ketua_juri" | "viewer" | "operator_vmix") {
     try {
       const { setJuriRole } = await import("@/lib/juri-users.functions");
       await setJuriRole({ data: { juriId: id, role } });
