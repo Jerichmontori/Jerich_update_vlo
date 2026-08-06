@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Toaster, toast } from "sonner";
-import { RefreshCw, Mic, FileText, Search } from "lucide-react";
+import { RefreshCw, Mic, FileText, Search, Clock, Trash2 } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { catatanToRows } from "@/components/JuriHasilFinalTab";
@@ -36,6 +36,7 @@ type Row = {
   kategori: string | null;
   sesi_no: number;
   final: boolean;
+  terlambat?: boolean;
   sedang_tampil: boolean;
   bacaan: string | null;
 };
@@ -45,6 +46,13 @@ function ViewerPage() {
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [nama, setNama] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
+  const [fNomor, setFNomor] = useState("");
+  const [fNama, setFNama] = useState("");
+  const [fAsal, setFAsal] = useState("");
+  const [fKategori, setFKategori] = useState("");
+  const [saving, setSaving] = useState(false);
+
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc("viewer_peserta_list" as any);
@@ -135,10 +143,63 @@ function ViewerPage() {
     doc.save(`catatan-juri-${r.nomor_urut}-${r.nama}.pdf`);
   }
 
+  function pilihEdit(r: Row) {
+    setEditId(r.peserta_id);
+    setFNomor(String(r.nomor_urut));
+    setFNama(r.nama);
+    setFAsal(r.asal ?? "");
+    setFKategori(r.kategori ?? "");
+  }
+
+  function batalEdit() {
+    setEditId(null);
+    setFNomor(""); setFNama(""); setFAsal(""); setFKategori("");
+  }
+
+  async function simpanPeserta(e: React.FormEvent) {
+    e.preventDefault();
+    const n = Number(fNomor);
+    if (!fNomor || !fNama.trim()) { toast.error("Nomor urut dan nama wajib diisi"); return; }
+    setSaving(true);
+    const payload = {
+      nomor_urut: n,
+      nama: fNama.trim(),
+      asal: fAsal.trim() || null,
+      kategori: fKategori.trim() || null,
+      sesi: `Sesi ${Math.ceil(n / 10)}`,
+    };
+    const { error } = editId
+      ? await supabase.from("peserta").update(payload).eq("id", editId)
+      : await supabase.from("peserta").insert(payload);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(editId ? "Peserta diperbarui" : "Peserta ditambahkan");
+    batalEdit();
+    load();
+  }
+
+  async function hapusPeserta(r: Row) {
+    if (!confirm(`Hapus peserta ${r.nomor_urut}. ${r.nama}?`)) return;
+    const { error } = await supabase.from("peserta").delete().eq("id", r.peserta_id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Peserta dihapus");
+    load();
+  }
+
+  async function toggleTerlambat(r: Row) {
+    const next = !r.terlambat;
+    if (next && !confirm(`Tandai ${r.nomor_urut}. ${r.nama} sebagai TERLAMBAT? Peserta dianggap selesai dinilai dengan nilai akhir 1.`)) return;
+    const { error } = await supabase.rpc("set_peserta_terlambat" as any, { _peserta: r.peserta_id, _terlambat: next });
+    if (error) { toast.error(error.message); return; }
+    toast.success(next ? "Peserta ditandai terlambat (nilai akhir 1)" : "Status terlambat dibatalkan");
+    load();
+  }
+
   async function signOut() {
     await supabase.auth.signOut();
     window.location.href = "/auth";
   }
+
 
   return (
     <div className="min-h-screen">
@@ -187,9 +248,29 @@ function ViewerPage() {
 
         <Card>
           <CardHeader className="pb-2">
+            <CardTitle className="text-base">{editId ? "Ubah Peserta" : "Tambah Peserta"}</CardTitle>
+            <CardDescription>Kelola daftar peserta dan atur jadwal tampil.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={simpanPeserta} className="grid grid-cols-1 sm:grid-cols-[100px_1fr_1fr_1fr_auto] gap-3">
+              <Input type="number" value={fNomor} onChange={(e) => setFNomor(e.target.value)} placeholder="No." />
+              <Input value={fNama} onChange={(e) => setFNama(e.target.value)} placeholder="Nama peserta" />
+              <Input value={fAsal} onChange={(e) => setFAsal(e.target.value)} placeholder="Asal / jemaat" />
+              <Input value={fKategori} onChange={(e) => setFKategori(e.target.value)} placeholder="Kategori" />
+              <div className="flex gap-2">
+                <Button type="submit" disabled={saving}>{editId ? "Simpan" : "Tambah"}</Button>
+                {editId && <Button type="button" variant="ghost" onClick={batalEdit}>Batal</Button>}
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
             <CardTitle className="text-base">Urutan Peserta</CardTitle>
             <CardDescription>
-              Tampilan hanya-baca. Catatan juri dapat diunduh untuk peserta yang sudah selesai dinilai (Final).
+              Klik nama peserta untuk mengubah datanya. Tombol <b>Terlambat</b> menandai peserta yang tidak naik panggung —
+              dianggap selesai dinilai dengan nilai akhir 1.
             </CardDescription>
             <div className="relative pt-2">
               <Search className="absolute left-3 top-1/2 size-4 text-muted-foreground" />
@@ -207,7 +288,7 @@ function ViewerPage() {
                     <TableHead>Peserta</TableHead>
                     <TableHead>Sesi</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Catatan Juri</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -215,12 +296,16 @@ function ViewerPage() {
                     <TableRow key={r.peserta_id} className={r.sedang_tampil ? "bg-accent/10" : ""}>
                       <TableCell>{r.nomor_urut}</TableCell>
                       <TableCell>
-                        <div className="font-medium">{r.nama}</div>
+                        <button type="button" onClick={() => pilihEdit(r)} className="font-medium text-left hover:underline hover:text-primary">
+                          {r.nama}
+                        </button>
                         <div className="text-xs text-muted-foreground">{r.asal ?? ""}{r.kategori ? ` · ${r.kategori}` : ""}</div>
                       </TableCell>
                       <TableCell><Badge variant="secondary">Sesi {r.sesi_no}</Badge></TableCell>
                       <TableCell>
-                        {r.sedang_tampil ? (
+                        {r.terlambat ? (
+                          <Badge variant="destructive">Terlambat</Badge>
+                        ) : r.sedang_tampil ? (
                           <Badge className="bg-amber-500 text-white">Sedang Tampil</Badge>
                         ) : r.final ? (
                           <Badge className="bg-emerald-600 text-white">Selesai</Badge>
@@ -229,12 +314,21 @@ function ViewerPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="outline" disabled={!r.final || busy === r.peserta_id} onClick={() => unduhCatatan(r)}>
-                          <FileText className="size-4 mr-1" /> Unduh
-                        </Button>
+                        <div className="flex flex-wrap items-center justify-end gap-1">
+                          <Button size="sm" variant={r.terlambat ? "secondary" : "outline"} onClick={() => toggleTerlambat(r)}>
+                            <Clock className="size-4 mr-1" /> {r.terlambat ? "Batal" : "Terlambat"}
+                          </Button>
+                          <Button size="sm" variant="outline" disabled={!r.final || busy === r.peserta_id} onClick={() => unduhCatatan(r)}>
+                            <FileText className="size-4 mr-1" /> Unduh
+                          </Button>
+                          <Button size="icon" variant="ghost" onClick={() => hapusPeserta(r)}>
+                            <Trash2 className="size-4 text-destructive" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
+
                 </TableBody>
               </Table>
             )}

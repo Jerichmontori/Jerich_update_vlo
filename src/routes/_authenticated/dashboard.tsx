@@ -241,7 +241,18 @@ function PesertaTab() {
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [page, setPage] = useState(0);
+  const [isAdm, setIsAdm] = useState(false);
   const PAGE_SIZE = 10;
+
+  useEffect(() => {
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user?.id) return;
+      const { data } = await supabase.rpc("has_role", { _user_id: u.user.id, _role: "admin" as any });
+      setIsAdm(!!data);
+    })();
+  }, []);
+
 
   const sesiDari = (n: number) => `Sesi ${Math.ceil(n / 10)}`;
 
@@ -397,6 +408,24 @@ function PesertaTab() {
     load();
   }
 
+  async function toggleTerlambat(p: Peserta) {
+    const next = !(p as any).terlambat;
+    if (next && !confirm(`Tandai ${p.nomor_urut}. ${p.nama} sebagai TERLAMBAT? Peserta dianggap selesai dinilai dengan nilai akhir 1.`)) return;
+    const { error } = await supabase.rpc("set_peserta_terlambat" as any, { _peserta: p.id, _terlambat: next });
+    if (error) return toast.error(error.message);
+    toast.success(next ? "Peserta ditandai terlambat (nilai akhir 1)" : "Status terlambat dibatalkan");
+    load();
+  }
+
+  async function bukaPenilaianUlang(p: Peserta) {
+    if (!confirm(`Aktifkan kembali penilaian untuk ${p.nomor_urut}. ${p.nama}? Juri dapat memperbaiki dan mengirim ulang nilai.`)) return;
+    const { error } = await supabase.rpc("admin_buka_penilaian_ulang" as any, { _peserta: p.id, _catatan: null });
+    if (error) return toast.error(error.message);
+    toast.success("Penilaian dibuka kembali untuk perbaikan juri");
+    load();
+  }
+
+
   function unduhTemplate() {
     const ws = XLSX.utils.aoa_to_sheet([
       ["nomor_urut", "nama", "asal", "kategori"],
@@ -500,7 +529,7 @@ function PesertaTab() {
               <TableHead>Asal</TableHead>
               <TableHead className="w-28">Sesi</TableHead>
               <TableHead className="w-32">Kategori</TableHead>
-              <TableHead className="w-20 text-right">Aksi</TableHead>
+              <TableHead className="w-72 text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -508,13 +537,27 @@ function PesertaTab() {
             {paginatedItems.map(p => (
               <TableRow key={p.id}>
                 <TableCell className="font-mono">{p.nomor_urut}</TableCell>
-                <TableCell className="font-medium"><button type="button" onClick={()=>pilihUntukEdit(p)} className="text-left hover:underline hover:text-primary transition-colors">{p.nama}</button></TableCell>
+                <TableCell className="font-medium">
+                  <button type="button" onClick={()=>pilihUntukEdit(p)} className="text-left hover:underline hover:text-primary transition-colors">{p.nama}</button>
+                  {(p as any).terlambat && <Badge variant="destructive" className="ml-2 align-middle">Terlambat</Badge>}
+                </TableCell>
                 <TableCell className="text-muted-foreground">{p.asal || "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{scoredIds.has(p.id) ? sesiDari(p.nomor_urut) : "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{p.kategori || "—"}</TableCell>
-                <TableCell className="text-right"><Button size="icon" variant="ghost" onClick={()=>hapus(p.id)}><Trash2 className="size-4 text-destructive" /></Button></TableCell>
+                <TableCell className="text-right">
+                  <div className="flex flex-wrap items-center justify-end gap-1">
+                    <Button size="sm" variant={(p as any).terlambat ? "secondary" : "outline"} onClick={()=>toggleTerlambat(p)}>
+                      {(p as any).terlambat ? "Batal Terlambat" : "Terlambat"}
+                    </Button>
+                    {isAdm && (
+                      <Button size="sm" variant="outline" onClick={()=>bukaPenilaianUlang(p)}>Buka Perbaikan</Button>
+                    )}
+                    <Button size="icon" variant="ghost" onClick={()=>hapus(p.id)}><Trash2 className="size-4 text-destructive" /></Button>
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
+
           </TableBody>
         </Table>
       </div>

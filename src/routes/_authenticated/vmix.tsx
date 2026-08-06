@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toaster, toast } from "sonner";
+import GantiPasswordButton from "@/components/GantiPasswordButton";
 import {
   MonitorPlay,
   RefreshCw,
@@ -18,7 +19,9 @@ import {
   Link2,
   Sparkles,
   AlertTriangle,
+  LogOut,
 } from "lucide-react";
+
 
 export const Route = createFileRoute("/_authenticated/vmix")({
   component: OperatorVmixPage,
@@ -225,16 +228,32 @@ function OperatorVmixPage() {
     <div className="min-h-screen bg-background">
       <Toaster position="top-center" richColors />
       <header className="border-b bg-card/60 backdrop-blur">
-        <div className="mx-auto max-w-6xl px-4 py-6 flex items-center gap-3">
-          <div className="grid place-items-center size-12 rounded-full bg-primary text-primary-foreground ring-4 ring-accent/30">
-            <MonitorPlay className="size-6" />
+        <div className="mx-auto max-w-6xl px-4 py-6 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="grid place-items-center size-12 rounded-full bg-primary text-primary-foreground ring-4 ring-accent/30">
+              <MonitorPlay className="size-6" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">Operator vMix</p>
+              <h1 className="truncate text-2xl font-serif font-semibold">Panel Tayangan VAR &amp; Pengumuman</h1>
+            </div>
           </div>
-          <div className="min-w-0">
-            <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">Operator vMix</p>
-            <h1 className="truncate text-2xl font-serif font-semibold">Panel Tayangan VAR &amp; Pengumuman</h1>
+          <div className="flex items-center gap-2 shrink-0">
+            <GantiPasswordButton variant="outline" size="sm" />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={async () => {
+                await supabase.auth.signOut();
+                window.location.href = "/auth";
+              }}
+            >
+              <LogOut className="size-4 mr-1" /> Keluar
+            </Button>
           </div>
         </div>
       </header>
+
 
       <main className="mx-auto max-w-6xl px-4 py-8">
         <Tabs defaultValue="var">

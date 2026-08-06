@@ -495,6 +495,8 @@ export type Database = {
           nama: string
           nomor_urut: number
           sesi: string | null
+          terlambat: boolean
+          terlambat_at: string | null
         }
         Insert: {
           asal?: string | null
@@ -504,6 +506,8 @@ export type Database = {
           nama: string
           nomor_urut: number
           sesi?: string | null
+          terlambat?: boolean
+          terlambat_at?: string | null
         }
         Update: {
           asal?: string | null
@@ -513,6 +517,8 @@ export type Database = {
           nama?: string
           nomor_urut?: number
           sesi?: string | null
+          terlambat?: boolean
+          terlambat_at?: string | null
         }
         Relationships: []
       }
@@ -801,6 +807,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_buka_penilaian_ulang: {
+        Args: { _catatan?: string; _peserta: string }
+        Returns: string
+      }
       admin_list_juri: {
         Args: never
         Returns: {
@@ -1007,6 +1017,10 @@ export type Database = {
       public_pengumuman_state: { Args: never; Returns: Json }
       set_pengumuman_state: {
         Args: { _peserta: string; _running: boolean }
+        Returns: undefined
+      }
+      set_peserta_terlambat: {
+        Args: { _peserta: string; _terlambat: boolean }
         Returns: undefined
       }
       submit_klarifikasi_var: {
