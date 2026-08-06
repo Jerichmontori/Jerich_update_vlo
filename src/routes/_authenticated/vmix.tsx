@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toaster, toast } from "sonner";
+import GantiPasswordButton from "@/components/GantiPasswordButton";
 import {
   MonitorPlay,
   RefreshCw,
@@ -18,7 +19,9 @@ import {
   Link2,
   Sparkles,
   AlertTriangle,
+  LogOut,
 } from "lucide-react";
+
 
 export const Route = createFileRoute("/_authenticated/vmix")({
   component: OperatorVmixPage,
