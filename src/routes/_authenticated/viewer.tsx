@@ -36,6 +36,7 @@ type Row = {
   kategori: string | null;
   sesi_no: number;
   final: boolean;
+  terlambat?: boolean;
   sedang_tampil: boolean;
   bacaan: string | null;
 };
@@ -45,6 +46,13 @@ function ViewerPage() {
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [nama, setNama] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
+  const [fNomor, setFNomor] = useState("");
+  const [fNama, setFNama] = useState("");
+  const [fAsal, setFAsal] = useState("");
+  const [fKategori, setFKategori] = useState("");
+  const [saving, setSaving] = useState(false);
+
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc("viewer_peserta_list" as any);
