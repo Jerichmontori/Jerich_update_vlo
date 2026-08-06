@@ -114,7 +114,22 @@ function AuthPage() {
       }
       setLoading(false);
       toast.success("Selamat datang kembali");
-      navigate({ to: "/dashboard" });
+      // Arahkan langsung ke halaman sesuai role supaya tidak melewati
+      // dashboard (yang memuat ulang halaman penuh dan terasa lambat).
+      const roleSet = new Set((roles ?? []).map((r) => r.role as string));
+      const target = roleSet.has("admin")
+        ? "/dashboard"
+        : roleSet.has("juri") || roleSet.has("ketua_juri")
+          ? "/dashboard"
+          : roleSet.has("inspektur")
+            ? "/inspektur"
+            : roleSet.has("panitia")
+              ? "/operator"
+              : roleSet.has("operator_vmix")
+                ? "/vmix"
+                : "/viewer";
+      navigate({ to: target });
+
     } catch (err) {
       setLoading(false);
       toast.error(err instanceof Error ? err.message : "Gagal masuk");
