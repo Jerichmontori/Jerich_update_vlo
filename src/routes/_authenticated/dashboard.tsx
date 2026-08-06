@@ -53,15 +53,17 @@ function App() {
       const { data: u } = await supabase.auth.getUser();
       const uid = u.user?.id;
       if (!uid) return;
-      const [{ data: isAdm }, { data: isPan }, { data: isJuri }, { data: isInsp }, { data: isKetua }] = await Promise.all([
+      const [{ data: isAdm }, { data: isPan }, { data: isJuri }, { data: isInsp }, { data: isKetua }, { data: isVmix }] = await Promise.all([
         supabase.rpc("has_role", { _user_id: uid, _role: "admin" as any }),
         supabase.rpc("has_role", { _user_id: uid, _role: "panitia" as any }),
         supabase.rpc("has_role", { _user_id: uid, _role: "juri" as any }),
         supabase.rpc("has_role", { _user_id: uid, _role: "inspektur" as any }),
         supabase.rpc("has_role", { _user_id: uid, _role: "ketua_juri" as any }),
+        supabase.rpc("has_role", { _user_id: uid, _role: "operator_vmix" as any }),
       ]);
       // Role tunggal → arahkan ke halaman khusus role tersebut
       if (!isAdm) {
+        if (isVmix && !isPan && !isJuri && !isInsp && !isKetua) { window.location.href = "/vmix"; return; }
         if (isPan && !isJuri && !isInsp && !isKetua) { window.location.href = "/operator"; return; }
         if (isInsp && !isPan && !isJuri && !isKetua) { window.location.href = "/inspektur"; return; }
         if (!isPan && !isJuri && !isInsp && !isKetua) { window.location.href = "/viewer"; return; }
@@ -573,7 +575,7 @@ function JuriTab() {
     }
   }
 
-  async function ubahRole(id: string, role: "admin" | "juri" | "panitia" | "inspektur" | "ketua_juri" | "viewer") {
+  async function ubahRole(id: string, role: "admin" | "juri" | "panitia" | "inspektur" | "ketua_juri" | "viewer" | "operator_vmix") {
     try {
       const { setJuriRole } = await import("@/lib/juri-users.functions");
       await setJuriRole({ data: { juriId: id, role } });
@@ -642,6 +644,7 @@ function JuriTab() {
                   <SelectItem value="panitia">Panitia</SelectItem>
                   <SelectItem value="ketua_juri">Ketua Dewan Juri</SelectItem>
                   <SelectItem value="inspektur">Inspektur Pertandingan</SelectItem>
+                  <SelectItem value="operator_vmix">Operator vMix</SelectItem>
                   <SelectItem value="viewer">User (hanya melihat)</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
@@ -701,6 +704,7 @@ function JuriTab() {
                       <SelectItem value="panitia">Panitia</SelectItem>
                       <SelectItem value="ketua_juri">Ketua Dewan Juri</SelectItem>
                       <SelectItem value="inspektur">Inspektur Pertandingan</SelectItem>
+                      <SelectItem value="operator_vmix">Operator vMix</SelectItem>
                   <SelectItem value="viewer">User (hanya melihat)</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
