@@ -241,7 +241,18 @@ function PesertaTab() {
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [page, setPage] = useState(0);
+  const [isAdm, setIsAdm] = useState(false);
   const PAGE_SIZE = 10;
+
+  useEffect(() => {
+    (async () => {
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user?.id) return;
+      const { data } = await supabase.rpc("has_role", { _user_id: u.user.id, _role: "admin" as any });
+      setIsAdm(!!data);
+    })();
+  }, []);
+
 
   const sesiDari = (n: number) => `Sesi ${Math.ceil(n / 10)}`;
 
