@@ -127,10 +127,14 @@ export const deleteJuriUser = createServerFn({ method: "POST" })
 
     await supabaseAdmin.from("juri").delete().eq("id", data.juriId);
     if (juri?.user_id) {
+      // Bersihkan semua jejak akun supaya email lama tidak bisa dipakai login lagi
+      await supabaseAdmin.from("user_roles").delete().eq("user_id", juri.user_id);
+      await supabaseAdmin.from("profiles").delete().eq("id", juri.user_id);
       await supabaseAdmin.auth.admin.deleteUser(juri.user_id).catch(() => {});
     }
     return { ok: true };
   });
+
 
 export const setJuriRole = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
