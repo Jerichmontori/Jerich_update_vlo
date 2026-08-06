@@ -20,6 +20,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as VmixSkorRouteImport } from './routes/vmix.skor'
 import { Route as VmixNowreadingRouteImport } from './routes/vmix.nowreading'
 import { Route as VmixLeaderboardRouteImport } from './routes/vmix.leaderboard'
+import { Route as AuthenticatedVmixRouteImport } from './routes/_authenticated/vmix'
 import { Route as AuthenticatedViewerRouteImport } from './routes/_authenticated/viewer'
 import { Route as AuthenticatedSkorRouteImport } from './routes/_authenticated/skor'
 import { Route as AuthenticatedOperatorRouteImport } from './routes/_authenticated/operator'
@@ -88,6 +89,11 @@ const VmixLeaderboardRoute = VmixLeaderboardRouteImport.update({
   id: '/vmix/leaderboard',
   path: '/vmix/leaderboard',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedVmixRoute = AuthenticatedVmixRouteImport.update({
+  id: '/vmix',
+  path: '/vmix',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedViewerRoute = AuthenticatedViewerRouteImport.update({
   id: '/viewer',
@@ -178,6 +184,7 @@ export interface FileRoutesByFullPath {
   '/operator': typeof AuthenticatedOperatorRoute
   '/skor': typeof AuthenticatedSkorRoute
   '/viewer': typeof AuthenticatedViewerRoute
+  '/vmix': typeof AuthenticatedVmixRoute
   '/vmix/leaderboard': typeof VmixLeaderboardRoute
   '/vmix/nowreading': typeof VmixNowreadingRoute
   '/vmix/skor': typeof VmixSkorRoute
@@ -204,6 +211,7 @@ export interface FileRoutesByTo {
   '/operator': typeof AuthenticatedOperatorRoute
   '/skor': typeof AuthenticatedSkorRoute
   '/viewer': typeof AuthenticatedViewerRoute
+  '/vmix': typeof AuthenticatedVmixRoute
   '/vmix/leaderboard': typeof VmixLeaderboardRoute
   '/vmix/nowreading': typeof VmixNowreadingRoute
   '/vmix/skor': typeof VmixSkorRoute
@@ -232,6 +240,7 @@ export interface FileRoutesById {
   '/_authenticated/operator': typeof AuthenticatedOperatorRoute
   '/_authenticated/skor': typeof AuthenticatedSkorRoute
   '/_authenticated/viewer': typeof AuthenticatedViewerRoute
+  '/_authenticated/vmix': typeof AuthenticatedVmixRoute
   '/vmix/leaderboard': typeof VmixLeaderboardRoute
   '/vmix/nowreading': typeof VmixNowreadingRoute
   '/vmix/skor': typeof VmixSkorRoute
@@ -260,6 +269,7 @@ export interface FileRouteTypes {
     | '/operator'
     | '/skor'
     | '/viewer'
+    | '/vmix'
     | '/vmix/leaderboard'
     | '/vmix/nowreading'
     | '/vmix/skor'
@@ -286,6 +296,7 @@ export interface FileRouteTypes {
     | '/operator'
     | '/skor'
     | '/viewer'
+    | '/vmix'
     | '/vmix/leaderboard'
     | '/vmix/nowreading'
     | '/vmix/skor'
@@ -313,6 +324,7 @@ export interface FileRouteTypes {
     | '/_authenticated/operator'
     | '/_authenticated/skor'
     | '/_authenticated/viewer'
+    | '/_authenticated/vmix'
     | '/vmix/leaderboard'
     | '/vmix/nowreading'
     | '/vmix/skor'
@@ -429,6 +441,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VmixLeaderboardRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/vmix': {
+      id: '/_authenticated/vmix'
+      path: '/vmix'
+      fullPath: '/vmix'
+      preLoaderRoute: typeof AuthenticatedVmixRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/viewer': {
       id: '/_authenticated/viewer'
       path: '/viewer'
@@ -536,6 +555,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOperatorRoute: typeof AuthenticatedOperatorRoute
   AuthenticatedSkorRoute: typeof AuthenticatedSkorRoute
   AuthenticatedViewerRoute: typeof AuthenticatedViewerRoute
+  AuthenticatedVmixRoute: typeof AuthenticatedVmixRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -544,6 +564,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOperatorRoute: AuthenticatedOperatorRoute,
   AuthenticatedSkorRoute: AuthenticatedSkorRoute,
   AuthenticatedViewerRoute: AuthenticatedViewerRoute,
+  AuthenticatedVmixRoute: AuthenticatedVmixRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
