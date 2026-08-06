@@ -33,7 +33,8 @@ function OperatorPage() {
   const [sesi, setSesi] = useState<Sesi | null>(null);
   const [selectedPeserta, setSelectedPeserta] = useState<string>("");
   const [selectedMazmur, setSelectedMazmur] = useState<string>("");
-  const [juriTotal, setJuriTotal] = useState<number>(0);
+  const [juriReal, setJuriReal] = useState<number>(0);
+  const [juriDummy, setJuriDummy] = useState<number>(0);
   const [juriDone, setJuriDone] = useState<number>(0);
   const [submissionCounts, setSubmissionCounts] = useState<Record<string, number>>({});
   const [busy, setBusy] = useState(false);
