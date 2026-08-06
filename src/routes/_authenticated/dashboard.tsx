@@ -1998,7 +1998,7 @@ function PenilaianTab() {
     if (pesertaId && mySubmittedIds.has(pesertaId) && !perbaikanAktifIds.has(pesertaId)) {
       return toast.warning("Penilaian sudah dikirim — nilai tidak dapat diubah lagi.");
     }
-    if (pesertaId && perbaikanAktifIds.has(pesertaId) && key !== "perhatian" && key !== "catatan") {
+    if (pesertaId && perbaikanAktifIds.has(pesertaId) && key !== "perhatian" && key !== "catatan" && currentNilai(k.id) !== null) {
       return toast.warning("Mode Perbaikan aktif — hanya kriteria Perhatian dan Catatan Juri yang dapat diubah.");
     }
     if (key === "catatan") {
