@@ -29,6 +29,7 @@ import { Route as ApiPublicSkorDotxmlRouteImport } from './routes/api/public/sko
 import { Route as ApiPublicSkorDotjsonRouteImport } from './routes/api/public/skor[.]json'
 import { Route as ApiPublicNowreadingDotxmlRouteImport } from './routes/api/public/nowreading[.]xml'
 import { Route as ApiPublicLiveDotjsonRouteImport } from './routes/api/public/live[.]json'
+import { Route as ApiPublicBootstrapJuriDummyRouteImport } from './routes/api/public/bootstrap-juri-dummy'
 import { Route as ApiPublicBootstrapAdminRouteImport } from './routes/api/public/bootstrap-admin'
 import { Route as ApiPublicVmixSkorDothtmlRouteImport } from './routes/api/public/vmix/skor[.]html'
 import { Route as ApiPublicVmixNowreadingDothtmlRouteImport } from './routes/api/public/vmix/nowreading[.]html'
@@ -134,6 +135,12 @@ const ApiPublicLiveDotjsonRoute = ApiPublicLiveDotjsonRouteImport.update({
   path: '/api/public/live.json',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicBootstrapJuriDummyRoute =
+  ApiPublicBootstrapJuriDummyRouteImport.update({
+    id: '/api/public/bootstrap-juri-dummy',
+    path: '/api/public/bootstrap-juri-dummy',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicBootstrapAdminRoute = ApiPublicBootstrapAdminRouteImport.update({
   id: '/api/public/bootstrap-admin',
   path: '/api/public/bootstrap-admin',
@@ -175,6 +182,7 @@ export interface FileRoutesByFullPath {
   '/vmix/nowreading': typeof VmixNowreadingRoute
   '/vmix/skor': typeof VmixSkorRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
+  '/api/public/bootstrap-juri-dummy': typeof ApiPublicBootstrapJuriDummyRoute
   '/api/public/live.json': typeof ApiPublicLiveDotjsonRoute
   '/api/public/nowreading.xml': typeof ApiPublicNowreadingDotxmlRoute
   '/api/public/skor.json': typeof ApiPublicSkorDotjsonRoute
@@ -200,6 +208,7 @@ export interface FileRoutesByTo {
   '/vmix/nowreading': typeof VmixNowreadingRoute
   '/vmix/skor': typeof VmixSkorRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
+  '/api/public/bootstrap-juri-dummy': typeof ApiPublicBootstrapJuriDummyRoute
   '/api/public/live.json': typeof ApiPublicLiveDotjsonRoute
   '/api/public/nowreading.xml': typeof ApiPublicNowreadingDotxmlRoute
   '/api/public/skor.json': typeof ApiPublicSkorDotjsonRoute
@@ -227,6 +236,7 @@ export interface FileRoutesById {
   '/vmix/nowreading': typeof VmixNowreadingRoute
   '/vmix/skor': typeof VmixSkorRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
+  '/api/public/bootstrap-juri-dummy': typeof ApiPublicBootstrapJuriDummyRoute
   '/api/public/live.json': typeof ApiPublicLiveDotjsonRoute
   '/api/public/nowreading.xml': typeof ApiPublicNowreadingDotxmlRoute
   '/api/public/skor.json': typeof ApiPublicSkorDotjsonRoute
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
     | '/vmix/nowreading'
     | '/vmix/skor'
     | '/api/public/bootstrap-admin'
+    | '/api/public/bootstrap-juri-dummy'
     | '/api/public/live.json'
     | '/api/public/nowreading.xml'
     | '/api/public/skor.json'
@@ -279,6 +290,7 @@ export interface FileRouteTypes {
     | '/vmix/nowreading'
     | '/vmix/skor'
     | '/api/public/bootstrap-admin'
+    | '/api/public/bootstrap-juri-dummy'
     | '/api/public/live.json'
     | '/api/public/nowreading.xml'
     | '/api/public/skor.json'
@@ -305,6 +317,7 @@ export interface FileRouteTypes {
     | '/vmix/nowreading'
     | '/vmix/skor'
     | '/api/public/bootstrap-admin'
+    | '/api/public/bootstrap-juri-dummy'
     | '/api/public/live.json'
     | '/api/public/nowreading.xml'
     | '/api/public/skor.json'
@@ -327,6 +340,7 @@ export interface RootRouteChildren {
   VmixNowreadingRoute: typeof VmixNowreadingRoute
   VmixSkorRoute: typeof VmixSkorRoute
   ApiPublicBootstrapAdminRoute: typeof ApiPublicBootstrapAdminRoute
+  ApiPublicBootstrapJuriDummyRoute: typeof ApiPublicBootstrapJuriDummyRoute
   ApiPublicLiveDotjsonRoute: typeof ApiPublicLiveDotjsonRoute
   ApiPublicNowreadingDotxmlRoute: typeof ApiPublicNowreadingDotxmlRoute
   ApiPublicSkorDotjsonRoute: typeof ApiPublicSkorDotjsonRoute
@@ -478,6 +492,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicLiveDotjsonRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/bootstrap-juri-dummy': {
+      id: '/api/public/bootstrap-juri-dummy'
+      path: '/api/public/bootstrap-juri-dummy'
+      fullPath: '/api/public/bootstrap-juri-dummy'
+      preLoaderRoute: typeof ApiPublicBootstrapJuriDummyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/bootstrap-admin': {
       id: '/api/public/bootstrap-admin'
       path: '/api/public/bootstrap-admin'
@@ -541,6 +562,7 @@ const rootRouteChildren: RootRouteChildren = {
   VmixNowreadingRoute: VmixNowreadingRoute,
   VmixSkorRoute: VmixSkorRoute,
   ApiPublicBootstrapAdminRoute: ApiPublicBootstrapAdminRoute,
+  ApiPublicBootstrapJuriDummyRoute: ApiPublicBootstrapJuriDummyRoute,
   ApiPublicLiveDotjsonRoute: ApiPublicLiveDotjsonRoute,
   ApiPublicNowreadingDotxmlRoute: ApiPublicNowreadingDotxmlRoute,
   ApiPublicSkorDotjsonRoute: ApiPublicSkorDotjsonRoute,

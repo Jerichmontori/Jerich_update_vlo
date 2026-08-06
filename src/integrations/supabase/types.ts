@@ -21,6 +21,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          is_dummy: boolean
           jabatan: string | null
           jumlah_ayat: number | null
           nama: string
@@ -33,6 +34,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          is_dummy?: boolean
           jabatan?: string | null
           jumlah_ayat?: number | null
           nama: string
@@ -45,6 +47,7 @@ export type Database = {
           created_at?: string
           email?: string | null
           id?: string
+          is_dummy?: boolean
           jabatan?: string | null
           jumlah_ayat?: number | null
           nama?: string
@@ -803,6 +806,7 @@ export type Database = {
           created_at: string
           email: string | null
           id: string
+          is_dummy: boolean
           jabatan: string | null
           jumlah_ayat: number | null
           nama: string
@@ -972,8 +976,14 @@ export type Database = {
       }
       inspektur_var_detail: { Args: { _peserta: string }; Returns: Json }
       is_peserta_final: { Args: { _peserta: string }; Returns: boolean }
+      is_peserta_uji: { Args: { _peserta: string }; Returns: boolean }
       juri_hasil_final: { Args: never; Returns: Json }
+      juri_in_pool: {
+        Args: { _juri: string; _peserta: string }
+        Returns: boolean
+      }
       juri_live_ranking_pending: { Args: never; Returns: Json }
+      juri_pool_count: { Args: { _peserta: string }; Returns: number }
       juri_vote_live_ranking: {
         Args: { _catatan?: string; _sesi: number; _setuju: boolean }
         Returns: Json
