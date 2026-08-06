@@ -529,7 +529,7 @@ function PesertaTab() {
               <TableHead>Asal</TableHead>
               <TableHead className="w-28">Sesi</TableHead>
               <TableHead className="w-32">Kategori</TableHead>
-              <TableHead className="w-20 text-right">Aksi</TableHead>
+              <TableHead className="w-72 text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -537,13 +537,27 @@ function PesertaTab() {
             {paginatedItems.map(p => (
               <TableRow key={p.id}>
                 <TableCell className="font-mono">{p.nomor_urut}</TableCell>
-                <TableCell className="font-medium"><button type="button" onClick={()=>pilihUntukEdit(p)} className="text-left hover:underline hover:text-primary transition-colors">{p.nama}</button></TableCell>
+                <TableCell className="font-medium">
+                  <button type="button" onClick={()=>pilihUntukEdit(p)} className="text-left hover:underline hover:text-primary transition-colors">{p.nama}</button>
+                  {(p as any).terlambat && <Badge variant="destructive" className="ml-2 align-middle">Terlambat</Badge>}
+                </TableCell>
                 <TableCell className="text-muted-foreground">{p.asal || "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{scoredIds.has(p.id) ? sesiDari(p.nomor_urut) : "—"}</TableCell>
                 <TableCell className="text-muted-foreground">{p.kategori || "—"}</TableCell>
-                <TableCell className="text-right"><Button size="icon" variant="ghost" onClick={()=>hapus(p.id)}><Trash2 className="size-4 text-destructive" /></Button></TableCell>
+                <TableCell className="text-right">
+                  <div className="flex flex-wrap items-center justify-end gap-1">
+                    <Button size="sm" variant={(p as any).terlambat ? "secondary" : "outline"} onClick={()=>toggleTerlambat(p)}>
+                      {(p as any).terlambat ? "Batal Terlambat" : "Terlambat"}
+                    </Button>
+                    {isAdm && (
+                      <Button size="sm" variant="outline" onClick={()=>bukaPenilaianUlang(p)}>Buka Perbaikan</Button>
+                    )}
+                    <Button size="icon" variant="ghost" onClick={()=>hapus(p.id)}><Trash2 className="size-4 text-destructive" /></Button>
+                  </div>
+                </TableCell>
               </TableRow>
             ))}
+
           </TableBody>
         </Table>
       </div>
