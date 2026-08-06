@@ -332,7 +332,8 @@ function OperatorPage() {
                   <SelectContent>
                     {peserta.map(p => {
                       const done = submissionCounts[p.id] ?? 0;
-                      const sudah = juriTotal > 0 && done >= juriTotal;
+                      const pool = poolJuri(p.kategori);
+                      const sudah = pool > 0 && done >= pool;
                       return (
                         <SelectItem key={p.id} value={p.id} disabled={sudah}>
                           {p.nomor_urut}. {p.nama}{p.asal ? ` — ${p.asal}` : ""}{sudah ? "  ✓ sudah dinilai" : ""}
