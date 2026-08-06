@@ -2323,7 +2323,9 @@ function PenilaianTab() {
                   {kriteria.map(k => {
                     const val = currentNilai(k.id);
                     const key = kriteriaKey(k.nama);
-                    const isDisabled = perbaikanAktifNow && key !== "perhatian" && key !== "catatan";
+                    // Kriteria yang belum pernah dinilai tetap dapat diisi agar juri bisa
+                    // melengkapi penilaian dan menekan Kirim, meski mode Perbaikan aktif.
+                    const isDisabled = perbaikanAktifNow && key !== "perhatian" && key !== "catatan" && val !== null;
                     return (
                       <div key={k.id} className="relative">
                         <CriteriaPillButton
