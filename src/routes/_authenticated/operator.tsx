@@ -33,7 +33,8 @@ function OperatorPage() {
   const [sesi, setSesi] = useState<Sesi | null>(null);
   const [selectedPeserta, setSelectedPeserta] = useState<string>("");
   const [selectedMazmur, setSelectedMazmur] = useState<string>("");
-  const [juriTotal, setJuriTotal] = useState<number>(0);
+  const [juriReal, setJuriReal] = useState<number>(0);
+  const [juriDummy, setJuriDummy] = useState<number>(0);
   const [juriDone, setJuriDone] = useState<number>(0);
   const [submissionCounts, setSubmissionCounts] = useState<Record<string, number>>({});
   const [busy, setBusy] = useState(false);
@@ -77,10 +78,12 @@ function OperatorPage() {
   async function loadJuriCount() {
     const { data } = await supabase
       .from("juri_public" as any)
-      .select("id, approved, role")
+      .select("id, approved, role, is_dummy")
       .eq("approved", true)
       .eq("role", "juri");
-    setJuriTotal((data ?? []).length);
+    const rows = ((data as any[] | null) ?? []);
+    setJuriReal(rows.filter((j: any) => !j.is_dummy).length);
+    setJuriDummy(rows.filter((j: any) => !!j.is_dummy).length);
   }
   async function loadSesi() {
     const { data } = await supabase
@@ -228,6 +231,10 @@ function OperatorPage() {
     if (!selectedMazmur) return;
     if (!mazmurFiltered.some(m => m.id === selectedMazmur)) setSelectedMazmur("");
   }, [mazmurFiltered, selectedMazmur, sesi]);
+  // Pool juri sesuai kategori peserta: peserta UJICOBA dinilai juri dummy, lainnya juri asli
+  const isUji = (kat: string | null | undefined) => (kat ?? "").trim().toUpperCase() === "UJICOBA";
+  const poolJuri = (kat: string | null | undefined) => (isUji(kat) ? juriDummy : juriReal);
+  const juriTotal = poolJuri(pesertaAktif?.kategori);
   const statusPenilaian: "Belum Dimulai" | "Sedang Berlangsung" | "Selesai" =
     !sesi ? "Belum Dimulai" : juriDone >= juriTotal && juriTotal > 0 ? "Selesai" : "Sedang Berlangsung";
 
@@ -325,7 +332,8 @@ function OperatorPage() {
                   <SelectContent>
                     {peserta.map(p => {
                       const done = submissionCounts[p.id] ?? 0;
-                      const sudah = juriTotal > 0 && done >= juriTotal;
+                      const pool = poolJuri(p.kategori);
+                      const sudah = pool > 0 && done >= pool;
                       return (
                         <SelectItem key={p.id} value={p.id} disabled={sudah}>
                           {p.nomor_urut}. {p.nama}{p.asal ? ` — ${p.asal}` : ""}{sudah ? "  ✓ sudah dinilai" : ""}
@@ -402,7 +410,8 @@ function OperatorPage() {
                   )}
                   {peserta.slice((pesertaPage - 1) * PESERTA_PAGE_SIZE, pesertaPage * PESERTA_PAGE_SIZE).map(p => {
                     const done = submissionCounts[p.id] ?? 0;
-                    const sudahDinilai = juriTotal > 0 && done >= juriTotal;
+                    const pool = poolJuri(p.kategori);
+                    const sudahDinilai = pool > 0 && done >= pool;
                     return (
                       <TableRow key={p.id} className={sudahDinilai ? "opacity-70" : ""}>
                         <TableCell className="font-medium">{p.nomor_urut}</TableCell>
@@ -413,7 +422,7 @@ function OperatorPage() {
                           {sudahDinilai ? (
                             <Badge className="bg-accent text-accent-foreground">Sudah dinilai</Badge>
                           ) : done > 0 ? (
-                            <Badge variant="outline">{done}/{juriTotal} juri</Badge>
+                            <Badge variant="outline">{done}/{pool} juri</Badge>
                           ) : (
                             <span className="text-xs text-muted-foreground">Belum dinilai</span>
                           )}

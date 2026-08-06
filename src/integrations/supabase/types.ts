@@ -769,6 +769,7 @@ export type Database = {
           bacaan_mazmur: string | null
           created_at: string | null
           id: string | null
+          is_dummy: boolean | null
           jabatan: string | null
           jumlah_ayat: number | null
           nama: string | null
@@ -779,6 +780,7 @@ export type Database = {
           bacaan_mazmur?: string | null
           created_at?: string | null
           id?: string | null
+          is_dummy?: boolean | null
           jabatan?: string | null
           jumlah_ayat?: number | null
           nama?: string | null
@@ -789,6 +791,7 @@ export type Database = {
           bacaan_mazmur?: string | null
           created_at?: string | null
           id?: string | null
+          is_dummy?: boolean | null
           jabatan?: string | null
           jumlah_ayat?: number | null
           nama?: string | null
