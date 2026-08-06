@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.var_detail_persepsi(uuid) TO authenticated;
