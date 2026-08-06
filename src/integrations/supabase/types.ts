@@ -980,6 +980,7 @@ export type Database = {
       inspektur_var_detail: { Args: { _peserta: string }; Returns: Json }
       is_peserta_final: { Args: { _peserta: string }; Returns: boolean }
       is_peserta_uji: { Args: { _peserta: string }; Returns: boolean }
+      is_vmix_viewer: { Args: { _uid: string }; Returns: boolean }
       juri_hasil_final: { Args: never; Returns: Json }
       juri_in_pool: {
         Args: { _juri: string; _peserta: string }
@@ -1028,6 +1029,7 @@ export type Database = {
         | "panitia"
         | "inspektur"
         | "ketua_juri"
+        | "operator_vmix"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1162,6 +1164,7 @@ export const Constants = {
         "panitia",
         "inspektur",
         "ketua_juri",
+        "operator_vmix",
       ],
     },
   },
