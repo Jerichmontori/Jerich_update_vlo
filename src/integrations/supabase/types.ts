@@ -1003,6 +1003,7 @@ export type Database = {
         Args: { _id: string; _mazmur: string }
         Returns: undefined
       }
+      var_detail_persepsi: { Args: { _peserta: string }; Returns: Json }
       viewer_catatan_peserta: { Args: { _peserta: string }; Returns: Json }
       viewer_peserta_list: { Args: never; Returns: Json }
     }
