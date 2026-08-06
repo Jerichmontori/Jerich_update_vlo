@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import VarPersepsiDetail from "@/components/VarPersepsiDetail";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
 import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight, LayoutDashboard, CheckCircle2, XCircle, FileText, KeyRound, AlertTriangle, Eye, EyeOff } from "lucide-react";
@@ -2463,13 +2464,14 @@ function PenilaianTab() {
                     <div className="flex items-center gap-2 font-serif text-lg text-rose-700">
                       <AlertTriangle className="size-5" /> ⚠ POTENSI VAR — Menunggu Keputusan Inspektur
                     </div>
-                    <ul className="mt-2 space-y-1 text-sm text-rose-900">
+                    <ul className="mt-2 space-y-3 text-sm text-rose-900">
                       {varRows.map((v) => (
                         <li key={v.peserta_id}>
                           <b>{v.peserta_nama || "—"}</b> · Perbedaan pada:{" "}
                           <span className="font-semibold">
                             {v.komponen.map((k) => KOMP_LABEL[k] ?? k).join(", ") || "—"}
                           </span>
+                          <VarPersepsiDetail pesertaId={v.peserta_id} tone="rose" />
                         </li>
                       ))}
                     </ul>
@@ -2483,10 +2485,11 @@ function PenilaianTab() {
                     <div className="flex items-center gap-2 font-serif text-lg text-amber-800">
                       <AlertTriangle className="size-5" /> ✦ Perbaikan Perhatian Dibuka oleh Inspektur
                     </div>
-                    <ul className="mt-2 space-y-1 text-sm text-amber-900">
+                    <ul className="mt-2 space-y-3 text-sm text-amber-900">
                       {perbaikanRows.map((v) => (
                         <li key={v.peserta_id}>
                           <b>{v.peserta_nama || "—"}</b> — silakan buka kembali kriteria <b>Perhatian</b>, samakan jawaban Anda dengan juri lain, lalu klik <b>Kirim</b>.
+                          <VarPersepsiDetail pesertaId={v.peserta_id} tone="amber" />
                         </li>
                       ))}
                     </ul>
