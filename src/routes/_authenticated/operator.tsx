@@ -410,7 +410,8 @@ function OperatorPage() {
                   )}
                   {peserta.slice((pesertaPage - 1) * PESERTA_PAGE_SIZE, pesertaPage * PESERTA_PAGE_SIZE).map(p => {
                     const done = submissionCounts[p.id] ?? 0;
-                    const sudahDinilai = juriTotal > 0 && done >= juriTotal;
+                    const pool = poolJuri(p.kategori);
+                    const sudahDinilai = pool > 0 && done >= pool;
                     return (
                       <TableRow key={p.id} className={sudahDinilai ? "opacity-70" : ""}>
                         <TableCell className="font-medium">{p.nomor_urut}</TableCell>
@@ -421,7 +422,7 @@ function OperatorPage() {
                           {sudahDinilai ? (
                             <Badge className="bg-accent text-accent-foreground">Sudah dinilai</Badge>
                           ) : done > 0 ? (
-                            <Badge variant="outline">{done}/{juriTotal} juri</Badge>
+                            <Badge variant="outline">{done}/{pool} juri</Badge>
                           ) : (
                             <span className="text-xs text-muted-foreground">Belum dinilai</span>
                           )}
