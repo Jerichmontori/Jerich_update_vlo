@@ -397,6 +397,24 @@ function PesertaTab() {
     load();
   }
 
+  async function toggleTerlambat(p: Peserta) {
+    const next = !(p as any).terlambat;
+    if (next && !confirm(`Tandai ${p.nomor_urut}. ${p.nama} sebagai TERLAMBAT? Peserta dianggap selesai dinilai dengan nilai akhir 1.`)) return;
+    const { error } = await supabase.rpc("set_peserta_terlambat" as any, { _peserta: p.id, _terlambat: next });
+    if (error) return toast.error(error.message);
+    toast.success(next ? "Peserta ditandai terlambat (nilai akhir 1)" : "Status terlambat dibatalkan");
+    load();
+  }
+
+  async function bukaPenilaianUlang(p: Peserta) {
+    if (!confirm(`Aktifkan kembali penilaian untuk ${p.nomor_urut}. ${p.nama}? Juri dapat memperbaiki dan mengirim ulang nilai.`)) return;
+    const { error } = await supabase.rpc("admin_buka_penilaian_ulang" as any, { _peserta: p.id, _catatan: null });
+    if (error) return toast.error(error.message);
+    toast.success("Penilaian dibuka kembali untuk perbaikan juri");
+    load();
+  }
+
+
   function unduhTemplate() {
     const ws = XLSX.utils.aoa_to_sheet([
       ["nomor_urut", "nama", "asal", "kategori"],
