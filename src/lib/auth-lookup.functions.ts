@@ -87,9 +87,39 @@ export const signInWithIdentifier = createServerFn({ method: "POST" })
       throw new Error("Email atau kata sandi salah");
     }
 
+    // Akun yang sudah dihapus (baris juri/role/profil hilang) tidak boleh masuk,
+    // walaupun kredensial auth-nya masih tertinggal.
+    const userId = signIn.user?.id ?? null;
+    if (!userId) throw new Error("Email atau kata sandi salah");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const [{ data: roles }, { data: juriRow }, { data: profileRow }] = await Promise.all([
+      supabaseAdmin.from("user_roles").select("role").eq("user_id", userId),
+      supabaseAdmin.from("juri").select("id, approved").eq("user_id", userId).maybeSingle(),
+      supabaseAdmin.from("profiles").select("id").eq("id", userId).maybeSingle(),
+    ]);
+
+    const isAdmin = (roles ?? []).some((r: { role: string }) => r.role === "admin");
+    const valid =
+      !!profileRow &&
+      (roles?.length ?? 0) > 0 &&
+      (isAdmin || (!!juriRow && juriRow.approved === true));
+
+    if (!valid) {
+      await supabasePublic.auth.signOut().catch(() => {});
+      // Bersihkan sisa akun yatim supaya tidak bisa dicoba lagi
+      if (!profileRow && !juriRow) {
+        await supabaseAdmin.from("user_roles").delete().eq("user_id", userId);
+        await supabaseAdmin.auth.admin.deleteUser(userId).catch(() => {});
+      }
+      throw new Error("Akun ini sudah tidak aktif. Hubungi admin.");
+    }
+
     return {
       access_token: signIn.session.access_token,
       refresh_token: signIn.session.refresh_token,
-      user_id: signIn.user?.id ?? null,
+      user_id: userId,
     };
   });
+
