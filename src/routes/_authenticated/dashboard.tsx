@@ -2384,12 +2384,14 @@ function PenilaianTab() {
 
             function requestKirim() {
               if (!juriId || !pesertaId) return toast.error("Pilih juri dan peserta");
-              if (editMode) {
-                if (!mazmurId) return toast.error("Pilih bacaan mazmur");
-                setConfirmOpen(true);
-                return;
+              // Tidak boleh ada item kriteria yang kosong — berlaku juga saat mode Perbaikan/Edit.
+              if (!allDone) {
+                const kosong = kriteria.filter(k => currentNilai(k.id) === null).map(k => k.nama);
+                return toast.warning("Masih ada item penilaian yang kosong", {
+                  description: `Lengkapi terlebih dahulu: ${kosong.join(", ")}.`,
+                });
               }
-              if (!allDone) return toast.warning("Lengkapi semua kriteria terlebih dahulu sebelum mengirim nilai.");
+              if (editMode && !mazmurId) return toast.error("Pilih bacaan mazmur");
               setConfirmOpen(true);
             }
 
@@ -2520,8 +2522,8 @@ function PenilaianTab() {
                       onClick={requestKirim}
                       disabled={(() => {
                         if (saving) return true;
-                        if (editMode) return false;
                         if (!allDone) return true;
+                        if (editMode) return false;
                         if (!pesertaId) return false;
                         const inPerbaikan = perbaikanPerhatianIds.has(pesertaId);
                         if (inPerbaikan) return perbaikanResubmittedIds.has(pesertaId);
