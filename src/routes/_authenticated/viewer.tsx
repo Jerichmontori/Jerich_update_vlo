@@ -248,9 +248,29 @@ function ViewerPage() {
 
         <Card>
           <CardHeader className="pb-2">
+            <CardTitle className="text-base">{editId ? "Ubah Peserta" : "Tambah Peserta"}</CardTitle>
+            <CardDescription>Kelola daftar peserta dan atur jadwal tampil.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={simpanPeserta} className="grid grid-cols-1 sm:grid-cols-[100px_1fr_1fr_1fr_auto] gap-3">
+              <Input type="number" value={fNomor} onChange={(e) => setFNomor(e.target.value)} placeholder="No." />
+              <Input value={fNama} onChange={(e) => setFNama(e.target.value)} placeholder="Nama peserta" />
+              <Input value={fAsal} onChange={(e) => setFAsal(e.target.value)} placeholder="Asal / jemaat" />
+              <Input value={fKategori} onChange={(e) => setFKategori(e.target.value)} placeholder="Kategori" />
+              <div className="flex gap-2">
+                <Button type="submit" disabled={saving}>{editId ? "Simpan" : "Tambah"}</Button>
+                {editId && <Button type="button" variant="ghost" onClick={batalEdit}>Batal</Button>}
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
             <CardTitle className="text-base">Urutan Peserta</CardTitle>
             <CardDescription>
-              Tampilan hanya-baca. Catatan juri dapat diunduh untuk peserta yang sudah selesai dinilai (Final).
+              Klik nama peserta untuk mengubah datanya. Tombol <b>Terlambat</b> menandai peserta yang tidak naik panggung —
+              dianggap selesai dinilai dengan nilai akhir 1.
             </CardDescription>
             <div className="relative pt-2">
               <Search className="absolute left-3 top-1/2 size-4 text-muted-foreground" />
@@ -268,7 +288,7 @@ function ViewerPage() {
                     <TableHead>Peserta</TableHead>
                     <TableHead>Sesi</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Catatan Juri</TableHead>
+                    <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -276,12 +296,16 @@ function ViewerPage() {
                     <TableRow key={r.peserta_id} className={r.sedang_tampil ? "bg-accent/10" : ""}>
                       <TableCell>{r.nomor_urut}</TableCell>
                       <TableCell>
-                        <div className="font-medium">{r.nama}</div>
+                        <button type="button" onClick={() => pilihEdit(r)} className="font-medium text-left hover:underline hover:text-primary">
+                          {r.nama}
+                        </button>
                         <div className="text-xs text-muted-foreground">{r.asal ?? ""}{r.kategori ? ` · ${r.kategori}` : ""}</div>
                       </TableCell>
                       <TableCell><Badge variant="secondary">Sesi {r.sesi_no}</Badge></TableCell>
                       <TableCell>
-                        {r.sedang_tampil ? (
+                        {r.terlambat ? (
+                          <Badge variant="destructive">Terlambat</Badge>
+                        ) : r.sedang_tampil ? (
                           <Badge className="bg-amber-500 text-white">Sedang Tampil</Badge>
                         ) : r.final ? (
                           <Badge className="bg-emerald-600 text-white">Selesai</Badge>
@@ -290,12 +314,21 @@ function ViewerPage() {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button size="sm" variant="outline" disabled={!r.final || busy === r.peserta_id} onClick={() => unduhCatatan(r)}>
-                          <FileText className="size-4 mr-1" /> Unduh
-                        </Button>
+                        <div className="flex flex-wrap items-center justify-end gap-1">
+                          <Button size="sm" variant={r.terlambat ? "secondary" : "outline"} onClick={() => toggleTerlambat(r)}>
+                            <Clock className="size-4 mr-1" /> {r.terlambat ? "Batal" : "Terlambat"}
+                          </Button>
+                          <Button size="sm" variant="outline" disabled={!r.final || busy === r.peserta_id} onClick={() => unduhCatatan(r)}>
+                            <FileText className="size-4 mr-1" /> Unduh
+                          </Button>
+                          <Button size="icon" variant="ghost" onClick={() => hapusPeserta(r)}>
+                            <Trash2 className="size-4 text-destructive" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
+
                 </TableBody>
               </Table>
             )}
