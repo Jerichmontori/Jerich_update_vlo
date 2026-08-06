@@ -2485,10 +2485,11 @@ function PenilaianTab() {
                     <div className="flex items-center gap-2 font-serif text-lg text-amber-800">
                       <AlertTriangle className="size-5" /> ✦ Perbaikan Perhatian Dibuka oleh Inspektur
                     </div>
-                    <ul className="mt-2 space-y-1 text-sm text-amber-900">
+                    <ul className="mt-2 space-y-3 text-sm text-amber-900">
                       {perbaikanRows.map((v) => (
                         <li key={v.peserta_id}>
                           <b>{v.peserta_nama || "—"}</b> — silakan buka kembali kriteria <b>Perhatian</b>, samakan jawaban Anda dengan juri lain, lalu klik <b>Kirim</b>.
+                          <VarPersepsiDetail pesertaId={v.peserta_id} tone="amber" />
                         </li>
                       ))}
                     </ul>
