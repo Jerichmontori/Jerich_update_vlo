@@ -41,7 +41,7 @@ export default function VarPersepsiDetail({
       return;
     }
     setErr(null);
-    setRows((((data as any)?.juri ?? []) as JuriDetail[]) ?? []);
+    setRows(((data as any)?.juri ?? []) as JuriDetail[]);
   }, [pesertaId]);
 
   useEffect(() => {
