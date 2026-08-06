@@ -231,6 +231,10 @@ function OperatorPage() {
     if (!selectedMazmur) return;
     if (!mazmurFiltered.some(m => m.id === selectedMazmur)) setSelectedMazmur("");
   }, [mazmurFiltered, selectedMazmur, sesi]);
+  // Pool juri sesuai kategori peserta: peserta UJICOBA dinilai juri dummy, lainnya juri asli
+  const isUji = (kat: string | null | undefined) => (kat ?? "").trim().toUpperCase() === "UJICOBA";
+  const poolJuri = (kat: string | null | undefined) => (isUji(kat) ? juriDummy : juriReal);
+  const juriTotal = poolJuri(pesertaAktif?.kategori);
   const statusPenilaian: "Belum Dimulai" | "Sedang Berlangsung" | "Selesai" =
     !sesi ? "Belum Dimulai" : juriDone >= juriTotal && juriTotal > 0 ? "Selesai" : "Sedang Berlangsung";
 
