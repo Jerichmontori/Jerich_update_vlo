@@ -143,10 +143,63 @@ function ViewerPage() {
     doc.save(`catatan-juri-${r.nomor_urut}-${r.nama}.pdf`);
   }
 
+  function pilihEdit(r: Row) {
+    setEditId(r.peserta_id);
+    setFNomor(String(r.nomor_urut));
+    setFNama(r.nama);
+    setFAsal(r.asal ?? "");
+    setFKategori(r.kategori ?? "");
+  }
+
+  function batalEdit() {
+    setEditId(null);
+    setFNomor(""); setFNama(""); setFAsal(""); setFKategori("");
+  }
+
+  async function simpanPeserta(e: React.FormEvent) {
+    e.preventDefault();
+    const n = Number(fNomor);
+    if (!fNomor || !fNama.trim()) { toast.error("Nomor urut dan nama wajib diisi"); return; }
+    setSaving(true);
+    const payload = {
+      nomor_urut: n,
+      nama: fNama.trim(),
+      asal: fAsal.trim() || null,
+      kategori: fKategori.trim() || null,
+      sesi: `Sesi ${Math.ceil(n / 10)}`,
+    };
+    const { error } = editId
+      ? await supabase.from("peserta").update(payload).eq("id", editId)
+      : await supabase.from("peserta").insert(payload);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(editId ? "Peserta diperbarui" : "Peserta ditambahkan");
+    batalEdit();
+    load();
+  }
+
+  async function hapusPeserta(r: Row) {
+    if (!confirm(`Hapus peserta ${r.nomor_urut}. ${r.nama}?`)) return;
+    const { error } = await supabase.from("peserta").delete().eq("id", r.peserta_id);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Peserta dihapus");
+    load();
+  }
+
+  async function toggleTerlambat(r: Row) {
+    const next = !r.terlambat;
+    if (next && !confirm(`Tandai ${r.nomor_urut}. ${r.nama} sebagai TERLAMBAT? Peserta dianggap selesai dinilai dengan nilai akhir 1.`)) return;
+    const { error } = await supabase.rpc("set_peserta_terlambat" as any, { _peserta: r.peserta_id, _terlambat: next });
+    if (error) { toast.error(error.message); return; }
+    toast.success(next ? "Peserta ditandai terlambat (nilai akhir 1)" : "Status terlambat dibatalkan");
+    load();
+  }
+
   async function signOut() {
     await supabase.auth.signOut();
     window.location.href = "/auth";
   }
+
 
   return (
     <div className="min-h-screen">
