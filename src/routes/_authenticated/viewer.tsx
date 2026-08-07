@@ -44,6 +44,8 @@ type Row = {
 function ViewerPage() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [q, setQ] = useState("");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
   const [busy, setBusy] = useState<string | null>(null);
   const [nama, setNama] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
@@ -52,6 +54,8 @@ function ViewerPage() {
   const [fAsal, setFAsal] = useState("");
   const [fKategori, setFKategori] = useState("");
   const [saving, setSaving] = useState(false);
+
+
 
 
   const load = useCallback(async () => {
