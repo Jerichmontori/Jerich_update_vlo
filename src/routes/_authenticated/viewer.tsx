@@ -85,6 +85,15 @@ function ViewerPage() {
     const s = q.trim().toLowerCase();
     return (rows ?? []).filter((r) => !s || r.nama.toLowerCase().includes(s) || String(r.nomor_urut) === s);
   }, [rows, q]);
+  const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  const pagedList = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return list.slice(start, start + PAGE_SIZE);
+  }, [list, page]);
+
+  // reset ke halaman 1 saat pencarian berubah
+  useEffect(() => { setPage(1); }, [q]);
+
 
   async function unduhCatatan(r: Row) {
     setBusy(r.peserta_id);
