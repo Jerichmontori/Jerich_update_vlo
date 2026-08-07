@@ -177,7 +177,7 @@ export default function SesiLiveRanking() {
                             Tarik
                           </Button>
                         ) : (
-                          <Button size="sm" disabled={!lengkap || busy === r.sesi_no} onClick={() => ajukan(r.sesi_no)}>
+                          <Button size="sm" disabled={busy === r.sesi_no} onClick={() => ajukan(r.sesi_no)}>
                             Tampilkan di Live
                           </Button>
                         )}
