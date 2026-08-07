@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Toaster, toast } from "sonner";
-import { RefreshCw, Mic, FileText, Search, Clock, Trash2 } from "lucide-react";
+import { RefreshCw, Mic, FileText, Search, Clock, Trash2, ChevronLeft, ChevronRight } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { catatanToRows } from "@/components/JuriHasilFinalTab";
@@ -44,6 +44,8 @@ type Row = {
 function ViewerPage() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [q, setQ] = useState("");
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 10;
   const [busy, setBusy] = useState<string | null>(null);
   const [nama, setNama] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
@@ -52,6 +54,8 @@ function ViewerPage() {
   const [fAsal, setFAsal] = useState("");
   const [fKategori, setFKategori] = useState("");
   const [saving, setSaving] = useState(false);
+
+
 
 
   const load = useCallback(async () => {
@@ -81,6 +85,15 @@ function ViewerPage() {
     const s = q.trim().toLowerCase();
     return (rows ?? []).filter((r) => !s || r.nama.toLowerCase().includes(s) || String(r.nomor_urut) === s);
   }, [rows, q]);
+  const totalPages = Math.max(1, Math.ceil(list.length / PAGE_SIZE));
+  const pagedList = useMemo(() => {
+    const start = (page - 1) * PAGE_SIZE;
+    return list.slice(start, start + PAGE_SIZE);
+  }, [list, page]);
+
+  // reset ke halaman 1 saat pencarian berubah
+  useEffect(() => { setPage(1); }, [q]);
+
 
   async function unduhCatatan(r: Row) {
     setBusy(r.peserta_id);
@@ -292,7 +305,7 @@ function ViewerPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {list.map((r) => (
+                  {pagedList.map((r) => (
                     <TableRow key={r.peserta_id} className={r.sedang_tampil ? "bg-accent/10" : ""}>
                       <TableCell>{r.nomor_urut}</TableCell>
                       <TableCell>
@@ -328,9 +341,24 @@ function ViewerPage() {
                       </TableCell>
                     </TableRow>
                   ))}
-
                 </TableBody>
               </Table>
+            )}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4">
+                <div className="text-sm text-muted-foreground">
+                  Menampilkan {Math.min((page - 1) * PAGE_SIZE + 1, list.length)}–{Math.min(page * PAGE_SIZE, list.length)} dari {list.length} peserta
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
+                    <ChevronLeft className="size-4 mr-1" /> Sebelumnya
+                  </Button>
+                  <span className="text-sm px-2">{page} / {totalPages}</span>
+                  <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+                    Selanjutnya <ChevronRight className="size-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
