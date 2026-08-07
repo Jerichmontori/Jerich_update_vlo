@@ -305,7 +305,7 @@ function ViewerPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {list.map((r) => (
+                  {pagedList.map((r) => (
                     <TableRow key={r.peserta_id} className={r.sedang_tampil ? "bg-accent/10" : ""}>
                       <TableCell>{r.nomor_urut}</TableCell>
                       <TableCell>
@@ -341,9 +341,24 @@ function ViewerPage() {
                       </TableCell>
                     </TableRow>
                   ))}
-
                 </TableBody>
               </Table>
+            )}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between mt-4">
+                <div className="text-sm text-muted-foreground">
+                  Menampilkan {Math.min((page - 1) * PAGE_SIZE + 1, list.length)}–{Math.min(page * PAGE_SIZE, list.length)} dari {list.length} peserta
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.max(1, p - 1))} disabled={page === 1}>
+                    <ChevronLeft className="size-4 mr-1" /> Sebelumnya
+                  </Button>
+                  <span className="text-sm px-2">{page} / {totalPages}</span>
+                  <Button variant="outline" size="sm" onClick={() => setPage((p) => Math.min(totalPages, p + 1))} disabled={page === totalPages}>
+                    Selanjutnya <ChevronRight className="size-4 ml-1" />
+                  </Button>
+                </div>
+              </div>
             )}
           </CardContent>
         </Card>
