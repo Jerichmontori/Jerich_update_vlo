@@ -121,6 +121,44 @@ export default function SesiLiveRanking() {
       </CardHeader>
 
       <CardContent>
+        <div className="mb-4 rounded-md border bg-muted/30 p-3">
+          <div className="mb-2 text-sm font-medium">Kategori yang ditayangkan di Live Ranking</div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant={katPilih.length === 0 ? "default" : "outline"}
+              disabled={katBusy}
+              onClick={() => simpanKategori([])}
+            >
+              Semua Kategori
+            </Button>
+            {katList.map((k) => {
+              const aktif = katPilih.includes(k);
+              return (
+                <Button
+                  key={k}
+                  size="sm"
+                  variant={aktif ? "default" : "outline"}
+                  disabled={katBusy}
+                  onClick={() =>
+                    simpanKategori(aktif ? katPilih.filter((x) => x !== k) : [...katPilih, k])
+                  }
+                >
+                  {k}
+                </Button>
+              );
+            })}
+            {katList.length === 0 && (
+              <span className="text-sm text-muted-foreground">Belum ada kategori terdaftar.</span>
+            )}
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {katPilih.length === 0
+              ? "Semua kategori peserta tampil di layar Live Ranking."
+              : `Hanya kategori: ${katPilih.join(", ")} yang tampil di layar Live Ranking.`}
+          </p>
+        </div>
+
         {rows === null ? (
           <div className="text-sm text-muted-foreground">Memuat…</div>
         ) : rows.length === 0 ? (
