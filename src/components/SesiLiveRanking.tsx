@@ -59,7 +59,7 @@ export default function SesiLiveRanking() {
     const { error } = await supabase.rpc("inspektur_ajukan_live_ranking" as any, { _sesi: sesi });
     setBusy(null);
     if (error) return toast.error(error.message);
-    toast.success(`Sesi ${sesi} diajukan — menunggu persetujuan semua juri.`);
+    toast.success(`Sesi ${sesi} sekarang tayang di Live Ranking.`);
     load();
   }
 
@@ -88,8 +88,8 @@ export default function SesiLiveRanking() {
         <div>
           <CardTitle className="flex items-center gap-2"><Radio className="size-5 text-accent" /> Sesi Live Ranking</CardTitle>
           <CardDescription>
-            Satu sesi = 10 peserta. Sesi bisa diajukan ke Live Ranking bila semua pesertanya berstatus Final,
-            dan hanya tayang setelah disetujui seluruh juri.
+            Satu sesi = 10 peserta. Inspektur dapat langsung menayangkan sesi di Live Ranking
+            tanpa menunggu persetujuan juri, dan bisa menarik atau menyembunyikannya kapan saja.
           </CardDescription>
         </div>
         <Button variant="outline" size="sm" onClick={load}><RefreshCw className="size-4 mr-1" />Muat Ulang</Button>
@@ -107,7 +107,7 @@ export default function SesiLiveRanking() {
                 <TableHead>Peserta</TableHead>
                 <TableHead>Final</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Persetujuan Juri</TableHead>
+                <TableHead>Masukan Juri</TableHead>
                 <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
