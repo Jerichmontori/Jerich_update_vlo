@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       juri: {
         Row: {
+          aktif_menilai: boolean
           approved: boolean
           bacaan_mazmur: string | null
           created_at: string
@@ -29,6 +30,7 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          aktif_menilai?: boolean
           approved?: boolean
           bacaan_mazmur?: string | null
           created_at?: string
@@ -42,6 +44,7 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          aktif_menilai?: boolean
           approved?: boolean
           bacaan_mazmur?: string | null
           created_at?: string
@@ -814,6 +817,7 @@ export type Database = {
       admin_list_juri: {
         Args: never
         Returns: {
+          aktif_menilai: boolean
           approved: boolean
           bacaan_mazmur: string | null
           created_at: string
@@ -853,6 +857,10 @@ export type Database = {
         }
       }
       admin_reset_all_penilaian: { Args: never; Returns: undefined }
+      admin_set_juri_aktif: {
+        Args: { _aktif: boolean; _juri: string }
+        Returns: undefined
+      }
       akhiri_sesi: { Args: { _id: string }; Returns: undefined }
       all_juri_submitted: { Args: { _peserta: string }; Returns: boolean }
       detect_potensi_var: { Args: { _peserta: string }; Returns: string }
