@@ -745,11 +745,12 @@ function JuriTab() {
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Ikut Menilai</TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Belum ada pendaftar juri.</TableCell></TableRow>}
+            {items.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Belum ada pendaftar juri.</TableCell></TableRow>}
             {items.map(j => (
               <TableRow key={j.id}>
                 <TableCell className="font-medium">{j.nama}</TableCell>
