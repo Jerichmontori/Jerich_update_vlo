@@ -451,18 +451,21 @@ export type Database = {
           created_at: string
           id: string
           juri_id: string
+          nilai_cache: number | null
           peserta_id: string
         }
         Insert: {
           created_at?: string
           id?: string
           juri_id: string
+          nilai_cache?: number | null
           peserta_id: string
         }
         Update: {
           created_at?: string
           id?: string
           juri_id?: string
+          nilai_cache?: number | null
           peserta_id?: string
         }
         Relationships: [
@@ -1028,6 +1031,7 @@ export type Database = {
       peserta_pool_cutoff: { Args: { _peserta: string }; Returns: string }
       public_live_state: { Args: never; Returns: Json }
       public_pengumuman_state: { Args: never; Returns: Json }
+      refresh_nilai_cache: { Args: never; Returns: undefined }
       set_live_ranking_kategori: {
         Args: { _kategori: string[] }
         Returns: Json
