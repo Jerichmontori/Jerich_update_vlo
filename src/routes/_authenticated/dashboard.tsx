@@ -12,6 +12,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import VarPersepsiDetail from "@/components/VarPersepsiDetail";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
@@ -28,7 +29,7 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 type Peserta = { id: string; nomor_urut: number; nama: string; asal: string | null; sesi: string | null; kategori: string | null };
-type Juri = { id: string; nama: string; jabatan: string | null; email: string | null; role: "admin" | "juri" | "viewer" | null; approved: boolean; user_id: string | null };
+type Juri = { id: string; nama: string; jabatan: string | null; email: string | null; role: "admin" | "juri" | "viewer" | null; approved: boolean; user_id: string | null; aktif_menilai?: boolean };
 type Kriteria = { id: string; nama: string; bobot: number; batas_atas: number; batas_bawah: number };
 type Mazmur = { id: string; bacaan: string; jumlah_ayat: number; kategori: string | null };
 type PenilaianDetail =
@@ -629,6 +630,15 @@ function JuriTab() {
     }
   }
 
+  async function ubahAktifMenilai(id: string, aktif: boolean) {
+    const { error } = await supabase.rpc("admin_set_juri_aktif" as any, { _juri: id, _aktif: aktif });
+    if (error) return toast.error(error.message);
+    toast.success(aktif ? "Juri diaktifkan untuk menilai" : "Juri dinonaktifkan dari penilaian (data tetap tersimpan)");
+    load();
+  }
+
+
+
 
   function openReset(j: Juri) {
     setResetTarget(j);
@@ -694,6 +704,12 @@ function JuriTab() {
               </Select>
             </div>
             <div className="text-xs text-muted-foreground break-all">{j.email || "—"}</div>
+            {j.approved && j.role === "juri" && (
+              <div className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 px-2 py-1.5">
+                <span className="text-xs">Ikut menilai</span>
+                <Switch checked={j.aktif_menilai !== false} onCheckedChange={(v)=>ubahAktifMenilai(j.id, v)} />
+              </div>
+            )}
             <div className="flex items-center justify-between gap-2 pt-1">
               {j.approved ? (
                 <Badge className="bg-accent text-accent-foreground gap-1"><Check className="size-3" />Disetujui</Badge>
@@ -729,11 +745,12 @@ function JuriTab() {
               <TableHead>Email</TableHead>
               <TableHead>Role</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Ikut Menilai</TableHead>
               <TableHead className="text-right">Aksi</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Belum ada pendaftar juri.</TableCell></TableRow>}
+            {items.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Belum ada pendaftar juri.</TableCell></TableRow>}
             {items.map(j => (
               <TableRow key={j.id}>
                 <TableCell className="font-medium">{j.nama}</TableCell>
@@ -758,6 +775,16 @@ function JuriTab() {
                     <Badge className="bg-accent text-accent-foreground gap-1"><Check className="size-3" />Disetujui</Badge>
                   ) : (
                     <Badge variant="outline" className="text-muted-foreground">Menunggu disetujui</Badge>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {j.approved && j.role === "juri" ? (
+                    <div className="flex items-center gap-2">
+                      <Switch checked={j.aktif_menilai !== false} onCheckedChange={(v)=>ubahAktifMenilai(j.id, v)} />
+                      <span className="text-xs text-muted-foreground">{j.aktif_menilai !== false ? "Aktif" : "Nonaktif"}</span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
                   )}
                 </TableCell>
                 <TableCell className="text-right">
@@ -1655,7 +1682,7 @@ function PenilaianTab() {
     ]);
     if (p.error || j.error || k.error || m.error || n.error) return toast.error("Gagal memuat data");
     const pesertaList = p.data ?? [];
-    const juriList = ((j.data ?? []) as unknown as Juri[]).filter(x => x.approved && x.role === "juri");
+    const juriList = ((j.data ?? []) as unknown as Juri[]).filter(x => x.approved && x.role === "juri" && x.aktif_menilai !== false);
     const kriteriaList = k.data ?? [];
     const mazmurList = (m.data ?? []) as Mazmur[];
     const penilaianList = (n.data ?? []) as Penilaian[];
@@ -3410,7 +3437,7 @@ function DashboardTab() {
   async function load() {
     setLoading(true);
     const [j, p, n, k, s] = await Promise.all([
-      supabase.from("juri_public" as any).select("*").eq("approved", true).eq("role", "juri").order("nama"),
+      supabase.from("juri_public" as any).select("*").eq("approved", true).eq("role", "juri").neq("aktif_menilai", false).order("nama"),
       supabase.from("peserta").select("*"),
       supabase.rpc("admin_list_penilaian" as any),
       supabase.from("kriteria").select("*"),
@@ -3625,7 +3652,7 @@ function LihatPenilaianTab() {
       return toast.error(p.error?.message || j.error?.message || k.error?.message || n.error?.message || s.error?.message || rank.error?.message || kat.error?.message || "Gagal memuat data");
     }
     setPeserta((p.data ?? []) as Peserta[]);
-    setJuri(((j.data ?? []) as unknown as Juri[]).filter((x) => x.approved && x.role !== "viewer"));
+    setJuri(((j.data ?? []) as unknown as Juri[]).filter((x) => x.approved && x.role !== "viewer" && !(x.role === "juri" && x.aktif_menilai === false)));
     setKriteria((k.data ?? []) as Kriteria[]);
     setPenilaian((n.data ?? []) as Penilaian[]);
     setKategoriRows((kat.data ?? []) as Kategori[]);
@@ -4060,7 +4087,7 @@ function RincianNilaiTab() {
       }
     }
     setPeserta((p.data ?? []) as Peserta[]);
-    setJuri(((j.data ?? []) as unknown as Juri[]).filter((x) => x.approved && x.role !== "viewer"));
+    setJuri(((j.data ?? []) as unknown as Juri[]).filter((x) => x.approved && x.role !== "viewer" && !(x.role === "juri" && x.aktif_menilai === false)));
     setKriteria((k.data ?? []) as Kriteria[]);
     setPenilaian((n.data ?? []) as Penilaian[]);
     setKategoriRows((kt.data ?? []) as Kategori[]);

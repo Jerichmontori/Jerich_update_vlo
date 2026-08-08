@@ -78,9 +78,10 @@ function OperatorPage() {
   async function loadJuriCount() {
     const { data } = await supabase
       .from("juri_public" as any)
-      .select("id, approved, role, is_dummy")
+      .select("id, approved, role, is_dummy, aktif_menilai")
       .eq("approved", true)
-      .eq("role", "juri");
+      .eq("role", "juri")
+      .neq("aktif_menilai", false);
     const rows = ((data as any[] | null) ?? []);
     setJuriReal(rows.filter((j: any) => !j.is_dummy).length);
     setJuriDummy(rows.filter((j: any) => !!j.is_dummy).length);
