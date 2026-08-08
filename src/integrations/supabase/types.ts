@@ -868,6 +868,7 @@ export type Database = {
       all_juri_submitted: { Args: { _peserta: string }; Returns: boolean }
       detect_potensi_var: { Args: { _peserta: string }; Returns: string }
       get_klarifikasi_status: { Args: { _peserta: string }; Returns: Json }
+      get_live_ranking_kategori: { Args: never; Returns: Json }
       get_ranking: {
         Args: never
         Returns: {
@@ -1027,6 +1028,10 @@ export type Database = {
       peserta_pool_cutoff: { Args: { _peserta: string }; Returns: string }
       public_live_state: { Args: never; Returns: Json }
       public_pengumuman_state: { Args: never; Returns: Json }
+      set_live_ranking_kategori: {
+        Args: { _kategori: string[] }
+        Returns: Json
+      }
       set_pengumuman_state: {
         Args: { _peserta: string; _running: boolean }
         Returns: undefined

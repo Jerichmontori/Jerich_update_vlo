@@ -42,6 +42,33 @@ export default function SesiLiveRanking() {
   const totalPages = Math.max(1, Math.ceil((rows?.length ?? 0) / PAGE_SIZE));
   useEffect(() => { if (page > totalPages) setPage(totalPages); }, [page, totalPages]);
   const pageRows = (rows ?? []).slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const [katList, setKatList] = useState<string[]>([]);
+  const [katPilih, setKatPilih] = useState<string[]>([]);
+  const [katBusy, setKatBusy] = useState(false);
+
+  const loadKategori = useCallback(async () => {
+    const [{ data: kats }, { data: sel }] = await Promise.all([
+      supabase.from("kategori").select("kategori"),
+      supabase.rpc("get_live_ranking_kategori" as any),
+    ]);
+    const list = Array.from(
+      new Set(((kats ?? []) as { kategori: string | null }[]).map((k) => k.kategori).filter((k): k is string => !!k)),
+    ).sort();
+    setKatList(list);
+    setKatPilih(Array.isArray(sel) ? (sel as string[]) : []);
+  }, []);
+
+  useEffect(() => { loadKategori(); }, [loadKategori]);
+
+  async function simpanKategori(next: string[]) {
+    setKatBusy(true);
+    const { error } = await supabase.rpc("set_live_ranking_kategori" as any, { _kategori: next });
+    setKatBusy(false);
+    if (error) return toast.error(error.message);
+    setKatPilih(next);
+    toast.success(next.length === 0 ? "Live Ranking menampilkan semua kategori." : `Live Ranking dibatasi ke: ${next.join(", ")}.`);
+  }
+
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc("live_ranking_sesi_list" as any);
@@ -121,6 +148,44 @@ export default function SesiLiveRanking() {
       </CardHeader>
 
       <CardContent>
+        <div className="mb-4 rounded-md border bg-muted/30 p-3">
+          <div className="mb-2 text-sm font-medium">Kategori yang ditayangkan di Live Ranking</div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant={katPilih.length === 0 ? "default" : "outline"}
+              disabled={katBusy}
+              onClick={() => simpanKategori([])}
+            >
+              Semua Kategori
+            </Button>
+            {katList.map((k) => {
+              const aktif = katPilih.includes(k);
+              return (
+                <Button
+                  key={k}
+                  size="sm"
+                  variant={aktif ? "default" : "outline"}
+                  disabled={katBusy}
+                  onClick={() =>
+                    simpanKategori(aktif ? katPilih.filter((x) => x !== k) : [...katPilih, k])
+                  }
+                >
+                  {k}
+                </Button>
+              );
+            })}
+            {katList.length === 0 && (
+              <span className="text-sm text-muted-foreground">Belum ada kategori terdaftar.</span>
+            )}
+          </div>
+          <p className="mt-2 text-xs text-muted-foreground">
+            {katPilih.length === 0
+              ? "Semua kategori peserta tampil di layar Live Ranking."
+              : `Hanya kategori: ${katPilih.join(", ")} yang tampil di layar Live Ranking.`}
+          </p>
+        </div>
+
         {rows === null ? (
           <div className="text-sm text-muted-foreground">Memuat…</div>
         ) : rows.length === 0 ? (
