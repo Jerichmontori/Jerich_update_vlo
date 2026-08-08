@@ -630,6 +630,15 @@ function JuriTab() {
     }
   }
 
+  async function ubahAktifMenilai(id: string, aktif: boolean) {
+    const { error } = await supabase.rpc("admin_set_juri_aktif" as any, { _juri: id, _aktif: aktif });
+    if (error) return toast.error(error.message);
+    toast.success(aktif ? "Juri diaktifkan untuk menilai" : "Juri dinonaktifkan dari penilaian (data tetap tersimpan)");
+    load();
+  }
+
+
+
 
   function openReset(j: Juri) {
     setResetTarget(j);
