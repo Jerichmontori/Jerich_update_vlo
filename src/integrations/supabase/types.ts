@@ -774,6 +774,7 @@ export type Database = {
     Views: {
       juri_public: {
         Row: {
+          aktif_menilai: boolean | null
           approved: boolean | null
           bacaan_mazmur: string | null
           created_at: string | null
@@ -785,6 +786,7 @@ export type Database = {
           role: Database["public"]["Enums"]["app_role"] | null
         }
         Insert: {
+          aktif_menilai?: boolean | null
           approved?: boolean | null
           bacaan_mazmur?: string | null
           created_at?: string | null
@@ -796,6 +798,7 @@ export type Database = {
           role?: Database["public"]["Enums"]["app_role"] | null
         }
         Update: {
+          aktif_menilai?: boolean | null
           approved?: boolean | null
           bacaan_mazmur?: string | null
           created_at?: string | null
