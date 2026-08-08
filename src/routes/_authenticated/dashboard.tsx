@@ -1805,6 +1805,29 @@ function PenilaianTab() {
           return;
         }
       }
+      // Operator sudah menutup sesi peserta ini (atau membuka sesi peserta lain).
+      // Jangan biarkan juri terjebak di overlay "Menunggu Juri Lain".
+      {
+        const { data: sesiRow } = await supabase
+          .from("sesi_penilaian")
+          .select("status")
+          .eq("peserta_id", lockedPesertaId)
+          .order("started_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        if (sesiRow && sesiRow.status !== "berlangsung") {
+          stopped = true;
+          setSubmittedFor(current => current === lockedPesertaId ? null : current);
+          setPendingDiscrepancy(null);
+          setPesertaId("");
+          setMazmurId("");
+          setOpenKriteria(null);
+          setJudgesDoneForPeserta(0);
+          setJudgesTotalForPeserta(0);
+          loadAll({ restoreSubmissionState: false });
+          return;
+        }
+      }
       // Sumber kebenaran: RPC backend agar semua device membaca progres yang sama,
       // tidak bergantung cache/list juri di browser.
       const { data: progressRows, error: progressError } = await supabase.rpc("get_submission_progress" as any, { _peserta: lockedPesertaId });
