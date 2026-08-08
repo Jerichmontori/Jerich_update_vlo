@@ -2573,8 +2573,11 @@ function PenilaianTab() {
               await loadAll({ restoreSubmissionState: false });
             }
 
-            const perbaikanRows = varAktifList.filter(v => v.status === "perbaikan_perhatian");
-            const varRows = varAktifList.filter(v => v.status !== "perbaikan_perhatian");
+            // Hanya tampilkan VAR untuk peserta yang sedang dinilai (sesi berlangsung).
+            const fokusPesertaId = activeSession?.peserta_id ?? pesertaId ?? "";
+            const varFokus = fokusPesertaId ? varAktifList.filter(v => v.peserta_id === fokusPesertaId) : [];
+            const perbaikanRows = varFokus.filter(v => v.status === "perbaikan_perhatian");
+            const varRows = varFokus.filter(v => v.status !== "perbaikan_perhatian");
             return (
               <>
                 {varRows.length > 0 && (
