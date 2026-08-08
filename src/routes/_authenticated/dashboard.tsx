@@ -1815,7 +1815,7 @@ function PenilaianTab() {
           .order("started_at", { ascending: false })
           .limit(1)
           .maybeSingle();
-        if (sesiRow && sesiRow.status !== "berlangsung") {
+        if (sesiRow && sesiRow.status !== "active") {
           stopped = true;
           setSubmittedFor(current => current === lockedPesertaId ? null : current);
           setPendingDiscrepancy(null);
