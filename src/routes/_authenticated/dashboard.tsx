@@ -3133,6 +3133,7 @@ function RankingTab() {
   const [peserta, setPeserta] = useState<{ id: string; kategori: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
   const [kategori, setKategori] = useState<string>(RANKING_ALL);
+  const [sesi, setSesi] = useState<string>(RANKING_ALL);
 
   async function load() {
     setLoading(true);
