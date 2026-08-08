@@ -224,8 +224,17 @@ function OperatorPage() {
   const mazmurFiltered = useMemo(() => {
     const kat = pesertaTerpilih?.kategori?.trim().toLowerCase();
     if (!kat) return mazmur;
-    return mazmur.filter(m => (m.kategori ?? "").trim().toLowerCase() === kat);
+    const exact = mazmur.filter(m => (m.kategori ?? "").trim().toLowerCase() === kat);
+    if (exact.length > 0) return exact;
+    // Kategori turunan (mis. "P/KB A"/"P/KB B") memakai bacaan kategori induknya
+    const mirip = mazmur.filter(m => {
+      const mk = (m.kategori ?? "").trim().toLowerCase();
+      return mk.length > 0 && (kat.startsWith(mk) || mk.startsWith(kat));
+    });
+    // Bila tetap tidak ada, tampilkan semua bacaan agar sesi tetap bisa dimulai
+    return mirip.length > 0 ? mirip : mazmur;
   }, [mazmur, pesertaTerpilih]);
+
   // Kosongkan pilihan mazmur bila tak sesuai kategori peserta terpilih
   useEffect(() => {
     if (sesi) return;
