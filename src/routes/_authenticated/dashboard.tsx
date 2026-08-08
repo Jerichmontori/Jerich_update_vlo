@@ -1682,7 +1682,7 @@ function PenilaianTab() {
     ]);
     if (p.error || j.error || k.error || m.error || n.error) return toast.error("Gagal memuat data");
     const pesertaList = p.data ?? [];
-    const juriList = ((j.data ?? []) as unknown as Juri[]).filter(x => x.approved && x.role === "juri");
+    const juriList = ((j.data ?? []) as unknown as Juri[]).filter(x => x.approved && x.role === "juri" && x.aktif_menilai !== false);
     const kriteriaList = k.data ?? [];
     const mazmurList = (m.data ?? []) as Mazmur[];
     const penilaianList = (n.data ?? []) as Penilaian[];
@@ -3437,7 +3437,7 @@ function DashboardTab() {
   async function load() {
     setLoading(true);
     const [j, p, n, k, s] = await Promise.all([
-      supabase.from("juri_public" as any).select("*").eq("approved", true).eq("role", "juri").order("nama"),
+      supabase.from("juri_public" as any).select("*").eq("approved", true).eq("role", "juri").neq("aktif_menilai", false).order("nama"),
       supabase.from("peserta").select("*"),
       supabase.rpc("admin_list_penilaian" as any),
       supabase.from("kriteria").select("*"),
@@ -3652,7 +3652,7 @@ function LihatPenilaianTab() {
       return toast.error(p.error?.message || j.error?.message || k.error?.message || n.error?.message || s.error?.message || rank.error?.message || kat.error?.message || "Gagal memuat data");
     }
     setPeserta((p.data ?? []) as Peserta[]);
-    setJuri(((j.data ?? []) as unknown as Juri[]).filter((x) => x.approved && x.role !== "viewer"));
+    setJuri(((j.data ?? []) as unknown as Juri[]).filter((x) => x.approved && x.role !== "viewer" && !(x.role === "juri" && x.aktif_menilai === false)));
     setKriteria((k.data ?? []) as Kriteria[]);
     setPenilaian((n.data ?? []) as Penilaian[]);
     setKategoriRows((kat.data ?? []) as Kategori[]);
@@ -4087,7 +4087,7 @@ function RincianNilaiTab() {
       }
     }
     setPeserta((p.data ?? []) as Peserta[]);
-    setJuri(((j.data ?? []) as unknown as Juri[]).filter((x) => x.approved && x.role !== "viewer"));
+    setJuri(((j.data ?? []) as unknown as Juri[]).filter((x) => x.approved && x.role !== "viewer" && !(x.role === "juri" && x.aktif_menilai === false)));
     setKriteria((k.data ?? []) as Kriteria[]);
     setPenilaian((n.data ?? []) as Penilaian[]);
     setKategoriRows((kt.data ?? []) as Kategori[]);
