@@ -704,6 +704,12 @@ function JuriTab() {
               </Select>
             </div>
             <div className="text-xs text-muted-foreground break-all">{j.email || "—"}</div>
+            {j.approved && j.role === "juri" && (
+              <div className="flex items-center justify-between gap-2 rounded-md border bg-muted/40 px-2 py-1.5">
+                <span className="text-xs">Ikut menilai</span>
+                <Switch checked={j.aktif_menilai !== false} onCheckedChange={(v)=>ubahAktifMenilai(j.id, v)} />
+              </div>
+            )}
             <div className="flex items-center justify-between gap-2 pt-1">
               {j.approved ? (
                 <Badge className="bg-accent text-accent-foreground gap-1"><Check className="size-3" />Disetujui</Badge>
