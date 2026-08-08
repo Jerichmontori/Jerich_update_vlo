@@ -18,6 +18,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Toaster, toast } from "sonner";
 import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight, LayoutDashboard, CheckCircle2, XCircle, FileText, KeyRound, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import JuriLiveRankingApproval from "@/components/JuriLiveRankingApproval";
+import SesiLiveRanking from "@/components/SesiLiveRanking";
 import JuriHasilFinalTab from "@/components/JuriHasilFinalTab";
 import GantiPasswordButton from "@/components/GantiPasswordButton";
 import jsPDF from "jspdf";
@@ -115,9 +116,10 @@ function App() {
         ) : (
           <Tabs defaultValue="dashboard" className="w-full">
             {roles.isJuri && <JuriLiveRankingApproval />}
-            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-11 h-auto bg-secondary/60 p-1">
+            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-12 h-auto bg-secondary/60 p-1">
               <TabsTrigger value="dashboard" className="gap-2"><LayoutDashboard className="size-4" />Dashboard</TabsTrigger>
               <TabsTrigger value="ranking" className="gap-2"><Trophy className="size-4" />Ranking</TabsTrigger>
+              <TabsTrigger value="live" className="gap-2"><Trophy className="size-4" />Live Ranking</TabsTrigger>
               <TabsTrigger value="lihat" className="gap-2"><FileText className="size-4" />Lihat Nilai</TabsTrigger>
               <TabsTrigger value="rincian" className="gap-2"><FileText className="size-4" />Rincian Nilai</TabsTrigger>
               <TabsTrigger value="posisi" className="gap-2"><Trophy className="size-4" />Posisi</TabsTrigger>
@@ -130,7 +132,9 @@ function App() {
             </TabsList>
             <TabsContent value="dashboard"><DashboardTab /></TabsContent>
             <TabsContent value="ranking"><RankingTab /></TabsContent>
+            <TabsContent value="live"><SesiLiveRanking /></TabsContent>
             <TabsContent value="lihat"><LihatPenilaianTab /></TabsContent>
+
             <TabsContent value="rincian"><RincianNilaiTab /></TabsContent>
 
             <TabsContent value="posisi"><PosisiTab /></TabsContent>

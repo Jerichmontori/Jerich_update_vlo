@@ -35,6 +35,7 @@ function statusBadge(s: string) {
 export default function SesiLiveRanking() {
   const [rows, setRows] = useState<SesiRow[] | null>(null);
   const [busy, setBusy] = useState<number | null>(null);
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [expanded, setExpanded] = useState<number | null>(null);
   const PAGE_SIZE = 10;
   const [page, setPage] = useState(1);
@@ -81,6 +82,21 @@ export default function SesiLiveRanking() {
     load();
   }
 
+  async function bulk(action: "tayang" | "tarik") {
+    if (!rows?.length || bulkBusy) return;
+    setBulkBusy(true);
+    let ok = 0;
+    for (const r of rows) {
+      if (action === "tarik" && r.status === "draft") continue;
+      const rpc = action === "tayang" ? "inspektur_ajukan_live_ranking" : "inspektur_batalkan_live_ranking";
+      const { error } = await supabase.rpc(rpc as any, { _sesi: r.sesi_no });
+      if (!error) ok++;
+    }
+    setBulkBusy(false);
+    toast.success(action === "tayang" ? `${ok} sesi ditayangkan di Live Ranking.` : `${ok} sesi ditarik dari Live Ranking.`);
+    load();
+  }
+
 
   return (
     <Card>
@@ -88,12 +104,22 @@ export default function SesiLiveRanking() {
         <div>
           <CardTitle className="flex items-center gap-2"><Radio className="size-5 text-accent" /> Sesi Live Ranking</CardTitle>
           <CardDescription>
-            Satu sesi = 10 peserta. Inspektur dapat langsung menayangkan sesi di Live Ranking
-            tanpa menunggu persetujuan juri, dan bisa menarik atau menyembunyikannya kapan saja.
+            Satu sesi = 10 peserta. Inspektur dan Admin dapat langsung menayangkan sesi tertentu
+            atau seluruh sesi di Live Ranking tanpa menunggu persetujuan juri, dan bisa menarik
+            atau menyembunyikannya kapan saja.
           </CardDescription>
         </div>
-        <Button variant="outline" size="sm" onClick={load}><RefreshCw className="size-4 mr-1" />Muat Ulang</Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button size="sm" disabled={bulkBusy || !rows?.length} onClick={() => bulk("tayang")}>
+            <Eye className="size-4 mr-1" />Tayangkan Semua Sesi
+          </Button>
+          <Button variant="secondary" size="sm" disabled={bulkBusy || !rows?.length} onClick={() => bulk("tarik")}>
+            <EyeOff className="size-4 mr-1" />Tarik Semua
+          </Button>
+          <Button variant="outline" size="sm" onClick={load}><RefreshCw className="size-4 mr-1" />Muat Ulang</Button>
+        </div>
       </CardHeader>
+
       <CardContent>
         {rows === null ? (
           <div className="text-sm text-muted-foreground">Memuat…</div>
