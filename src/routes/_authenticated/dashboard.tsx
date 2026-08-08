@@ -3161,8 +3161,17 @@ function RankingTab() {
     return Array.from(set).sort();
   }, [peserta]);
 
+  const sesiOf = (nomor: number) => Math.floor((Number(nomor) - 1) / 10) + 1;
+
+  const sesiList = useMemo(() => {
+    const set = new Set<number>();
+    rows.forEach((r) => set.add(sesiOf(r.nomor_urut)));
+    return Array.from(set).sort((a, b) => a - b);
+  }, [rows]);
+
   const filtered = useMemo(() => {
-    const list = kategori === RANKING_ALL ? rows : rows.filter((r) => (kategoriMap[r.peserta_id] ?? "") === kategori);
+    let list = kategori === RANKING_ALL ? rows : rows.filter((r) => (kategoriMap[r.peserta_id] ?? "") === kategori);
+    if (sesi !== RANKING_ALL) list = list.filter((r) => String(sesiOf(r.nomor_urut)) === sesi);
     return [...list].sort((a, b) => {
       const av = Number(a.nilai_akhir ?? 0), bv = Number(b.nilai_akhir ?? 0);
       const ar = Math.round(av * 1000), br = Math.round(bv * 1000);
@@ -3173,16 +3182,27 @@ function RankingTab() {
       if (bs !== as) return bs - as;
       return a.nomor_urut - b.nomor_urut;
     });
-  }, [rows, kategori, kategoriMap]);
+  }, [rows, kategori, sesi, kategoriMap]);
 
   const medals = ["🥇", "🥈", "🥉"];
 
   return (
     <SectionCard
       title="Daftar Nilai Peserta"
-      description="Filter berdasarkan kategori peserta untuk melihat peringkat per kategori."
+      description="Filter berdasarkan kategori dan sesi peserta (1 sesi = 10 peserta) untuk melihat perolehan nilai per sesi."
       action={
         <div className="flex flex-wrap items-center gap-2">
+          <Select value={sesi} onValueChange={setSesi}>
+            <SelectTrigger className="w-[180px]"><SelectValue placeholder="Semua Sesi" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={RANKING_ALL}>Semua Sesi</SelectItem>
+              {sesiList.map((s) => (
+                <SelectItem key={s} value={String(s)}>
+                  Sesi {s} (No. {(s - 1) * 10 + 1}–{s * 10})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
           <Select value={kategori} onValueChange={setKategori}>
             <SelectTrigger className="w-[220px]"><SelectValue placeholder="Semua Kategori" /></SelectTrigger>
             <SelectContent>
@@ -3195,6 +3215,7 @@ function RankingTab() {
       }
     >
       <div className="rounded-lg border bg-card overflow-hidden">
+
         <Table>
           <TableHeader>
             <TableRow>
