@@ -39,11 +39,23 @@ export default function JuriLiveRankingApproval() {
     load();
   }
 
-  if (rows.length === 0) return null;
+  // Hanya tampilkan permintaan yang sedang berlangsung (belum divote juri ini),
+  // dan ambil sesi terbaru saja.
+  const aktif = rows
+    .filter((r) => !r.sudah_vote && r.status === "menunggu_persetujuan")
+    .sort((a, b) => {
+      const at = a.requested_at ? Date.parse(a.requested_at) : 0;
+      const bt = b.requested_at ? Date.parse(b.requested_at) : 0;
+      if (bt !== at) return bt - at;
+      return b.sesi_no - a.sesi_no;
+    })
+    .slice(0, 1);
+
+  if (aktif.length === 0) return null;
 
   return (
     <div className="space-y-3 mb-4">
-      {rows.map((r) => (
+      {aktif.map((r) => (
         <Card key={r.sesi_no} className="border-2 border-amber-500/60 bg-amber-50/60">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
