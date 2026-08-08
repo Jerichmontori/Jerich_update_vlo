@@ -2316,6 +2316,23 @@ function PenilaianTab() {
                   {judgesDoneForPeserta} / {judgesTotalForPeserta || totalJuriApproved}
                 </div>
                 <div className="text-xs text-muted-foreground mt-1">juri telah mengirim penilaian</div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-4"
+                  onClick={() => {
+                    setSubmittedFor(null);
+                    setPendingDiscrepancy(null);
+                    setPesertaId("");
+                    setMazmurId("");
+                    setOpenKriteria(null);
+                    setJudgesDoneForPeserta(0);
+                    setJudgesTotalForPeserta(0);
+                    loadAll({ restoreSubmissionState: false });
+                  }}
+                >
+                  Buka Form Penilaian
+                </Button>
               </div>
             </div>
           )}
