@@ -116,7 +116,7 @@ function App() {
         ) : (
           <Tabs defaultValue="dashboard" className="w-full">
             {roles.isJuri && <JuriLiveRankingApproval />}
-            <TabsList className="grid w-full grid-cols-3 sm:grid-cols-12 h-auto bg-secondary/60 p-1">
+            <TabsList className="flex w-full flex-wrap justify-start gap-1 h-auto bg-secondary/60 p-1 [&>button]:flex-1 [&>button]:min-w-[7.5rem]">
               <TabsTrigger value="dashboard" className="gap-2"><LayoutDashboard className="size-4" />Dashboard</TabsTrigger>
               <TabsTrigger value="ranking" className="gap-2"><Trophy className="size-4" />Ranking</TabsTrigger>
               <TabsTrigger value="live" className="gap-2"><Trophy className="size-4" />Live Ranking</TabsTrigger>
