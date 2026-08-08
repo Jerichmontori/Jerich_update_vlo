@@ -777,6 +777,16 @@ function JuriTab() {
                     <Badge variant="outline" className="text-muted-foreground">Menunggu disetujui</Badge>
                   )}
                 </TableCell>
+                <TableCell>
+                  {j.approved && j.role === "juri" ? (
+                    <div className="flex items-center gap-2">
+                      <Switch checked={j.aktif_menilai !== false} onCheckedChange={(v)=>ubahAktifMenilai(j.id, v)} />
+                      <span className="text-xs text-muted-foreground">{j.aktif_menilai !== false ? "Aktif" : "Nonaktif"}</span>
+                    </div>
+                  ) : (
+                    <span className="text-xs text-muted-foreground">—</span>
+                  )}
+                </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
                     {!j.approved && (
