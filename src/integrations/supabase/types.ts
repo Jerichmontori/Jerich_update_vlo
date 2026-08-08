@@ -1024,6 +1024,7 @@ export type Database = {
         Args: { _mazmur: string; _peserta: string }
         Returns: string
       }
+      peserta_pool_cutoff: { Args: { _peserta: string }; Returns: string }
       public_live_state: { Args: never; Returns: Json }
       public_pengumuman_state: { Args: never; Returns: Json }
       set_pengumuman_state: {
