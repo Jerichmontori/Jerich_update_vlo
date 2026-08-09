@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Toaster, toast } from "sonner";
 import { ArrowLeft, Users } from "lucide-react";
-import brandLogo from "@/assets/bumotik-black.png.asset.json";
+import BrandLogo from "@/components/BrandLogo";
 
 export const Route = createFileRoute("/posisi")({
   head: () => ({
@@ -95,7 +95,7 @@ function PosisiPublic() {
       <header className="border-b bg-card/60 backdrop-blur">
         <div className="mx-auto max-w-6xl px-4 py-6 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <img src={brandLogo.url} alt="Logo BUMOTIK" className="h-9 sm:h-10 w-auto shrink-0 object-contain" width={480} height={130} />
+            <BrandLogo className="h-9 sm:h-10 w-auto shrink-0 object-contain" />
             <div className="min-w-0">
               <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">Viewer</p>
               <h1 className="truncate text-xl sm:text-2xl font-serif font-semibold">Posisi per Sesi</h1>
