@@ -19,6 +19,7 @@ import { Toaster, toast } from "sonner";
 import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight, LayoutDashboard, CheckCircle2, XCircle, FileText, KeyRound, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import JuriLiveRankingApproval from "@/components/JuriLiveRankingApproval";
 import SesiLiveRanking from "@/components/SesiLiveRanking";
+import BackupExcelButton from "@/components/BackupExcelButton";
 import JuriHasilFinalTab from "@/components/JuriHasilFinalTab";
 import GantiPasswordButton from "@/components/GantiPasswordButton";
 import jsPDF from "jspdf";
@@ -101,7 +102,7 @@ function App() {
       <Header />
       <main className="mx-auto max-w-6xl px-4 pb-16">
         {roles.isAdm && (
-          <div className="flex justify-end pt-4"><ResetAllPenilaianButton /></div>
+          <div className="flex flex-wrap justify-end gap-2 pt-4"><BackupExcelButton /><ResetAllPenilaianButton /></div>
         )}
         {juriOnly ? (
           <Tabs defaultValue="penilaian" className="w-full">
