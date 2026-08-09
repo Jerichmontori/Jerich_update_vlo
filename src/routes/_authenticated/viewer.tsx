@@ -12,7 +12,7 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { catatanToRows } from "@/components/JuriHasilFinalTab";
 import GantiPasswordButton from "@/components/GantiPasswordButton";
-import brandLogo from "@/assets/bumotik-black.png.asset.json";
+import BrandLogo from "@/components/BrandLogo";
 
 export const Route = createFileRoute("/_authenticated/viewer")({
   component: ViewerPage,
@@ -220,7 +220,7 @@ function ViewerPage() {
       <header className="border-b bg-card/60 backdrop-blur mb-8">
         <div className="mx-auto max-w-5xl px-4 py-6 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3 min-w-0">
-            <img src={brandLogo.url} alt="Logo BUMOTIK" className="h-9 sm:h-10 w-auto shrink-0 object-contain" width={480} height={130} />
+            <BrandLogo className="h-9 sm:h-10 w-auto shrink-0 object-contain" />
             <div className="min-w-0">
               <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">Pengguna</p>
               <h1 className="truncate text-xl sm:text-2xl font-serif font-semibold">Urutan &amp; Catatan Peserta</h1>

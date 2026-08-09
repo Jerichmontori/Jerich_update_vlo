@@ -24,7 +24,7 @@ import JuriHasilFinalTab from "@/components/JuriHasilFinalTab";
 import GantiPasswordButton from "@/components/GantiPasswordButton";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import brandLogo from "@/assets/bumotik-black.png.asset.json";
+import BrandLogo from "@/components/BrandLogo";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: App,
@@ -194,7 +194,7 @@ function Header() {
     <header className="border-b bg-card/60 backdrop-blur mb-8">
       <div className="mx-auto max-w-6xl px-4 py-8 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
         <div className="flex min-w-0 items-center gap-4">
-          <img src={brandLogo.url} alt="Logo BUMOTIK" className="h-11 sm:h-14 w-auto shrink-0 object-contain" width={480} height={130} />
+          <BrandLogo className="h-11 sm:h-14 w-auto shrink-0 object-contain" />
           <div className="min-w-0">
             <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">Lomba Rohani</p>
             <h1 className="truncate text-2xl sm:text-4xl font-serif font-semibold text-foreground">Sistem Penjurian Baca Mazmur</h1>
