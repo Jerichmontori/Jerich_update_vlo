@@ -196,9 +196,9 @@ function Header() {
         <div className="flex min-w-0 items-center gap-4">
           <BrandLogo className="h-11 sm:h-14 w-auto shrink-0 object-contain" />
           <div className="min-w-0">
-            <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">Lomba Rohani</p>
-            <h1 className="truncate text-2xl sm:text-4xl font-serif font-semibold text-foreground">Sistem Penjurian Baca Mazmur</h1>
-            <p className="text-sm text-muted-foreground mt-1">Kelola peserta, juri, kriteria, dan lihat ranking secara langsung.</p>
+            <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">{branding.kicker}</p>
+            <h1 className="truncate text-2xl sm:text-4xl font-serif font-semibold text-foreground">{branding.judul}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{branding.subjudul}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0 flex-wrap justify-end">
