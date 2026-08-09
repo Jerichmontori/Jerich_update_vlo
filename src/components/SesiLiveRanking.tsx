@@ -45,17 +45,21 @@ export default function SesiLiveRanking() {
   const [katList, setKatList] = useState<string[]>([]);
   const [katPilih, setKatPilih] = useState<string[]>([]);
   const [katBusy, setKatBusy] = useState(false);
+  const [top10, setTop10] = useState(false);
+  const [top10Busy, setTop10Busy] = useState(false);
 
   const loadKategori = useCallback(async () => {
-    const [{ data: kats }, { data: sel }] = await Promise.all([
+    const [{ data: kats }, { data: sel }, { data: t10 }] = await Promise.all([
       supabase.from("kategori").select("kategori"),
       supabase.rpc("get_live_ranking_kategori" as any),
+      supabase.rpc("get_live_ranking_top10" as any),
     ]);
     const list = Array.from(
       new Set(((kats ?? []) as { kategori: string | null }[]).map((k) => k.kategori).filter((k): k is string => !!k)),
     ).sort();
     setKatList(list);
     setKatPilih(Array.isArray(sel) ? (sel as string[]) : []);
+    setTop10(t10 === true);
   }, []);
 
   useEffect(() => { loadKategori(); }, [loadKategori]);
@@ -68,6 +72,16 @@ export default function SesiLiveRanking() {
     setKatPilih(next);
     toast.success(next.length === 0 ? "Live Ranking menampilkan semua kategori." : `Live Ranking dibatasi ke: ${next.join(", ")}.`);
   }
+
+  async function simpanTop10(next: boolean) {
+    setTop10Busy(true);
+    const { error } = await supabase.rpc("set_live_ranking_top10" as any, { _on: next });
+    setTop10Busy(false);
+    if (error) return toast.error(error.message);
+    setTop10(next);
+    toast.success(next ? "Live Ranking menayangkan 10 besar setiap kategori." : "Live Ranking kembali mengikuti sesi yang ditayangkan.");
+  }
+
 
 
   const load = useCallback(async () => {
@@ -148,7 +162,22 @@ export default function SesiLiveRanking() {
       </CardHeader>
 
       <CardContent>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 p-3">
+          <div>
+            <div className="text-sm font-medium">Mode 10 Besar Setiap Kategori</div>
+            <p className="text-xs text-muted-foreground">
+              {top10
+                ? "Aktif — layar Live Ranking menampilkan 10 peserta terbaik pada setiap kategori tanpa menunggu sesi ditayangkan."
+                : "Nonaktif — layar Live Ranking mengikuti sesi yang ditayangkan di bawah."}
+            </p>
+          </div>
+          <Button size="sm" variant={top10 ? "secondary" : "default"} disabled={top10Busy} onClick={() => simpanTop10(!top10)}>
+            {top10 ? <><EyeOff className="size-4 mr-1" />Matikan 10 Besar</> : <><Eye className="size-4 mr-1" />Tayangkan 10 Besar</>}
+          </Button>
+        </div>
+
         <div className="mb-4 rounded-md border bg-muted/30 p-3">
+
           <div className="mb-2 text-sm font-medium">Kategori yang ditayangkan di Live Ranking</div>
           <div className="flex flex-wrap items-center gap-2">
             <Button
