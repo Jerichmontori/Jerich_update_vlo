@@ -153,6 +153,7 @@ function App() {
 }
 
 function Header() {
+  const branding = useBranding();
   const [canOperate, setCanOperate] = useState(false);
   const [canInspect, setCanInspect] = useState(false);
   const [canAnnounce, setCanAnnounce] = useState(false);
