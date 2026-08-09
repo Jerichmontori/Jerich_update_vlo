@@ -25,6 +25,8 @@ import GantiPasswordButton from "@/components/GantiPasswordButton";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import BrandLogo from "@/components/BrandLogo";
+import { useBranding } from "@/hooks/useBranding";
+import BrandingSettingsButton from "@/components/BrandingSettingsButton";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: App,
@@ -102,7 +104,7 @@ function App() {
       <Header />
       <main className="mx-auto max-w-6xl px-4 pb-16">
         {roles.isAdm && (
-          <div className="flex flex-wrap justify-end gap-2 pt-4"><BackupExcelButton /><ResetAllPenilaianButton /></div>
+          <div className="flex flex-wrap justify-end gap-2 pt-4"><BrandingSettingsButton /><BackupExcelButton /><ResetAllPenilaianButton /></div>
         )}
         {juriOnly ? (
           <Tabs defaultValue="penilaian" className="w-full">
