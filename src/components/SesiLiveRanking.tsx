@@ -162,7 +162,22 @@ export default function SesiLiveRanking() {
       </CardHeader>
 
       <CardContent>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 p-3">
+          <div>
+            <div className="text-sm font-medium">Mode 10 Besar Setiap Kategori</div>
+            <p className="text-xs text-muted-foreground">
+              {top10
+                ? "Aktif — layar Live Ranking menampilkan 10 peserta terbaik pada setiap kategori tanpa menunggu sesi ditayangkan."
+                : "Nonaktif — layar Live Ranking mengikuti sesi yang ditayangkan di bawah."}
+            </p>
+          </div>
+          <Button size="sm" variant={top10 ? "secondary" : "default"} disabled={top10Busy} onClick={() => simpanTop10(!top10)}>
+            {top10 ? <><EyeOff className="size-4 mr-1" />Matikan 10 Besar</> : <><Eye className="size-4 mr-1" />Tayangkan 10 Besar</>}
+          </Button>
+        </div>
+
         <div className="mb-4 rounded-md border bg-muted/30 p-3">
+
           <div className="mb-2 text-sm font-medium">Kategori yang ditayangkan di Live Ranking</div>
           <div className="flex flex-wrap items-center gap-2">
             <Button
