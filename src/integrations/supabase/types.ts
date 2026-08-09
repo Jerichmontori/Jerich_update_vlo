@@ -872,6 +872,7 @@ export type Database = {
       detect_potensi_var: { Args: { _peserta: string }; Returns: string }
       get_klarifikasi_status: { Args: { _peserta: string }; Returns: Json }
       get_live_ranking_kategori: { Args: never; Returns: Json }
+      get_live_ranking_top10: { Args: never; Returns: boolean }
       get_ranking: {
         Args: never
         Returns: {
@@ -1036,6 +1037,7 @@ export type Database = {
         Args: { _kategori: string[] }
         Returns: Json
       }
+      set_live_ranking_top10: { Args: { _on: boolean }; Returns: Json }
       set_pengumuman_state: {
         Args: { _peserta: string; _running: boolean }
         Returns: undefined
