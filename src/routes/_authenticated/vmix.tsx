@@ -1,3 +1,4 @@
+import { usePolling } from "@/hooks/usePolling";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -116,11 +117,7 @@ function AyatVar({ pesertaId }: { pesertaId: string }) {
     setRows(((data as any)?.juri ?? []) as JuriDetail[]);
   }, [pesertaId]);
 
-  useEffect(() => {
-    load();
-    const id = setInterval(load, 8000);
-    return () => clearInterval(id);
-  }, [load]);
+  usePolling(() => { void load(); }, 20000);
 
   const data = rows ?? [];
   const total = data.length;
@@ -294,11 +291,7 @@ function VarTab() {
     setRows((data as unknown as VarRow[]) ?? []);
   }, []);
 
-  useEffect(() => {
-    load();
-    const id = setInterval(load, 10000);
-    return () => clearInterval(id);
-  }, [load]);
+  usePolling(() => { void load(); }, 25000);
 
   const filtered = rows.filter(
     (r) => !q.trim() || r.nama.toLowerCase().includes(q.toLowerCase()) || String(r.nomor_urut).includes(q.trim()),

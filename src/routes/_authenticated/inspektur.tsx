@@ -1,3 +1,4 @@
+import { usePolling } from "@/hooks/usePolling";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -176,12 +177,7 @@ function InspekturPage() {
     }
   }, []);
 
-  useEffect(() => {
-    if (!allowed) return;
-    loadAll();
-    const id = setInterval(loadAll, 3000);
-    return () => clearInterval(id);
-  }, [allowed, loadAll]);
+  usePolling(loadAll, 20000, allowed === true);
 
   async function openDetail(row: MonitorRow) {
     setDetailPeserta(row);

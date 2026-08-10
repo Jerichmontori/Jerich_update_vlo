@@ -1,3 +1,4 @@
+import { usePolling } from "@/hooks/usePolling";
 import { createFileRoute } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,11 +65,7 @@ function ViewerPage() {
     setRows((data as unknown as Row[]) ?? []);
   }, []);
 
-  useEffect(() => {
-    load();
-    const id = setInterval(load, 8000);
-    return () => clearInterval(id);
-  }, [load]);
+  usePolling(load, 25000);
 
   useEffect(() => {
     (async () => {

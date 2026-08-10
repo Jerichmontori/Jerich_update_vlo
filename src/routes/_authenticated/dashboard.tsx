@@ -1,3 +1,4 @@
+import { usePolling } from "@/hooks/usePolling";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState, useMemo, useRef } from "react";
 import * as XLSX from "xlsx";
@@ -879,7 +880,7 @@ function PendingPasswordResets() {
       toast.error(msg || "Gagal memuat permintaan");
     }
   }
-  useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, []);
+  useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, []);
 
   async function approve(id: string, ident: string) {
     if (loading) return;
@@ -1476,6 +1477,7 @@ function PenilaianTab() {
   useEffect(() => {
     let stopped = false;
     async function poll() {
+      if (typeof document !== "undefined" && document.hidden) return;
       const { data } = await supabase
         .from("sesi_penilaian" as any)
         .select("id, peserta_id, mazmur_id, status")
@@ -1488,7 +1490,7 @@ function PenilaianTab() {
       setActiveSession(row ? { id: row.id, peserta_id: row.peserta_id, mazmur_id: row.mazmur_id } : null);
     }
     poll();
-    const id = setInterval(poll, 3000);
+    const id = setInterval(poll, 10000);
     return () => { stopped = true; clearInterval(id); };
   }, []);
   // Auto-terapkan sesi aktif untuk non-admin (juri): kunci peserta & mazmur mengikuti pilihan Operator
@@ -1524,6 +1526,7 @@ function PenilaianTab() {
   useEffect(() => {
     let stopped = false;
     async function poll() {
+      if (typeof document !== "undefined" && document.hidden) return;
       const { data, error } = await supabase
         .from("var_clarification_session" as any)
         .select("peserta_id, komponen_berbeda, status")
@@ -1549,7 +1552,7 @@ function PenilaianTab() {
       setVarAktifList(rows);
     }
     poll();
-    const id = setInterval(poll, 3000);
+    const id = setInterval(poll, 10000);
     return () => { stopped = true; clearInterval(id); };
   }, []);
   // Saat VAR sedang berjalan (perbaikan perhatian, klarifikasi VAR dibuka Inspektur,
@@ -1588,6 +1591,7 @@ function PenilaianTab() {
   useEffect(() => {
     let stopped = false;
     async function poll() {
+      if (typeof document !== "undefined" && document.hidden) return;
       const { data, error } = await supabase.rpc("get_var_manual_pending" as any);
       if (stopped) return;
       if (error) { console.error("get_var_manual_pending", error.message); return; }
@@ -1622,7 +1626,7 @@ function PenilaianTab() {
       varManualSeen.current.forEach((id) => { if (!aktif.has(id)) varManualSeen.current.delete(id); });
     }
     poll();
-    const id = setInterval(poll, 3000);
+    const id = setInterval(poll, 10000);
     return () => { stopped = true; clearInterval(id); };
   }, []);
   async function voteVarManual(sessionId: string, setuju: boolean) {
@@ -1789,6 +1793,7 @@ function PenilaianTab() {
       if (wait > 0) await new Promise(r => setTimeout(r, wait));
     }
     async function tick() {
+      if (typeof document !== "undefined" && document.hidden) return;
       if (pollingInFlightRef.current) return;
       pollingInFlightRef.current = true;
       try {
@@ -1905,7 +1910,7 @@ function PenilaianTab() {
       }
     }
     tick();
-    const id = setInterval(tick, 4000);
+    const id = setInterval(tick, 12000);
     return () => { stopped = true; clearInterval(id); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submittedFor, totalJuriApproved]);
@@ -3497,13 +3502,13 @@ function DashboardTab() {
       supabase.from("peserta").select("*"),
       supabase.rpc("admin_list_penilaian" as any),
       supabase.from("kriteria").select("*"),
-      supabase.from("penilaian_submission" as any).select("peserta_id, juri_id"),
+      supabase.from("penilaian_submission" as any).select("peserta_id, juri_id, nilai_cache"),
       supabase.rpc("inspektur_ringkasan" as any),
     ]);
     const juriList = (j.data as unknown as Juri[]) || [];
     const pesertaList = (p.data as Peserta[]) || [];
     const penilaianList = (n.data as unknown as Penilaian[]) || [];
-    const submitted = ((s.data ?? []) as unknown as Array<{ peserta_id: string; juri_id: string }>);
+    const submitted = ((s.data ?? []) as unknown as Array<{ peserta_id: string; juri_id: string; nilai_cache: number | null }>);
     setJuri(juriList);
     setPeserta(pesertaList);
     setPenilaian(penilaianList);
@@ -3511,23 +3516,18 @@ function DashboardTab() {
     setSubmissionRows(submitted);
     setRingkasan((rk.data as any) ?? null);
 
-    // Hitung nilai per (juri, peserta) via RPC (menerapkan rentang kategori)
-    const pairs = new Set<string>();
-    submitted.forEach((r) => pairs.add(`${r.juri_id}|${r.peserta_id}`));
-    const entries = await Promise.all(
-      Array.from(pairs).map(async (key) => {
-        const [ji, pi] = key.split("|");
-        const { data } = await supabase.rpc("hitung_nilai_juri" as any, { _peserta: pi, _juri: ji });
-        return [key, data == null ? null : Number(data)] as const;
-      })
-    );
+    // Nilai per (juri, peserta) dibaca dari cache yang sudah dihitung server
+    // saat juri mengirim penilaian — tidak perlu menghitung ulang satu per satu.
     const map: Record<string, number | null> = {};
-    entries.forEach(([k, v]) => { map[k] = v; });
+    submitted.forEach((r) => {
+      map[`${r.juri_id}|${r.peserta_id}`] = r.nilai_cache == null ? null : Number(r.nilai_cache);
+    });
     setNilaiMap(map);
     setLoading(false);
   }
 
-  useEffect(() => { load(); const id = setInterval(load, 8000); return () => clearInterval(id); }, []);
+  usePolling(load, 30000);
+
 
   const totalPeserta = peserta.length;
 

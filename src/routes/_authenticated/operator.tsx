@@ -1,3 +1,4 @@
+import { usePolling } from "@/hooks/usePolling";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -128,9 +129,10 @@ function OperatorPage() {
     loadMazmur();
     loadJuriCount();
     loadSesi();
-    const id = setInterval(loadSesi, 3000);
-    return () => clearInterval(id);
   }, [allowed]);
+
+  usePolling(() => { void loadSesi(); }, 15000, allowed === true);
+
 
   async function logAudit(action: string, extra: Partial<{ session_id: string; peserta_id: string; mazmur_id: string; metadata: any }> = {}) {
     try {

@@ -80,7 +80,7 @@ function AuthenticatedLayout() {
       }
     }
     check();
-    const id = setInterval(check, 8000);
+    const id = setInterval(check, 20000);
     const onFocus = () => check();
     window.addEventListener("focus", onFocus);
     return () => {

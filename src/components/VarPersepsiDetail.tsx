@@ -1,3 +1,4 @@
+import { usePolling } from "@/hooks/usePolling";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
@@ -54,11 +55,7 @@ export default function VarPersepsiDetail({
     if (open) load();
   }, [open, load]);
 
-  useEffect(() => {
-    if (!open) return;
-    const id = setInterval(load, 5000);
-    return () => clearInterval(id);
-  }, [open, load]);
+  usePolling(load, 20000, open);
 
   const data = rows ?? [];
 
