@@ -10,6 +10,7 @@ import { Toaster, toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
 import { signInWithIdentifier } from "@/lib/auth-lookup.functions";
+import { requestPasswordReset } from "@/lib/password-reset.functions";
 
 
 export const Route = createFileRoute("/auth")({
@@ -51,7 +52,6 @@ function AuthPage() {
     }
     setForgotLoading(true);
     try {
-      const { requestPasswordReset } = await import("@/lib/password-reset.functions");
       await requestPasswordReset({ data: { identifier: ident } });
       toast.success("Permintaan dikirim. Admin akan menetapkan kata sandi baru untuk Anda.");
       setForgotOpen(false);
