@@ -514,7 +514,7 @@ function OperatorPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <div className="text-sm font-medium mb-1">Peserta</div>
-                <Select value={selectedPeserta} onValueChange={(v) => { setSelectedPeserta(v); logAudit("pilih_peserta", { peserta_id: v }); }} disabled={!!sesi}>
+                <Select value={selectedPeserta} onValueChange={(v) => { setSelectedPeserta(v); setSelectedMazmur(""); logAudit("pilih_peserta", { peserta_id: v }); }}>
                   <SelectTrigger><SelectValue placeholder="Pilih peserta" /></SelectTrigger>
                   <SelectContent>
                     {pesertaSesiTampil.map(p => {
