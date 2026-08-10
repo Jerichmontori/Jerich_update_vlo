@@ -3559,11 +3559,36 @@ function DashboardTab() {
   const totalSelesai = rows.filter((r) => r.status === "selesai").length;
 
   return (
-    <SectionCard
-      title="Dashboard Progres Juri"
-      description="Pantau juri mana yang sudah dan belum mengirim nilai."
-      action={<Button variant="outline" size="sm" onClick={load} disabled={loading}>Refresh</Button>}
-    >
+    <div className="space-y-6">
+      <SectionCard
+        title="Ringkasan Lomba"
+        description="Statistik peserta, sesi penilaian, dan potensi VAR secara real-time."
+        action={<Button variant="outline" size="sm" onClick={load} disabled={loading}>Refresh</Button>}
+      >
+        {ringkasan ? (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <StatCard label="Total Peserta" value={Number(ringkasan.total_peserta ?? 0)} />
+            <StatCard label="Sudah Tampil" value={Number(ringkasan.sudah_tampil ?? 0)} tone="ok" />
+            <StatCard label="Belum Tampil" value={Number(ringkasan.belum_tampil ?? 0)} tone="warn" />
+            <StatCard label="Sedang Tampil" value={Number(ringkasan.sedang_tampil ?? 0)} />
+            <StatCard label="Sesi Aktif" value={Number(ringkasan.sesi_aktif ?? 0)} tone="warn" />
+            <StatCard label="Sesi Selesai" value={Number(ringkasan.sesi_selesai ?? 0)} tone="ok" />
+            <StatCard label="Jumlah Potensi VAR" value={Number(ringkasan.total_var ?? 0)} tone="warn" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <StatCard label="Total Peserta" value={totalPeserta} />
+            <StatCard label="Total Juri" value={juri.length} />
+            <StatCard label="Sudah Mengirim" value={totalSudahKirim} tone="ok" />
+            <StatCard label="Selesai Semua" value={totalSelesai} tone="ok" />
+          </div>
+        )}
+      </SectionCard>
+
+      <SectionCard
+        title="Dashboard Progres Juri"
+        description="Pantau juri mana yang sudah dan belum mengirim nilai."
+      >
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <StatCard label="Total Juri" value={juri.length} />
         <StatCard label="Sudah Mengirim" value={totalSudahKirim} tone="ok" />
