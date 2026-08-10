@@ -4030,6 +4030,36 @@ function LihatPenilaianTab() {
               {kategoriList.map((k) => (<SelectItem key={k} value={k}>{k}</SelectItem>))}
             </SelectContent>
           </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-[220px] justify-between gap-2">
+                <span className="truncate">
+                  {juriPilih === null ? "Semua Juri" : `${juriTampil.length} dari ${juri.length} juri`}
+                </span>
+                <ChevronDown className="size-4 opacity-60" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-64 p-2">
+              <div className="flex items-center justify-between px-1 pb-2">
+                <span className="text-xs font-medium text-muted-foreground">Tampilkan Nilai Juri</span>
+                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setJuriPilih(null)}>
+                  Semua
+                </Button>
+              </div>
+              <div className="max-h-64 space-y-1 overflow-auto">
+                {juri.length === 0 && <p className="px-1 text-xs text-muted-foreground">Belum ada juri.</p>}
+                {juri.map((j) => {
+                  const checked = juriPilih === null || juriPilih.includes(j.id);
+                  return (
+                    <label key={j.id} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-muted">
+                      <Checkbox checked={checked} onCheckedChange={() => toggleJuri(j.id)} />
+                      <span className="truncate text-sm">{j.nama}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
           <Button variant="outline" onClick={load}>Muat Ulang</Button>
           <Select value={pesertaPilih} onValueChange={setPesertaPilih}>
             <SelectTrigger className="w-[220px]"><SelectValue placeholder="Pilih Peserta" /></SelectTrigger>
