@@ -84,14 +84,24 @@ Basis data:
   penyesuaian `mulai_sesi` / `akhiri_sesi` / `get_sesi_tampil` / `set_sesi_tampil`.
 - Penyesuaian fungsi pool & skor: `juri_in_pool`, `juri_pool_count`, `all_juri_submitted`,
   `detect_potensi_var`, `inspektur_monitor`, `inspektur_ringkasan`, `get_ranking`.
-- RPC baru: `ip_putuskan_var(_peserta uuid, _clear boolean, _catatan text)` (security definer,
-  gate role inspektur/admin) yang menimpa komponen Clear Text semua juri, menyimpan snapshot,
-  dan me-refresh cache nilai; `ip_daftar_keberatan()`, `ip_putuskan_keberatan(...)`.
+- Dua slot IP: role `inspektur` tetap, ditambah penanda urutan (IP 1 / IP 2) pada data juri,
+  atau role kedua `inspektur_2` — dipilih saat implementasi agar tidak menabrak data lama.
+- Tabel `var_keputusan_ip` (session VAR, ip_user_id, urutan IP, keputusan clear boolean,
+  catatan, waktu) — satu baris per IP, unik per (session, IP).
+- Tabel `var_snapshot_nilai` (session VAR, juri_id, kriteria/komponen, nilai sebelum, nilai sesudah)
+  untuk berita acara; tidak boleh diubah/dihapus (hanya insert).
+- RPC baru: `ip_putuskan_var(_peserta uuid, _clear boolean, _catatan text)` — mencatat keputusan
+  satu IP; bila kedua IP sepakat, menimpa komponen Clear Text semua juri, menyimpan snapshot,
+  dan me-refresh cache nilai. `ketua_putuskan_var(...)` untuk kasus beda pendapat.
+  `var_berita_acara(_session uuid)` mengembalikan seluruh data report.
+  `ip_daftar_keberatan()`, `ip_putuskan_keberatan(...)`.
 
 Frontend:
 - Halaman baru `/keberatan` dan `/keberatan/status` (publik, dengan metadata SEO tersendiri).
 - Halaman Inspektur: tab "Keberatan" dan tab "Koreksi VAR" dengan tombol
-  Clear Text / Tidak Clear Text + catatan.
+  Clear Text / Tidak Clear Text + catatan, menampilkan status keputusan IP lain.
+- Tombol **Unduh Berita Acara VAR** (PDF per kasus) di halaman Inspektur dan Admin.
+
 - Sidebar Admin: entri "Keberatan" (read-only + ekspor).
 - Halaman Operator: pemilih kategori dan kontrol sesi per kategori.
 - Halaman Admin > Juri: pengaturan kategori penugasan tiap juri.
