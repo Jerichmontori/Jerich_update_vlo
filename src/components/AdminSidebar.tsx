@@ -18,6 +18,7 @@ import {
   Gavel,
   ListChecks,
   BookOpenText,
+  AlertTriangle,
 } from "lucide-react";
 
 export type AdminSection =
@@ -25,6 +26,7 @@ export type AdminSection =
   | "hasil"
   | "live"
   | "penilaian"
+  | "var"
   | "peserta"
   | "juri"
   | "pengaturan-nilai"
@@ -40,8 +42,10 @@ const GROUPS: { label: string; items: Item[] }[] = [
       { value: "hasil", label: "Hasil Nilai", icon: Trophy },
       { value: "live", label: "Live Ranking", icon: Radio },
       { value: "penilaian", label: "Penilaian", icon: ClipboardCheck },
+      { value: "var", label: "Potensi VAR", icon: AlertTriangle },
     ],
   },
+
   {
     label: "Data Master",
     items: [
