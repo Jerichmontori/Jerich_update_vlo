@@ -3780,10 +3780,18 @@ function LihatPenilaianTab() {
     return Array.from(s).sort();
   }, [peserta]);
 
+  // Hanya peserta yang sudah memiliki nilai yang ditampilkan.
+  const pesertaBernilai = useMemo(() => {
+    const ids = new Set(penilaian.map((n) => n.peserta_id));
+    Object.keys(nilaiMap).forEach((k) => { if (nilaiMap[k] != null) ids.add(k.split("|")[1]); });
+    return peserta.filter((p) => ids.has(p.id));
+  }, [peserta, penilaian, nilaiMap]);
+
   const pesertaFiltered = useMemo(
-    () => (kategori === LIHAT_ALL ? peserta : peserta.filter((p) => (p.kategori ?? "") === kategori)),
-    [peserta, kategori]
+    () => (kategori === LIHAT_ALL ? pesertaBernilai : pesertaBernilai.filter((p) => (p.kategori ?? "") === kategori)),
+    [pesertaBernilai, kategori]
   );
+
 
   const totalBobot = useMemo(() => kriteria.reduce((s, k) => s + Number(k.bobot || 0), 0), [kriteria]);
 
