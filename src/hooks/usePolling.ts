@@ -54,5 +54,5 @@ export function usePolling(
         document.removeEventListener("visibilitychange", onVisibility);
       }
     };
-  }, [intervalMs]);
+  }, [intervalMs, enabled]);
 }
