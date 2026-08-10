@@ -4651,3 +4651,48 @@ function ResetAllPenilaianButton() {
   );
 }
 
+
+/* RESET DATA — pusat semua tombol reset */
+function ResetTab() {
+  const [busyPeserta, setBusyPeserta] = useState(false);
+
+  async function resetSemuaPeserta() {
+    if (!window.confirm("Hapus SEMUA daftar peserta beserta seluruh nilainya?\n\nTindakan ini tidak dapat dibatalkan.")) return;
+    if (!window.confirm("Konfirmasi sekali lagi: hapus semua peserta sekarang?")) return;
+    setBusyPeserta(true);
+    await supabase.from("penilaian_submission" as any).delete().not("id", "is", null);
+    const { error: pe } = await supabase.from("penilaian").delete().not("id", "is", null);
+    if (pe) { setBusyPeserta(false); return toast.error("Gagal menghapus penilaian: " + pe.message); }
+    const { error } = await supabase.from("peserta").delete().not("id", "is", null);
+    setBusyPeserta(false);
+    if (error) return toast.error(error.message);
+    toast.success("Semua peserta dihapus");
+  }
+
+  return (
+    <SectionCard
+      title="Reset Data"
+      description="Semua tindakan reset terkumpul di sini. Perhatikan: data yang dihapus tidak dapat dikembalikan."
+    >
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+          <div className="min-w-0">
+            <div className="font-medium">Reset Semua Nilai</div>
+            <p className="text-sm text-muted-foreground">Hapus seluruh penilaian dari semua juri untuk semua peserta. Daftar peserta tetap ada.</p>
+          </div>
+          <ResetAllPenilaianButton />
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+          <div className="min-w-0">
+            <div className="font-medium">Reset Daftar Peserta</div>
+            <p className="text-sm text-muted-foreground">Hapus seluruh peserta beserta semua nilainya.</p>
+          </div>
+          <Button variant="destructive" size="sm" onClick={resetSemuaPeserta} disabled={busyPeserta} className="gap-2">
+            <Trash2 className="size-4" />{busyPeserta ? "Menghapus..." : "Hapus Semua Peserta"}
+          </Button>
+        </div>
+      </div>
+    </SectionCard>
+  );
+}
