@@ -104,7 +104,7 @@ function App() {
       <Header />
       <main className="mx-auto max-w-6xl px-4 pb-16">
         {roles.isAdm && (
-          <div className="flex flex-wrap justify-end gap-2 pt-4"><BrandingSettingsButton /><BackupExcelButton /><ResetAllPenilaianButton /></div>
+          <div className="flex flex-wrap justify-end gap-2 pt-4"><BrandingSettingsButton /><LaporanPertanggungjawabanButton /><BackupExcelButton /><ResetAllPenilaianButton /></div>
         )}
         {juriOnly ? (
           <Tabs defaultValue="penilaian" className="w-full">
