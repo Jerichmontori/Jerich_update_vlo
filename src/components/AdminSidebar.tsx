@@ -24,6 +24,8 @@ import {
   Eye,
   Shield,
   ExternalLink,
+  Trash2,
+
 } from "lucide-react";
 
 export type AdminSection =

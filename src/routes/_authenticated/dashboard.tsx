@@ -139,7 +139,7 @@ function App() {
               <h2 className="text-lg font-semibold">{ADMIN_SECTION_LABEL[section]}</h2>
               {roles.isAdm && (
                 <div className="ml-auto flex flex-wrap justify-end gap-2">
-                  <BrandingSettingsButton /><LaporanPertanggungjawabanButton /><BackupExcelButton /><ResetAllPenilaianButton />
+                  <BrandingSettingsButton /><LaporanPertanggungjawabanButton /><BackupExcelButton />
                 </div>
               )}
             </div>
@@ -152,6 +152,8 @@ function App() {
             {section === "juri" && <JuriTab />}
             {section === "pengaturan-nilai" && <PengaturanNilaiTab />}
             {section === "mazmur" && <MazmurTab />}
+            {section === "reset" && <ResetTab />}
+
           </main>
         </div>
       </div>
