@@ -27,8 +27,7 @@ export type SesiRow = {
 function statusBadge(s: string) {
   switch (s) {
     case "disetujui": return { label: "Tayang di Live", className: "bg-emerald-600 text-white" };
-    case "menunggu_persetujuan": return { label: "Menunggu Persetujuan Juri", className: "bg-amber-500 text-white" };
-    case "ditolak": return { label: "Ditolak Juri", className: "bg-rose-600 text-white" };
+    case "menunggu_persetujuan": return { label: "Diproses", className: "bg-amber-500 text-white" };
     default: return { label: "Belum Diajukan", className: "bg-muted text-foreground" };
   }
 }
@@ -143,8 +142,7 @@ export default function SesiLiveRanking() {
           <CardTitle className="flex items-center gap-2"><Radio className="size-5 text-accent" /> Sesi Live Ranking</CardTitle>
           <CardDescription>
             Satu sesi = 10 peserta. Inspektur dan Admin dapat langsung menayangkan sesi tertentu
-            atau seluruh sesi di Live Ranking tanpa menunggu persetujuan juri, dan bisa menarik
-            atau menyembunyikannya kapan saja.
+            atau seluruh sesi di Live Ranking, dan bisa menarik atau menyembunyikannya kapan saja.
           </CardDescription>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -224,7 +222,6 @@ export default function SesiLiveRanking() {
                 <TableHead>Peserta</TableHead>
                 <TableHead>Final</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead>Masukan Juri</TableHead>
                 <TableHead className="text-right">Aksi</TableHead>
               </TableRow>
             </TableHeader>
@@ -232,8 +229,6 @@ export default function SesiLiveRanking() {
               {pageRows.map((r) => {
                 const sb = statusBadge(r.status);
                 const lengkap = r.final_count >= r.total;
-                const belum = r.juri_status.filter((j) => !j.sudah_vote);
-                const tolak = r.juri_status.filter((j) => j.sudah_vote && j.setuju === false);
                 return (
                   <Fragment key={r.sesi_no}>
                     <TableRow>
@@ -250,29 +245,6 @@ export default function SesiLiveRanking() {
                         <Badge className={sb.className}>{sb.label}</Badge>
                         {r.status === "disetujui" && r.hidden && (
                           <div><Badge className="bg-slate-500 text-white">Disembunyikan</Badge></div>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-xs">
-                        {r.status === "draft" ? (
-                          <span className="text-muted-foreground">—</span>
-                        ) : (
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="inline-flex items-center gap-1 text-emerald-700"><CheckCircle2 className="size-3" />{r.setuju_count}</span>
-                              <span className="inline-flex items-center gap-1 text-rose-700"><XCircle className="size-3" />{r.tolak_count}</span>
-                              <span className="inline-flex items-center gap-1 text-amber-700"><Clock className="size-3" />{belum.length} belum</span>
-                            </div>
-                            {belum.length > 0 && (
-                              <div className="text-[11px] text-amber-700">
-                                Belum menyetujui: {belum.map((j) => j.nama).join(", ")}
-                              </div>
-                            )}
-                            {tolak.length > 0 && (
-                              <div className="text-[11px] text-rose-700">
-                                Menolak: {tolak.map((j) => j.nama).join(", ")}
-                              </div>
-                            )}
-                          </div>
                         )}
                       </TableCell>
                       <TableCell className="text-right space-x-2 whitespace-nowrap">
@@ -302,8 +274,8 @@ export default function SesiLiveRanking() {
                     </TableRow>
                     {expanded === r.sesi_no && (
                       <TableRow>
-                        <TableCell colSpan={6} className="bg-secondary/40">
-                          <div className="grid gap-4 md:grid-cols-2">
+                        <TableCell colSpan={5} className="bg-secondary/40">
+                          <div className="grid gap-4">
                             <div>
                               <div className="text-xs font-semibold mb-1">Peserta Sesi {r.sesi_no}</div>
                               <ul className="text-xs space-y-0.5">
@@ -314,23 +286,6 @@ export default function SesiLiveRanking() {
                                     <Badge className={p.final ? "bg-emerald-600 text-white" : "bg-muted text-foreground"}>
                                       {p.final ? "Final" : "Belum"}
                                     </Badge>
-                                  </li>
-                                ))}
-                              </ul>
-                            </div>
-                            <div>
-                              <div className="text-xs font-semibold mb-1">Status Persetujuan Juri</div>
-                              <ul className="text-xs space-y-0.5">
-                                {r.juri_status.map((j) => (
-                                  <li key={j.juri_id} className="flex items-center gap-2">
-                                    <span className="flex-1">{j.nama}</span>
-                                    {!j.sudah_vote ? (
-                                      <Badge className="bg-amber-500 text-white">Belum menyetujui</Badge>
-                                    ) : j.setuju ? (
-                                      <Badge className="bg-emerald-600 text-white">Setuju</Badge>
-                                    ) : (
-                                      <Badge className="bg-rose-600 text-white">Menolak</Badge>
-                                    )}
                                   </li>
                                 ))}
                               </ul>
