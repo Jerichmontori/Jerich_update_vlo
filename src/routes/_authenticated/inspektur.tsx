@@ -440,15 +440,6 @@ function InspekturPage() {
                             </Button>
                           </>
                         )}
-                        {hasActiveVar && (
-                          <Button
-                            size="sm"
-                            className="bg-amber-600 hover:bg-amber-700 text-white"
-                            onClick={() => openConfirmBukaPerbaikan(r.peserta_id, r.nama, null, "row")}
-                          >
-                            <AlertTriangle className="size-4 mr-1" /> Buka Perbaikan
-                          </Button>
-                        )}
                         <Button size="sm" variant="outline" onClick={() => openDetail(r)}>
                           <Eye className="size-4 mr-1" /> Detail
                         </Button>
@@ -768,24 +759,13 @@ function InspekturPage() {
 
           <DialogFooter className="flex-wrap gap-2">
             {detailData?.var_session && (
-              <>
-                <Button
-                  className="bg-amber-600 hover:bg-amber-700 text-white"
-                  onClick={() => {
-                    if (!detailPeserta) return;
-                    openConfirmBukaPerbaikan(detailPeserta.peserta_id, detailPeserta.nama, catatan.trim() || null, "detail");
-                  }}
-                >
-                  <AlertTriangle className="size-4 mr-1" /> Buka Perbaikan Perhatian
-                </Button>
-                <Button
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                  onClick={terapkanPerubahan}
-                  disabled={terapkanLoading}
-                >
-                  {terapkanLoading ? "Menerapkan…" : "Terapkan Perubahan Juri & Finalkan"}
-                </Button>
-              </>
+              <Button
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={terapkanPerubahan}
+                disabled={terapkanLoading}
+              >
+                {terapkanLoading ? "Menerapkan…" : "Terapkan Perubahan Juri & Finalkan"}
+              </Button>
             )}
             <Button variant="outline" onClick={() => setDetailOpen(false)}>Tutup</Button>
             <Button onClick={simpanCatatan} disabled={savingCatatan}>{savingCatatan ? "Menyimpan…" : "Simpan Catatan"}</Button>
