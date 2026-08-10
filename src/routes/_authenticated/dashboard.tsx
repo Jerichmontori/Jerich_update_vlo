@@ -3747,7 +3747,7 @@ function LihatPenilaianTab() {
     doc.text(`Kategori: ${p.kategori || "—"}${p.asal ? " • Asal: " + p.asal : ""}`, 40, startY + 18);
     doc.setTextColor(0);
     const dHead = [["Juri", ...kriteria.map((k) => `${k.nama} (b:${k.bobot})`), "Nilai Juri"]];
-    const dBody = juri.map((j) => {
+    const dBody = juriTampil.map((j) => {
       const rec = scoreMap[p.id]?.[j.id];
       const nilai = nilaiJuri(j.id, p.id);
       return [
@@ -3776,11 +3776,11 @@ function LihatPenilaianTab() {
 
     const head = [[
       "No.", "Peserta", "Kategori",
-      ...juri.map((j) => j.nama),
+      ...juriTampil.map((j) => j.nama),
       "Nilai Akhir", "Total Juri"
     ]];
     const body = pesertaFiltered.map((p) => {
-      const scores = juri.map((j) => nilaiJuri(j.id, p.id));
+      const scores = juriTampil.map((j) => nilaiJuri(j.id, p.id));
       const valid = scores.filter((s): s is number => typeof s === "number" && s > 0);
       const nilaiAkhir = rankMap[p.id]?.nilai_akhir;
       const total = rankMap[p.id]?.juri_total_sum ?? valid.reduce((a, b) => a + b, 0);
@@ -3802,7 +3802,7 @@ function LihatPenilaianTab() {
     });
 
     pesertaFiltered.forEach((p) => {
-      const hasAny = juri.some((j) => scoreMap[p.id]?.[j.id]);
+      const hasAny = juriTampil.some((j) => scoreMap[p.id]?.[j.id]);
       if (!hasAny) return;
       doc.addPage();
       buildPesertaDetail(doc, p, 40);
@@ -3816,7 +3816,7 @@ function LihatPenilaianTab() {
   function downloadPesertaPDF() {
     const p = peserta.find((x) => x.id === pesertaPilih);
     if (!p) return toast.error("Pilih peserta terlebih dahulu");
-    const hasAny = juri.some((j) => scoreMap[p.id]?.[j.id]);
+    const hasAny = juriTampil.some((j) => scoreMap[p.id]?.[j.id]);
     if (!hasAny) return toast.error("Peserta ini belum memiliki penilaian");
     const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
     doc.setFontSize(16); doc.text("Laporan Nilai Peserta", 40, 40);
@@ -3829,7 +3829,7 @@ function LihatPenilaianTab() {
   function downloadPerhitunganPDF() {
     const p = peserta.find((x) => x.id === pesertaPilih);
     if (!p) return toast.error("Pilih peserta terlebih dahulu");
-    const hasAny = juri.some((j) => scoreMap[p.id]?.[j.id]);
+    const hasAny = juriTampil.some((j) => scoreMap[p.id]?.[j.id]);
     if (!hasAny) return toast.error("Peserta ini belum memiliki penilaian");
 
     const bV = bobotFor("interpretasi", kriteria, 0) || bobotFor("vokal", kriteria, 25) || bobotFor("vocal", kriteria, 25);
@@ -3879,7 +3879,7 @@ function LihatPenilaianTab() {
     });
 
     // Per-juri
-    const juriValid = juri.filter((j) => scoreMap[p.id]?.[j.id]);
+    const juriValid = juriTampil.filter((j) => scoreMap[p.id]?.[j.id]);
     juriValid.forEach((j, idx) => {
       const rec = scoreMap[p.id][j.id];
       const detailByKrit: Record<string, PenilaianDetail> = {};
@@ -4044,7 +4044,7 @@ function LihatPenilaianTab() {
               <TableHead className="w-16">No.</TableHead>
               <TableHead>Peserta</TableHead>
               <TableHead>Kategori</TableHead>
-              {juri.map((j) => (
+              {juriTampil.map((j) => (
                 <TableHead key={j.id} className="text-right whitespace-nowrap">{j.nama}</TableHead>
               ))}
               <TableHead className="text-right w-32">Nilai Akhir</TableHead>
@@ -4052,10 +4052,10 @@ function LihatPenilaianTab() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading && <TableRow><TableCell colSpan={5 + juri.length} className="text-center py-10 text-muted-foreground">Memuat…</TableCell></TableRow>}
-            {!loading && pesertaFiltered.length === 0 && <TableRow><TableCell colSpan={5 + juri.length} className="text-center py-10 text-muted-foreground">Belum ada peserta.</TableCell></TableRow>}
+            {loading && <TableRow><TableCell colSpan={5 + juriTampil.length} className="text-center py-10 text-muted-foreground">Memuat…</TableCell></TableRow>}
+            {!loading && pesertaFiltered.length === 0 && <TableRow><TableCell colSpan={5 + juriTampil.length} className="text-center py-10 text-muted-foreground">Belum ada peserta.</TableCell></TableRow>}
             {pesertaFiltered.map((p) => {
-              const scores = juri.map((j) => nilaiJuri(j.id, p.id));
+              const scores = juriTampil.map((j) => nilaiJuri(j.id, p.id));
               const valid = scores.filter((s): s is number => typeof s === "number" && s > 0);
               const nilaiAkhir = rankMap[p.id]?.nilai_akhir;
               const total = rankMap[p.id]?.juri_total_sum ?? valid.reduce((a, b) => a + b, 0);
@@ -4065,7 +4065,7 @@ function LihatPenilaianTab() {
                   <TableCell className="font-medium">{p.nama}</TableCell>
                   <TableCell className="text-muted-foreground">{p.kategori || "—"}</TableCell>
                   {scores.map((s, i) => (
-                    <TableCell key={juri[i].id} className="text-right font-mono">
+                    <TableCell key={juriTampil[i].id} className="text-right font-mono">
                       {s === undefined ? <span className="text-muted-foreground italic">—</span> : s.toFixed(3)}
                     </TableCell>
                   ))}
