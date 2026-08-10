@@ -177,7 +177,7 @@ function InspekturPage() {
     }
   }, []);
 
-  usePolling(loadAll, 20000, allowed);
+  usePolling(loadAll, 20000, allowed === true);
 
   async function openDetail(row: MonitorRow) {
     setDetailPeserta(row);

@@ -117,7 +117,7 @@ function AyatVar({ pesertaId }: { pesertaId: string }) {
     setRows(((data as any)?.juri ?? []) as JuriDetail[]);
   }, [pesertaId]);
 
-  usePolling(load, 20000);
+  usePolling(() => { void load(); }, 20000);
 
   const data = rows ?? [];
   const total = data.length;
@@ -291,7 +291,7 @@ function VarTab() {
     setRows((data as unknown as VarRow[]) ?? []);
   }, []);
 
-  usePolling(load, 25000);
+  usePolling(() => { void load(); }, 25000);
 
   const filtered = rows.filter(
     (r) => !q.trim() || r.nama.toLowerCase().includes(q.toLowerCase()) || String(r.nomor_urut).includes(q.trim()),
