@@ -22,6 +22,7 @@ import SesiLiveRanking from "@/components/SesiLiveRanking";
 import AdminVarTab from "@/components/AdminVarTab";
 import BackupExcelButton from "@/components/BackupExcelButton";
 import LaporanPertanggungjawabanButton from "@/components/LaporanPertanggungjawabanButton";
+import Top10PdfButton from "@/components/Top10PdfButton";
 import JuriHasilFinalTab from "@/components/JuriHasilFinalTab";
 import GantiPasswordButton from "@/components/GantiPasswordButton";
 import jsPDF from "jspdf";
