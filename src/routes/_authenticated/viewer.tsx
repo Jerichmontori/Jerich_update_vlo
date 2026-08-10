@@ -55,6 +55,11 @@ function ViewerPage() {
   const [fAsal, setFAsal] = useState("");
   const [fKategori, setFKategori] = useState("");
   const [saving, setSaving] = useState(false);
+  const [tukarA, setTukarA] = useState("");
+  const [tukarB, setTukarB] = useState("");
+  const [tukarBusy, setTukarBusy] = useState(false);
+  const [sesiEditId, setSesiEditId] = useState<string | null>(null);
+  const [sesiVal, setSesiVal] = useState("");
 
 
 
