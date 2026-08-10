@@ -550,10 +550,6 @@ function OperatorPage() {
                       </TableRow>
                     );
                   })}
-
-                      </TableRow>
-                    );
-                  })}
                 </TableBody>
 
               </Table>
