@@ -304,19 +304,8 @@ function PesertaTab() {
     if (page > maxPage) setPage(maxPage);
   }, [items.length]);
 
-  async function resetSemua() {
-    if (!confirm("Yakin ingin menghapus SEMUA daftar peserta beserta seluruh nilainya? Tindakan ini tidak dapat dibatalkan.")) return;
-    setResetting(true);
-    await supabase.from("penilaian_submission" as any).delete().not("id", "is", null);
-    const { error: pe } = await supabase.from("penilaian").delete().not("id", "is", null);
-    if (pe) { setResetting(false); return toast.error("Gagal menghapus penilaian: " + pe.message); }
-    const { error } = await supabase.from("peserta").delete().not("id", "is", null);
-    setResetting(false);
-    if (error) return toast.error(error.message);
-    toast.success("Semua peserta dihapus");
-    setEditId(null); setNomor(""); setNama(""); setAsal(""); setKategori("");
-    load();
-  }
+  void resetting; void setResetting;
+
 
 
   function pilihUntukEdit(p: Peserta) {
