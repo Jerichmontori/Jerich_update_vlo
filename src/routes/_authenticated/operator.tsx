@@ -310,16 +310,50 @@ function OperatorPage() {
 
   // Kosongkan pilihan mazmur bila tak sesuai kategori peserta terpilih
   useEffect(() => {
-    if (sesi) return;
+    if (sesi && selectedPeserta === sesi.peserta_id) return;
     if (!selectedMazmur) return;
     if (!mazmurFiltered.some(m => m.id === selectedMazmur)) setSelectedMazmur("");
-  }, [mazmurFiltered, selectedMazmur, sesi]);
+  }, [mazmurFiltered, selectedMazmur, sesi, selectedPeserta]);
   // Pool juri sesuai kategori peserta: peserta UJICOBA dinilai juri dummy, lainnya juri asli
   const isUji = (kat: string | null | undefined) => (kat ?? "").trim().toUpperCase() === "UJICOBA";
   const poolJuri = (kat: string | null | undefined) => (isUji(kat) ? juriDummy : juriReal);
   const juriTotal = poolJuri(pesertaAktif?.kategori);
   const statusPenilaian: "Belum Dimulai" | "Sedang Berlangsung" | "Selesai" =
     !sesi ? "Belum Dimulai" : juriDone >= juriTotal && juriTotal > 0 ? "Selesai" : "Sedang Berlangsung";
+
+  type StatusInfo = {
+    key: "tampil" | "menunggu" | "var" | "final" | "terlambat" | "belum";
+    label: string;
+    variant?: "default" | "secondary" | "outline" | "destructive";
+    cls?: string;
+  };
+  function statusPeserta(p: Peserta & { terlambat?: boolean }): StatusInfo {
+    if ((p as any).terlambat) return { key: "terlambat", label: "Terlambat", variant: "outline" };
+    const done = submissionCounts[p.id] ?? 0;
+    const pool = poolJuri(p.kategori);
+    const varAktif = isVarAktif(varMap[p.id]);
+    if (sesi?.peserta_id === p.id) return { key: "tampil", label: "Sedang tampil", cls: "bg-primary" };
+    if (varAktif) return { key: "var", label: "Proses VAR — IP 2", variant: "destructive" };
+    if (pool > 0 && done >= pool) return { key: "final", label: "Final", cls: "bg-accent text-accent-foreground" };
+    if (done > 0) return { key: "menunggu", label: `Menunggu juri (${done}/${pool})`, variant: "outline" };
+    return { key: "belum", label: "Belum tampil", variant: "secondary" };
+  }
+
+  // Peserta yang sudah turun panggung tetapi belum final
+  const menungguPenyelesaian = useMemo(() => {
+    return peserta
+      .filter(p => {
+        if (sesi?.peserta_id === p.id) return false;
+        if ((p as any).terlambat) return false;
+        const done = submissionCounts[p.id] ?? 0;
+        const pool = poolJuri(p.kategori);
+        const varAktif = isVarAktif(varMap[p.id]);
+        if (varAktif) return true;
+        return done > 0 && !(pool > 0 && done >= pool);
+      })
+      .sort((a, b) => a.nomor_urut - b.nomor_urut);
+  }, [peserta, submissionCounts, varMap, sesi, juriReal, juriDummy]);
+
 
   if (allowed === null) return <div className="p-8 text-center text-muted-foreground">Memuat…</div>;
   if (!allowed) return null;
