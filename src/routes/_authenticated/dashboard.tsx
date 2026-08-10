@@ -14,10 +14,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import VarPersepsiDetail from "@/components/VarPersepsiDetail";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
-import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight, LayoutDashboard, CheckCircle2, XCircle, FileText, KeyRound, AlertTriangle, Eye, EyeOff } from "lucide-react";
+import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight, ChevronDown, LayoutDashboard, CheckCircle2, XCircle, FileText, KeyRound, AlertTriangle, Eye, EyeOff } from "lucide-react";
 import SesiLiveRanking from "@/components/SesiLiveRanking";
 import AdminVarTab from "@/components/AdminVarTab";
 import BackupExcelButton from "@/components/BackupExcelButton";
@@ -3657,6 +3659,7 @@ function LihatPenilaianTab() {
   const [loading, setLoading] = useState(true);
   const [kategori, setKategori] = useState<string>(LIHAT_ALL);
   const [pesertaPilih, setPesertaPilih] = useState<string>("");
+  const [juriPilih, setJuriPilih] = useState<string[] | null>(null); // null = semua juri
 
   async function load() {
     setLoading(true);
@@ -3695,6 +3698,19 @@ function LihatPenilaianTab() {
   function nilaiJuri(juriId: string, pesertaId: string): number | undefined {
     const value = nilaiMap[`${juriId}|${pesertaId}`];
     return value == null ? undefined : value;
+  }
+
+  // Juri yang nilainya ditampilkan (null = semua)
+  const juriTampil = useMemo(
+    () => (juriPilih === null ? juri : juri.filter((j) => juriPilih.includes(j.id))),
+    [juri, juriPilih],
+  );
+  function toggleJuri(id: string) {
+    setJuriPilih((prev) => {
+      const cur = prev === null ? juri.map((j) => j.id) : prev;
+      const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+      return next.length === juri.length ? null : next;
+    });
   }
 
   const kategoriList = useMemo(() => {
@@ -3747,7 +3763,7 @@ function LihatPenilaianTab() {
     doc.text(`Kategori: ${p.kategori || "—"}${p.asal ? " • Asal: " + p.asal : ""}`, 40, startY + 18);
     doc.setTextColor(0);
     const dHead = [["Juri", ...kriteria.map((k) => `${k.nama} (b:${k.bobot})`), "Nilai Juri"]];
-    const dBody = juri.map((j) => {
+    const dBody = juriTampil.map((j) => {
       const rec = scoreMap[p.id]?.[j.id];
       const nilai = nilaiJuri(j.id, p.id);
       return [
@@ -3776,11 +3792,11 @@ function LihatPenilaianTab() {
 
     const head = [[
       "No.", "Peserta", "Kategori",
-      ...juri.map((j) => j.nama),
+      ...juriTampil.map((j) => j.nama),
       "Nilai Akhir", "Total Juri"
     ]];
     const body = pesertaFiltered.map((p) => {
-      const scores = juri.map((j) => nilaiJuri(j.id, p.id));
+      const scores = juriTampil.map((j) => nilaiJuri(j.id, p.id));
       const valid = scores.filter((s): s is number => typeof s === "number" && s > 0);
       const nilaiAkhir = rankMap[p.id]?.nilai_akhir;
       const total = rankMap[p.id]?.juri_total_sum ?? valid.reduce((a, b) => a + b, 0);
@@ -3802,7 +3818,7 @@ function LihatPenilaianTab() {
     });
 
     pesertaFiltered.forEach((p) => {
-      const hasAny = juri.some((j) => scoreMap[p.id]?.[j.id]);
+      const hasAny = juriTampil.some((j) => scoreMap[p.id]?.[j.id]);
       if (!hasAny) return;
       doc.addPage();
       buildPesertaDetail(doc, p, 40);
@@ -3816,7 +3832,7 @@ function LihatPenilaianTab() {
   function downloadPesertaPDF() {
     const p = peserta.find((x) => x.id === pesertaPilih);
     if (!p) return toast.error("Pilih peserta terlebih dahulu");
-    const hasAny = juri.some((j) => scoreMap[p.id]?.[j.id]);
+    const hasAny = juriTampil.some((j) => scoreMap[p.id]?.[j.id]);
     if (!hasAny) return toast.error("Peserta ini belum memiliki penilaian");
     const doc = new jsPDF({ orientation: "landscape", unit: "pt", format: "a4" });
     doc.setFontSize(16); doc.text("Laporan Nilai Peserta", 40, 40);
@@ -3829,7 +3845,7 @@ function LihatPenilaianTab() {
   function downloadPerhitunganPDF() {
     const p = peserta.find((x) => x.id === pesertaPilih);
     if (!p) return toast.error("Pilih peserta terlebih dahulu");
-    const hasAny = juri.some((j) => scoreMap[p.id]?.[j.id]);
+    const hasAny = juriTampil.some((j) => scoreMap[p.id]?.[j.id]);
     if (!hasAny) return toast.error("Peserta ini belum memiliki penilaian");
 
     const bV = bobotFor("interpretasi", kriteria, 0) || bobotFor("vokal", kriteria, 25) || bobotFor("vocal", kriteria, 25);
@@ -3879,7 +3895,7 @@ function LihatPenilaianTab() {
     });
 
     // Per-juri
-    const juriValid = juri.filter((j) => scoreMap[p.id]?.[j.id]);
+    const juriValid = juriTampil.filter((j) => scoreMap[p.id]?.[j.id]);
     juriValid.forEach((j, idx) => {
       const rec = scoreMap[p.id][j.id];
       const detailByKrit: Record<string, PenilaianDetail> = {};
@@ -4016,6 +4032,36 @@ function LihatPenilaianTab() {
               {kategoriList.map((k) => (<SelectItem key={k} value={k}>{k}</SelectItem>))}
             </SelectContent>
           </Select>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="w-[220px] justify-between gap-2">
+                <span className="truncate">
+                  {juriPilih === null ? "Semua Juri" : `${juriTampil.length} dari ${juri.length} juri`}
+                </span>
+                <ChevronDown className="size-4 opacity-60" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent align="start" className="w-64 p-2">
+              <div className="flex items-center justify-between px-1 pb-2">
+                <span className="text-xs font-medium text-muted-foreground">Tampilkan Nilai Juri</span>
+                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={() => setJuriPilih(null)}>
+                  Semua
+                </Button>
+              </div>
+              <div className="max-h-64 space-y-1 overflow-auto">
+                {juri.length === 0 && <p className="px-1 text-xs text-muted-foreground">Belum ada juri.</p>}
+                {juri.map((j) => {
+                  const checked = juriPilih === null || juriPilih.includes(j.id);
+                  return (
+                    <label key={j.id} className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 hover:bg-muted">
+                      <Checkbox checked={checked} onCheckedChange={() => toggleJuri(j.id)} />
+                      <span className="truncate text-sm">{j.nama}</span>
+                    </label>
+                  );
+                })}
+              </div>
+            </PopoverContent>
+          </Popover>
           <Button variant="outline" onClick={load}>Muat Ulang</Button>
           <Select value={pesertaPilih} onValueChange={setPesertaPilih}>
             <SelectTrigger className="w-[220px]"><SelectValue placeholder="Pilih Peserta" /></SelectTrigger>
@@ -4044,7 +4090,7 @@ function LihatPenilaianTab() {
               <TableHead className="w-16">No.</TableHead>
               <TableHead>Peserta</TableHead>
               <TableHead>Kategori</TableHead>
-              {juri.map((j) => (
+              {juriTampil.map((j) => (
                 <TableHead key={j.id} className="text-right whitespace-nowrap">{j.nama}</TableHead>
               ))}
               <TableHead className="text-right w-32">Nilai Akhir</TableHead>
@@ -4052,10 +4098,10 @@ function LihatPenilaianTab() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading && <TableRow><TableCell colSpan={5 + juri.length} className="text-center py-10 text-muted-foreground">Memuat…</TableCell></TableRow>}
-            {!loading && pesertaFiltered.length === 0 && <TableRow><TableCell colSpan={5 + juri.length} className="text-center py-10 text-muted-foreground">Belum ada peserta.</TableCell></TableRow>}
+            {loading && <TableRow><TableCell colSpan={5 + juriTampil.length} className="text-center py-10 text-muted-foreground">Memuat…</TableCell></TableRow>}
+            {!loading && pesertaFiltered.length === 0 && <TableRow><TableCell colSpan={5 + juriTampil.length} className="text-center py-10 text-muted-foreground">Belum ada peserta.</TableCell></TableRow>}
             {pesertaFiltered.map((p) => {
-              const scores = juri.map((j) => nilaiJuri(j.id, p.id));
+              const scores = juriTampil.map((j) => nilaiJuri(j.id, p.id));
               const valid = scores.filter((s): s is number => typeof s === "number" && s > 0);
               const nilaiAkhir = rankMap[p.id]?.nilai_akhir;
               const total = rankMap[p.id]?.juri_total_sum ?? valid.reduce((a, b) => a + b, 0);
@@ -4065,7 +4111,7 @@ function LihatPenilaianTab() {
                   <TableCell className="font-medium">{p.nama}</TableCell>
                   <TableCell className="text-muted-foreground">{p.kategori || "—"}</TableCell>
                   {scores.map((s, i) => (
-                    <TableCell key={juri[i].id} className="text-right font-mono">
+                    <TableCell key={juriTampil[i].id} className="text-right font-mono">
                       {s === undefined ? <span className="text-muted-foreground italic">—</span> : s.toFixed(3)}
                     </TableCell>
                   ))}
