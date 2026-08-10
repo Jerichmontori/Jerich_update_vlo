@@ -13,6 +13,8 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { catatanToRows } from "@/components/JuriHasilFinalTab";
 import GantiPasswordButton from "@/components/GantiPasswordButton";
+import VarBadge from "@/components/VarBadge";
+import { useVarStatus } from "@/hooks/useVarStatus";
 import BrandLogo from "@/components/BrandLogo";
 
 export const Route = createFileRoute("/_authenticated/viewer")({
@@ -44,6 +46,7 @@ type Row = {
 
 function ViewerPage() {
   const [rows, setRows] = useState<Row[] | null>(null);
+  const { varMap } = useVarStatus();
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
@@ -498,6 +501,7 @@ function ViewerPage() {
                     <TableHead>Peserta</TableHead>
                     
                     <TableHead>Status</TableHead>
+                    <TableHead>VAR</TableHead>
                     <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -522,6 +526,9 @@ function ViewerPage() {
                         ) : (
                           <Badge className="bg-muted text-foreground">Belum Tampil</Badge>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <VarBadge status={varMap[r.peserta_id]} compact />
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex flex-wrap items-center justify-end gap-1">

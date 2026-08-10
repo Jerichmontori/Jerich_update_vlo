@@ -9,6 +9,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Toaster, toast } from "sonner";
 import GantiPasswordButton from "@/components/GantiPasswordButton";
+import VarBadge from "@/components/VarBadge";
+import { useVarStatus } from "@/hooks/useVarStatus";
 import {
   MonitorPlay,
   RefreshCw,
@@ -391,6 +393,7 @@ function PengumumanTab() {
   const [nilaiAkhir, setNilaiAkhir] = useState<number | null>(null);
   const [running, setRunning] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { varMap } = useVarStatus();
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc("inspektur_monitor" as any);
@@ -495,8 +498,11 @@ function PengumumanTab() {
                   selected?.peserta_id === r.peserta_id ? "border-accent bg-accent/10" : ""
                 }`}
               >
-                <div className="font-medium truncate">
-                  {r.nomor_urut}. {r.nama}
+                <div className="flex items-center gap-2">
+                  <div className="font-medium truncate">
+                    {r.nomor_urut}. {r.nama}
+                  </div>
+                  <VarBadge status={varMap[r.peserta_id]} compact className="shrink-0" />
                 </div>
                 <div className="text-xs text-muted-foreground truncate">{r.kategori ?? "—"}</div>
               </button>
