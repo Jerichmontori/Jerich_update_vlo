@@ -435,6 +435,71 @@ function OperatorPage() {
           </Card>
         </div>
 
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><SkipForward className="size-5 text-primary" />Antrian Panggung</CardTitle>
+            <CardDescription>Peserta dapat dilanjutkan tanpa menunggu penilaian sebelumnya selesai.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="rounded-lg border p-3">
+                <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Sedang tampil</div>
+                <div className="font-medium mt-1">{pesertaAktif ? `${pesertaAktif.nomor_urut}. ${pesertaAktif.nama}` : "—"}</div>
+                <div className="text-xs text-muted-foreground">{juriDone}/{juriTotal} juri mengirim</div>
+              </div>
+              <div className="rounded-lg border p-3">
+                <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Berikutnya (dipilih)</div>
+                <div className="font-medium mt-1">
+                  {pesertaTerpilih && pesertaTerpilih.id !== sesi?.peserta_id
+                    ? `${pesertaTerpilih.nomor_urut}. ${pesertaTerpilih.nama}`
+                    : "Belum dipilih"}
+                </div>
+                <div className="text-xs text-muted-foreground">{selectedMazmur ? "Bacaan siap" : "Bacaan belum dipilih"}</div>
+              </div>
+              <div className="rounded-lg border p-3">
+                <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Menunggu penyelesaian</div>
+                <div className="font-medium mt-1">{menungguPenyelesaian.length} peserta</div>
+                <div className="text-xs text-muted-foreground">Juri / Inspektur VAR</div>
+              </div>
+            </div>
+
+            {menungguPenyelesaian.length > 0 && (
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-1">
+                {menungguPenyelesaian.slice(0, 6).map(p => {
+                  const st = statusPeserta(p);
+                  return (
+                    <div key={p.id} className="flex items-center justify-between text-sm">
+                      <span>{p.nomor_urut}. {p.nama}</span>
+                      <span className="flex items-center gap-2">
+                        <Badge variant={st.variant} className={st.cls}>{st.label}</Badge>
+                        {varStatusDetail(varMap[p.id]) && (
+                          <span className="text-xs text-muted-foreground hidden md:inline">{varStatusDetail(varMap[p.id])}</span>
+                        )}
+                      </span>
+                    </div>
+                  );
+                })}
+                {menungguPenyelesaian.length > 6 && (
+                  <div className="text-xs text-muted-foreground">+{menungguPenyelesaian.length - 6} peserta lainnya…</div>
+                )}
+              </div>
+            )}
+
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="flex items-center gap-2 text-sm">
+                <Tv className="size-4 text-primary" />
+                <div>
+                  <div className="font-medium">Tampilkan status VAR di vMix</div>
+                  <div className="text-xs text-muted-foreground">Badge "POTENSI VAR" muncul otomatis pada overlay peserta.</div>
+                </div>
+              </div>
+              <Switch checked={vmixVarBadge} onCheckedChange={toggleVmixVarBadge} />
+            </div>
+          </CardContent>
+        </Card>
+
+
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Play className="size-5 text-primary" />Kontrol Sesi</CardTitle>
