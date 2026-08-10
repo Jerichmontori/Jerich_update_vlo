@@ -34,12 +34,19 @@ Status pada daftar peserta diperluas dari "Belum/Sudah dinilai" menjadi:
 - Badge jumlah peserta yang belum final di header operator; jika melebihi ambang (mis. 3), muncul peringatan lembut agar operator mengoordinasikan dengan Inspektur/IP 2 — tanpa memblokir.
 - Panel tetap disegarkan berkala mengikuti polling yang sudah ada.
 
-### 5. Jejak audit
+### 5. Informasi status VAR peserta + tayang otomatis di vMix
+- Di panel operator, peserta yang terdeteksi **Potensi VAR** atau **VAR Diajukan** diberi penanda mencolok beserta keterangan tahapannya (menunggu klarifikasi juri / menunggu keputusan IP 2 / selesai).
+- Status VAR ini juga dikirim ke sumber data tayangan, sehingga overlay vMix (`vmix.nowreading`) otomatis menampilkan badge "POTENSI VAR" / "VAR — Peninjauan Inspektur" saat peserta yang sedang tampil berstatus VAR, dan badge hilang sendiri begitu kasus final.
+- Operator mendapat sakelar **Tayangkan status VAR di vMix** (aktif secara default) bila suatu saat ingin disembunyikan dari layar penonton.
+
+### 6. Jejak audit
 Setiap perpindahan peserta saat sesi lama masih berjalan dicatat di log audit operator dengan metadata status peserta sebelumnya, sehingga bisa dipertanggungjawabkan dalam laporan.
 
 ## Catatan teknis
 
 - Frontend: `src/routes/_authenticated/operator.tsx` — hapus penonaktifan tombol saat `sesi` aktif, tambah dialog konfirmasi, panel antrian, dan perluasan status.
 - Data status diambil dari sumber yang sudah ada: `penilaian_submission` (progres juri), `var_clarification_session` (status VAR), `peserta.terlambat`, serta pool juri aktif — tidak perlu tabel baru.
+- Status VAR untuk tayangan ditambahkan ke `public_live_state()` (field baru `var_status`), dibaca `src/routes/vmix.nowreading.tsx`; sakelar tampil/sembunyi disimpan di `system_config`.
 - Perpindahan peserta memakai RPC `mulai_sesi` yang sudah menutup sesi aktif kategori yang sama; `akhiri_sesi` (yang menghapus catatan juri) tidak dipakai di alur ini.
 - Tidak ada perubahan aturan perhitungan nilai, VAR, maupun kewenangan IP 1 / IP 2.
+
