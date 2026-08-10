@@ -1,0 +1,1 @@
+ALTER FUNCTION public.sesi_no_of(integer, text) SET search_path = public;
