@@ -229,9 +229,10 @@ function OperatorPage() {
     loadPeserta();
   }
 
-  async function mulaiSesi() {
+  async function mulaiSesi(lanjut = false) {
     if (!selectedPeserta) return toast.error("Pilih peserta terlebih dahulu");
     if (!selectedMazmur) return toast.error("Pilih Bacaan Mazmur terlebih dahulu");
+    const sebelumnya = sesi ? peserta.find(p => p.id === sesi.peserta_id) ?? null : null;
     setBusy(true);
     const { data, error } = await supabase.rpc("mulai_sesi" as any, {
       _peserta: selectedPeserta,
@@ -240,11 +241,25 @@ function OperatorPage() {
     setBusy(false);
     if (error) return toast.error(error.message);
     const newId = (data as any) as string;
-    toast.success("Sesi penilaian dimulai");
-    logAudit("pilih_peserta", { peserta_id: selectedPeserta, session_id: newId });
+    toast.success(lanjut ? "Peserta berikutnya ditampilkan" : "Sesi penilaian dimulai");
+    logAudit(lanjut ? "lanjut_peserta" : "pilih_peserta", {
+      peserta_id: selectedPeserta,
+      session_id: newId,
+      metadata: lanjut && sebelumnya
+        ? {
+            peserta_sebelumnya: sebelumnya.nama,
+            peserta_sebelumnya_id: sebelumnya.id,
+            juri_terkirim: submissionCounts[sebelumnya.id] ?? 0,
+            juri_pool: poolJuri(sebelumnya.kategori),
+            var_status: varMap[sebelumnya.id] ?? null,
+          }
+        : undefined,
+    });
     logAudit("pilih_mazmur", { mazmur_id: selectedMazmur, session_id: newId });
     loadSesi();
+    loadVarStatus();
   }
+
 
   // Sesi tidak lagi diakhiri dari halaman Operator — dipindah ke halaman Inspektur.
 
