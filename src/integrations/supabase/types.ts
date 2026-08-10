@@ -1094,6 +1094,7 @@ export type Database = {
       all_juri_submitted: { Args: { _peserta: string }; Returns: boolean }
       detect_potensi_var: { Args: { _peserta: string }; Returns: string }
       get_branding: { Args: never; Returns: Json }
+      get_keberatan_deadline: { Args: never; Returns: Json }
       get_klarifikasi_status: { Args: { _peserta: string }; Returns: Json }
       get_live_ranking_kategori: { Args: never; Returns: Json }
       get_live_ranking_top10: { Args: never; Returns: boolean }
@@ -1265,6 +1266,7 @@ export type Database = {
         Returns: Json
       }
       keberatan_status: { Args: { _tiket: string }; Returns: Json }
+      keberatan_window: { Args: { _peserta: string }; Returns: Json }
       live_ranking_sesi_list: { Args: never; Returns: Json }
       lookup_nilai: { Args: { _grade: number }; Returns: number }
       mulai_klarifikasi_var: { Args: { _peserta: string }; Returns: string }
@@ -1287,6 +1289,7 @@ export type Database = {
       }
       sesi_no_of: { Args: { _nomor: number; _sesi: string }; Returns: number }
       set_branding: { Args: { _value: Json }; Returns: Json }
+      set_keberatan_deadline: { Args: { _value: Json }; Returns: Json }
       set_live_ranking_kategori: {
         Args: { _kategori: string[] }
         Returns: Json
