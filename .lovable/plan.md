@@ -20,23 +20,39 @@ Halaman publik `/keberatan` yang bisa diisi peserta atau pendamping tanpa login.
   Admin melihat semua keberatan dan rekapnya, serta bisa mengekspor ke laporan.
 - Status tiket: `baru` → `ditinjau` → `diterima`/`ditolak`, tampil di halaman status.
 
-## 2. Potensi VAR diselesaikan oleh IP (bukan juri)
+## 2. Potensi VAR diselesaikan oleh 2 IP (bukan juri) + report per kasus
 
 Alur baru menggantikan klarifikasi oleh juri:
 
 - Saat sistem mendeteksi potensi VAR (perbedaan input Perhatian antar juri),
   kasus langsung masuk ke **antrean IP**, bukan ke form juri.
-- IP membuka detail persepsi (peta ayat & perbedaan antar juri — komponen yang sudah ada),
-  lalu memutuskan **satu keputusan berlaku untuk semua juri**:
-  **Clear Text = Ya** atau **Tidak Clear Text**, plus catatan alasan.
-- Keputusan IP menimpa komponen Clear Text pada seluruh juri untuk peserta tersebut;
-  komponen lain (salah kata, menambah/mengurangi kata, catatan juri, kriteria lain)
-  **tidak diubah**. Nilai akhir dihitung ulang otomatis setelah keputusan disimpan.
-- Nilai lama disimpan sebagai riwayat (snapshot sebelum & sesudah koreksi) supaya
-  bisa diaudit dan muncul di laporan pertanggungjawaban.
+- Ada **dua Inspektur Pertandingan (IP 1 dan IP 2)**. Keduanya melihat detail persepsi
+  (peta ayat & perbedaan antar juri — komponen yang sudah ada) dan masing-masing memberi
+  keputusan **Clear Text = Ya** atau **Tidak Clear Text** beserta catatan alasan.
+- Keputusan baru **sah bila kedua IP sepakat**. Bila berbeda, kasus berstatus
+  **"beda pendapat"** dan diteruskan ke **Ketua Dewan Juri** sebagai pemutus akhir.
+  Selama belum sah, nilai peserta tidak berubah.
+- Keputusan sah berlaku **sama untuk semua juri**: menimpa komponen Clear Text pada
+  seluruh juri peserta tersebut; komponen lain (salah kata, menambah/mengurangi kata,
+  catatan juri, kriteria lain) **tidak diubah**. Nilai akhir dihitung ulang otomatis.
 - Juri tidak lagi diminta mengirim ulang nilai untuk kasus VAR ini; form juri tetap terkunci.
-- Halaman "Potensi VAR" di Admin tetap read-only; kolom keterangan menampilkan
-  keputusan IP dan waktu penyelesaian.
+
+### Report VAR per kasus (dapat dipertanggungjawabkan)
+
+Setiap kasus VAR menghasilkan **satu berita acara** yang bisa dicetak/di-PDF, berisi:
+
+- Nomor kasus VAR, waktu deteksi, peserta (no. urut, nama, kategori), bacaan/mazmur.
+- Rincian perbedaan antar juri: komponen dan ayat mana yang berbeda, siapa menandai apa.
+- **Snapshot nilai sebelum koreksi** dan **nilai sesudah koreksi** per juri dan nilai akhir.
+- Keputusan IP 1 dan IP 2 (masing-masing dengan nama, waktu, catatan), serta keputusan
+  Ketua Dewan Juri bila terjadi beda pendapat.
+- Kolom tanda tangan: IP 1, IP 2, Ketua Dewan Juri.
+- Jejak audit lengkap (siapa, kapan, aksi apa) tidak bisa dihapus atau diubah.
+
+Halaman "Potensi VAR" di Admin tetap read-only, kini menampilkan status
+(menunggu IP 1 / menunggu IP 2 / beda pendapat / selesai) dan tombol **Unduh Berita Acara**,
+serta rekap seluruh kasus VAR ikut masuk ke Laporan Pertanggungjawaban.
+
 
 ## 3. Juri per kategori + sesi paralel
 
@@ -68,14 +84,24 @@ Basis data:
   penyesuaian `mulai_sesi` / `akhiri_sesi` / `get_sesi_tampil` / `set_sesi_tampil`.
 - Penyesuaian fungsi pool & skor: `juri_in_pool`, `juri_pool_count`, `all_juri_submitted`,
   `detect_potensi_var`, `inspektur_monitor`, `inspektur_ringkasan`, `get_ranking`.
-- RPC baru: `ip_putuskan_var(_peserta uuid, _clear boolean, _catatan text)` (security definer,
-  gate role inspektur/admin) yang menimpa komponen Clear Text semua juri, menyimpan snapshot,
-  dan me-refresh cache nilai; `ip_daftar_keberatan()`, `ip_putuskan_keberatan(...)`.
+- Dua slot IP: role `inspektur` tetap, ditambah penanda urutan (IP 1 / IP 2) pada data juri,
+  atau role kedua `inspektur_2` — dipilih saat implementasi agar tidak menabrak data lama.
+- Tabel `var_keputusan_ip` (session VAR, ip_user_id, urutan IP, keputusan clear boolean,
+  catatan, waktu) — satu baris per IP, unik per (session, IP).
+- Tabel `var_snapshot_nilai` (session VAR, juri_id, kriteria/komponen, nilai sebelum, nilai sesudah)
+  untuk berita acara; tidak boleh diubah/dihapus (hanya insert).
+- RPC baru: `ip_putuskan_var(_peserta uuid, _clear boolean, _catatan text)` — mencatat keputusan
+  satu IP; bila kedua IP sepakat, menimpa komponen Clear Text semua juri, menyimpan snapshot,
+  dan me-refresh cache nilai. `ketua_putuskan_var(...)` untuk kasus beda pendapat.
+  `var_berita_acara(_session uuid)` mengembalikan seluruh data report.
+  `ip_daftar_keberatan()`, `ip_putuskan_keberatan(...)`.
 
 Frontend:
 - Halaman baru `/keberatan` dan `/keberatan/status` (publik, dengan metadata SEO tersendiri).
 - Halaman Inspektur: tab "Keberatan" dan tab "Koreksi VAR" dengan tombol
-  Clear Text / Tidak Clear Text + catatan.
+  Clear Text / Tidak Clear Text + catatan, menampilkan status keputusan IP lain.
+- Tombol **Unduh Berita Acara VAR** (PDF per kasus) di halaman Inspektur dan Admin.
+
 - Sidebar Admin: entri "Keberatan" (read-only + ekspor).
 - Halaman Operator: pemilih kategori dan kontrol sesi per kategori.
 - Halaman Admin > Juri: pengaturan kategori penugasan tiap juri.
