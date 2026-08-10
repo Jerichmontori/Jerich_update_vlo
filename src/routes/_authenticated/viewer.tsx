@@ -181,11 +181,10 @@ function ViewerPage() {
       nama: fNama.trim(),
       asal: fAsal.trim() || null,
       kategori: fKategori.trim() || null,
-      sesi: `Sesi ${Math.ceil(n / 10)}`,
     };
     const { error } = editId
       ? await supabase.from("peserta").update(payload).eq("id", editId)
-      : await supabase.from("peserta").insert(payload);
+      : await supabase.from("peserta").insert({ ...payload, sesi: `Sesi ${Math.ceil(n / 10)}` });
     setSaving(false);
     if (error) { toast.error(error.message); return; }
     toast.success(editId ? "Peserta diperbarui" : "Peserta ditambahkan");
