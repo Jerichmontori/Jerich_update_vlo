@@ -13,6 +13,7 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RankingRouteImport } from './routes/ranking'
 import { Route as PosisiRouteImport } from './routes/posisi'
 import { Route as LiveRouteImport } from './routes/live'
+import { Route as KeberatanRouteImport } from './routes/keberatan'
 import { Route as DaftarRouteImport } from './routes/daftar'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
@@ -24,12 +25,14 @@ import { Route as AuthenticatedVmixRouteImport } from './routes/_authenticated/v
 import { Route as AuthenticatedViewerRouteImport } from './routes/_authenticated/viewer'
 import { Route as AuthenticatedSkorRouteImport } from './routes/_authenticated/skor'
 import { Route as AuthenticatedOperatorRouteImport } from './routes/_authenticated/operator'
+import { Route as AuthenticatedInspekturVarRouteImport } from './routes/_authenticated/inspektur-var'
 import { Route as AuthenticatedInspekturRouteImport } from './routes/_authenticated/inspektur'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as ApiPublicSkorDotxmlRouteImport } from './routes/api/public/skor[.]xml'
 import { Route as ApiPublicSkorDotjsonRouteImport } from './routes/api/public/skor[.]json'
 import { Route as ApiPublicNowreadingDotxmlRouteImport } from './routes/api/public/nowreading[.]xml'
 import { Route as ApiPublicLiveDotjsonRouteImport } from './routes/api/public/live[.]json'
+import { Route as ApiPublicKeberatanRouteImport } from './routes/api/public/keberatan'
 import { Route as ApiPublicBootstrapJuriDummyRouteImport } from './routes/api/public/bootstrap-juri-dummy'
 import { Route as ApiPublicBootstrapAdminRouteImport } from './routes/api/public/bootstrap-admin'
 import { Route as ApiPublicVmixSkorDothtmlRouteImport } from './routes/api/public/vmix/skor[.]html'
@@ -54,6 +57,11 @@ const PosisiRoute = PosisiRouteImport.update({
 const LiveRoute = LiveRouteImport.update({
   id: '/live',
   path: '/live',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const KeberatanRoute = KeberatanRouteImport.update({
+  id: '/keberatan',
+  path: '/keberatan',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DaftarRoute = DaftarRouteImport.update({
@@ -110,6 +118,12 @@ const AuthenticatedOperatorRoute = AuthenticatedOperatorRouteImport.update({
   path: '/operator',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedInspekturVarRoute =
+  AuthenticatedInspekturVarRouteImport.update({
+    id: '/inspektur-var',
+    path: '/inspektur-var',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedInspekturRoute = AuthenticatedInspekturRouteImport.update({
   id: '/inspektur',
   path: '/inspektur',
@@ -139,6 +153,11 @@ const ApiPublicNowreadingDotxmlRoute =
 const ApiPublicLiveDotjsonRoute = ApiPublicLiveDotjsonRouteImport.update({
   id: '/api/public/live.json',
   path: '/api/public/live.json',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiPublicKeberatanRoute = ApiPublicKeberatanRouteImport.update({
+  id: '/api/public/keberatan',
+  path: '/api/public/keberatan',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ApiPublicBootstrapJuriDummyRoute =
@@ -175,12 +194,14 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/daftar': typeof DaftarRoute
+  '/keberatan': typeof KeberatanRoute
   '/live': typeof LiveRoute
   '/posisi': typeof PosisiRoute
   '/ranking': typeof RankingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inspektur': typeof AuthenticatedInspekturRoute
+  '/inspektur-var': typeof AuthenticatedInspekturVarRoute
   '/operator': typeof AuthenticatedOperatorRoute
   '/skor': typeof AuthenticatedSkorRoute
   '/viewer': typeof AuthenticatedViewerRoute
@@ -190,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/vmix/skor': typeof VmixSkorRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/api/public/bootstrap-juri-dummy': typeof ApiPublicBootstrapJuriDummyRoute
+  '/api/public/keberatan': typeof ApiPublicKeberatanRoute
   '/api/public/live.json': typeof ApiPublicLiveDotjsonRoute
   '/api/public/nowreading.xml': typeof ApiPublicNowreadingDotxmlRoute
   '/api/public/skor.json': typeof ApiPublicSkorDotjsonRoute
@@ -202,12 +224,14 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/daftar': typeof DaftarRoute
+  '/keberatan': typeof KeberatanRoute
   '/live': typeof LiveRoute
   '/posisi': typeof PosisiRoute
   '/ranking': typeof RankingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/inspektur': typeof AuthenticatedInspekturRoute
+  '/inspektur-var': typeof AuthenticatedInspekturVarRoute
   '/operator': typeof AuthenticatedOperatorRoute
   '/skor': typeof AuthenticatedSkorRoute
   '/viewer': typeof AuthenticatedViewerRoute
@@ -217,6 +241,7 @@ export interface FileRoutesByTo {
   '/vmix/skor': typeof VmixSkorRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/api/public/bootstrap-juri-dummy': typeof ApiPublicBootstrapJuriDummyRoute
+  '/api/public/keberatan': typeof ApiPublicKeberatanRoute
   '/api/public/live.json': typeof ApiPublicLiveDotjsonRoute
   '/api/public/nowreading.xml': typeof ApiPublicNowreadingDotxmlRoute
   '/api/public/skor.json': typeof ApiPublicSkorDotjsonRoute
@@ -231,12 +256,14 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/daftar': typeof DaftarRoute
+  '/keberatan': typeof KeberatanRoute
   '/live': typeof LiveRoute
   '/posisi': typeof PosisiRoute
   '/ranking': typeof RankingRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/inspektur': typeof AuthenticatedInspekturRoute
+  '/_authenticated/inspektur-var': typeof AuthenticatedInspekturVarRoute
   '/_authenticated/operator': typeof AuthenticatedOperatorRoute
   '/_authenticated/skor': typeof AuthenticatedSkorRoute
   '/_authenticated/viewer': typeof AuthenticatedViewerRoute
@@ -246,6 +273,7 @@ export interface FileRoutesById {
   '/vmix/skor': typeof VmixSkorRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/api/public/bootstrap-juri-dummy': typeof ApiPublicBootstrapJuriDummyRoute
+  '/api/public/keberatan': typeof ApiPublicKeberatanRoute
   '/api/public/live.json': typeof ApiPublicLiveDotjsonRoute
   '/api/public/nowreading.xml': typeof ApiPublicNowreadingDotxmlRoute
   '/api/public/skor.json': typeof ApiPublicSkorDotjsonRoute
@@ -260,12 +288,14 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/daftar'
+    | '/keberatan'
     | '/live'
     | '/posisi'
     | '/ranking'
     | '/sitemap.xml'
     | '/dashboard'
     | '/inspektur'
+    | '/inspektur-var'
     | '/operator'
     | '/skor'
     | '/viewer'
@@ -275,6 +305,7 @@ export interface FileRouteTypes {
     | '/vmix/skor'
     | '/api/public/bootstrap-admin'
     | '/api/public/bootstrap-juri-dummy'
+    | '/api/public/keberatan'
     | '/api/public/live.json'
     | '/api/public/nowreading.xml'
     | '/api/public/skor.json'
@@ -287,12 +318,14 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/daftar'
+    | '/keberatan'
     | '/live'
     | '/posisi'
     | '/ranking'
     | '/sitemap.xml'
     | '/dashboard'
     | '/inspektur'
+    | '/inspektur-var'
     | '/operator'
     | '/skor'
     | '/viewer'
@@ -302,6 +335,7 @@ export interface FileRouteTypes {
     | '/vmix/skor'
     | '/api/public/bootstrap-admin'
     | '/api/public/bootstrap-juri-dummy'
+    | '/api/public/keberatan'
     | '/api/public/live.json'
     | '/api/public/nowreading.xml'
     | '/api/public/skor.json'
@@ -315,12 +349,14 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/daftar'
+    | '/keberatan'
     | '/live'
     | '/posisi'
     | '/ranking'
     | '/sitemap.xml'
     | '/_authenticated/dashboard'
     | '/_authenticated/inspektur'
+    | '/_authenticated/inspektur-var'
     | '/_authenticated/operator'
     | '/_authenticated/skor'
     | '/_authenticated/viewer'
@@ -330,6 +366,7 @@ export interface FileRouteTypes {
     | '/vmix/skor'
     | '/api/public/bootstrap-admin'
     | '/api/public/bootstrap-juri-dummy'
+    | '/api/public/keberatan'
     | '/api/public/live.json'
     | '/api/public/nowreading.xml'
     | '/api/public/skor.json'
@@ -344,6 +381,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   DaftarRoute: typeof DaftarRoute
+  KeberatanRoute: typeof KeberatanRoute
   LiveRoute: typeof LiveRoute
   PosisiRoute: typeof PosisiRoute
   RankingRoute: typeof RankingRoute
@@ -353,6 +391,7 @@ export interface RootRouteChildren {
   VmixSkorRoute: typeof VmixSkorRoute
   ApiPublicBootstrapAdminRoute: typeof ApiPublicBootstrapAdminRoute
   ApiPublicBootstrapJuriDummyRoute: typeof ApiPublicBootstrapJuriDummyRoute
+  ApiPublicKeberatanRoute: typeof ApiPublicKeberatanRoute
   ApiPublicLiveDotjsonRoute: typeof ApiPublicLiveDotjsonRoute
   ApiPublicNowreadingDotxmlRoute: typeof ApiPublicNowreadingDotxmlRoute
   ApiPublicSkorDotjsonRoute: typeof ApiPublicSkorDotjsonRoute
@@ -390,6 +429,13 @@ declare module '@tanstack/react-router' {
       path: '/live'
       fullPath: '/live'
       preLoaderRoute: typeof LiveRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/keberatan': {
+      id: '/keberatan'
+      path: '/keberatan'
+      fullPath: '/keberatan'
+      preLoaderRoute: typeof KeberatanRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/daftar': {
@@ -469,6 +515,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedOperatorRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/inspektur-var': {
+      id: '/_authenticated/inspektur-var'
+      path: '/inspektur-var'
+      fullPath: '/inspektur-var'
+      preLoaderRoute: typeof AuthenticatedInspekturVarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/inspektur': {
       id: '/_authenticated/inspektur'
       path: '/inspektur'
@@ -509,6 +562,13 @@ declare module '@tanstack/react-router' {
       path: '/api/public/live.json'
       fullPath: '/api/public/live.json'
       preLoaderRoute: typeof ApiPublicLiveDotjsonRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/public/keberatan': {
+      id: '/api/public/keberatan'
+      path: '/api/public/keberatan'
+      fullPath: '/api/public/keberatan'
+      preLoaderRoute: typeof ApiPublicKeberatanRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/api/public/bootstrap-juri-dummy': {
@@ -552,6 +612,7 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedInspekturRoute: typeof AuthenticatedInspekturRoute
+  AuthenticatedInspekturVarRoute: typeof AuthenticatedInspekturVarRoute
   AuthenticatedOperatorRoute: typeof AuthenticatedOperatorRoute
   AuthenticatedSkorRoute: typeof AuthenticatedSkorRoute
   AuthenticatedViewerRoute: typeof AuthenticatedViewerRoute
@@ -561,6 +622,7 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedInspekturRoute: AuthenticatedInspekturRoute,
+  AuthenticatedInspekturVarRoute: AuthenticatedInspekturVarRoute,
   AuthenticatedOperatorRoute: AuthenticatedOperatorRoute,
   AuthenticatedSkorRoute: AuthenticatedSkorRoute,
   AuthenticatedViewerRoute: AuthenticatedViewerRoute,
@@ -575,6 +637,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   DaftarRoute: DaftarRoute,
+  KeberatanRoute: KeberatanRoute,
   LiveRoute: LiveRoute,
   PosisiRoute: PosisiRoute,
   RankingRoute: RankingRoute,
@@ -584,6 +647,7 @@ const rootRouteChildren: RootRouteChildren = {
   VmixSkorRoute: VmixSkorRoute,
   ApiPublicBootstrapAdminRoute: ApiPublicBootstrapAdminRoute,
   ApiPublicBootstrapJuriDummyRoute: ApiPublicBootstrapJuriDummyRoute,
+  ApiPublicKeberatanRoute: ApiPublicKeberatanRoute,
   ApiPublicLiveDotjsonRoute: ApiPublicLiveDotjsonRoute,
   ApiPublicNowreadingDotxmlRoute: ApiPublicNowreadingDotxmlRoute,
   ApiPublicSkorDotjsonRoute: ApiPublicSkorDotjsonRoute,
@@ -595,13 +659,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

@@ -122,13 +122,15 @@ function AuthPage() {
         ? "/dashboard"
         : roleSet.has("juri") || roleSet.has("ketua_juri")
           ? "/dashboard"
-          : roleSet.has("inspektur")
-            ? "/inspektur"
-            : roleSet.has("panitia")
-              ? "/operator"
-              : roleSet.has("operator_vmix")
-                ? "/vmix"
-                : "/viewer";
+          : roleSet.has("inspektur_var")
+            ? "/inspektur-var"
+            : roleSet.has("inspektur")
+              ? "/inspektur"
+              : roleSet.has("panitia")
+                ? "/operator"
+                : roleSet.has("operator_vmix")
+                  ? "/vmix"
+                  : "/viewer";
       navigate({ to: target });
 
     } catch (err) {

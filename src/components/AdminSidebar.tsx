@@ -25,6 +25,8 @@ import {
   Shield,
   ExternalLink,
   Trash2,
+  FileWarning,
+  Undo2,
 
 } from "lucide-react";
 
@@ -34,6 +36,8 @@ export type AdminSection =
   | "live"
   | "penilaian"
   | "var"
+  | "keberatan"
+  | "peninjauan"
   | "peserta"
   | "juri"
   | "pengaturan-nilai"
@@ -51,6 +55,8 @@ const GROUPS: { label: string; items: Item[] }[] = [
       { value: "live", label: "Live Ranking", icon: Radio },
       { value: "penilaian", label: "Penilaian", icon: ClipboardCheck },
       { value: "var", label: "Potensi VAR", icon: AlertTriangle },
+      { value: "keberatan", label: "Keberatan", icon: FileWarning },
+      { value: "peninjauan", label: "Peninjauan Kembali", icon: Undo2 },
     ],
   },
 
@@ -70,8 +76,10 @@ const GROUPS: { label: string; items: Item[] }[] = [
 const LINKS: { href: string; label: string; icon: typeof LayoutDashboard }[] = [
   { href: "/operator", label: "Operator Lomba", icon: Presentation },
   { href: "/inspektur", label: "Inspektur", icon: Shield },
+  { href: "/inspektur-var", label: "Inspektur VAR", icon: Gavel },
   { href: "/vmix", label: "Operator vMix", icon: MonitorPlay },
   { href: "/viewer", label: "Sekretariat", icon: Eye },
+  { href: "/keberatan", label: "Form Keberatan (publik)", icon: FileWarning },
 ];
 
 export const ADMIN_SECTION_LABEL: Record<AdminSection, string> = Object.fromEntries(

@@ -31,18 +31,21 @@ import { useBranding } from "@/hooks/useBranding";
 import BrandingSettingsButton from "@/components/BrandingSettingsButton";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import AdminSidebar, { ADMIN_SECTION_LABEL, type AdminSection } from "@/components/AdminSidebar";
+import KeberatanTab from "@/components/KeberatanTab";
+import PeninjauanTab from "@/components/PeninjauanTab";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: App,
 });
 
 type Peserta = { id: string; nomor_urut: number; nama: string; asal: string | null; sesi: string | null; kategori: string | null };
-type AppRole = "admin" | "juri" | "panitia" | "inspektur" | "ketua_juri" | "viewer" | "operator_vmix";
+type AppRole = "admin" | "juri" | "panitia" | "inspektur" | "inspektur_var" | "ketua_juri" | "viewer" | "operator_vmix";
 const ROLE_LABEL: Record<AppRole, string> = {
   admin: "Admin",
   juri: "Juri",
   panitia: "Panitia",
   inspektur: "Inspektur Pertandingan",
+  inspektur_var: "Inspektur VAR",
   ketua_juri: "Ketua Dewan Juri",
   viewer: "Sekretariat",
   operator_vmix: "Operator vMix",
@@ -158,6 +161,8 @@ function App() {
             {section === "live" && <SesiLiveRanking />}
             {section === "penilaian" && <PenilaianTab />}
             {section === "var" && <AdminVarTab />}
+            {section === "keberatan" && <KeberatanTab canDecide={roles.isAdm} />}
+            {section === "peninjauan" && <PeninjauanTab canDecide={roles.isAdm} />}
             {section === "peserta" && <PesertaTab />}
             {section === "juri" && <JuriTab />}
             {section === "pengaturan-nilai" && <PengaturanNilaiTab />}
@@ -721,6 +726,7 @@ function JuriTab() {
                   <SelectItem value="panitia">Panitia</SelectItem>
                   <SelectItem value="ketua_juri">Ketua Dewan Juri</SelectItem>
                   <SelectItem value="inspektur">Inspektur Pertandingan</SelectItem>
+                  <SelectItem value="inspektur_var">Inspektur VAR</SelectItem>
                   <SelectItem value="operator_vmix">Operator vMix</SelectItem>
                   <SelectItem value="viewer">Sekretariat</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
@@ -788,6 +794,7 @@ function JuriTab() {
                       <SelectItem value="panitia">Panitia</SelectItem>
                       <SelectItem value="ketua_juri">Ketua Dewan Juri</SelectItem>
                       <SelectItem value="inspektur">Inspektur Pertandingan</SelectItem>
+                      <SelectItem value="inspektur_var">Inspektur VAR</SelectItem>
                       <SelectItem value="operator_vmix">Operator vMix</SelectItem>
                   <SelectItem value="viewer">Sekretariat</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>

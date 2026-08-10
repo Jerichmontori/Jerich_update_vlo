@@ -101,6 +101,71 @@ export type Database = {
         }
         Relationships: []
       }
+      keberatan: {
+        Row: {
+          bukti_url: string | null
+          catatan_ip: string | null
+          created_at: string
+          diputus_at: string | null
+          diputus_oleh: string | null
+          hubungan: string | null
+          id: string
+          jenis: string
+          keputusan: string | null
+          kontak: string | null
+          nama_pengaju: string
+          nomor_tiket: string
+          peserta_id: string
+          status: string
+          updated_at: string
+          uraian: string
+        }
+        Insert: {
+          bukti_url?: string | null
+          catatan_ip?: string | null
+          created_at?: string
+          diputus_at?: string | null
+          diputus_oleh?: string | null
+          hubungan?: string | null
+          id?: string
+          jenis: string
+          keputusan?: string | null
+          kontak?: string | null
+          nama_pengaju: string
+          nomor_tiket: string
+          peserta_id: string
+          status?: string
+          updated_at?: string
+          uraian: string
+        }
+        Update: {
+          bukti_url?: string | null
+          catatan_ip?: string | null
+          created_at?: string
+          diputus_at?: string | null
+          diputus_oleh?: string | null
+          hubungan?: string | null
+          id?: string
+          jenis?: string
+          keputusan?: string | null
+          kontak?: string | null
+          nama_pengaju?: string
+          nomor_tiket?: string
+          peserta_id?: string
+          status?: string
+          updated_at?: string
+          uraian?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "keberatan_peserta_id_fkey"
+            columns: ["peserta_id"]
+            isOneToOne: false
+            referencedRelation: "peserta"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       kriteria: {
         Row: {
           batas_atas: number
@@ -492,6 +557,62 @@ export type Database = {
           },
         ]
       }
+      peninjauan_kembali: {
+        Row: {
+          admin_id: string | null
+          admin_nama: string | null
+          alasan: string
+          catatan_admin: string | null
+          created_at: string
+          digunakan_at: string | null
+          diputus_at: string | null
+          id: string
+          pemohon_id: string | null
+          pemohon_nama: string | null
+          peserta_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_id?: string | null
+          admin_nama?: string | null
+          alasan: string
+          catatan_admin?: string | null
+          created_at?: string
+          digunakan_at?: string | null
+          diputus_at?: string | null
+          id?: string
+          pemohon_id?: string | null
+          pemohon_nama?: string | null
+          peserta_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_id?: string | null
+          admin_nama?: string | null
+          alasan?: string
+          catatan_admin?: string | null
+          created_at?: string
+          digunakan_at?: string | null
+          diputus_at?: string | null
+          id?: string
+          pemohon_id?: string | null
+          pemohon_nama?: string | null
+          peserta_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "peninjauan_kembali_peserta_id_fkey"
+            columns: ["peserta_id"]
+            isOneToOne: false
+            referencedRelation: "peserta"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       peserta: {
         Row: {
           asal: string | null
@@ -743,6 +864,57 @@ export type Database = {
         }
         Relationships: []
       }
+      var_keputusan_ip: {
+        Row: {
+          catatan: string | null
+          clear_text: boolean | null
+          created_at: string
+          id: string
+          ip_nama: string | null
+          ip_user_id: string | null
+          koreksi: Json
+          peserta_id: string
+          var_session_id: string | null
+        }
+        Insert: {
+          catatan?: string | null
+          clear_text?: boolean | null
+          created_at?: string
+          id?: string
+          ip_nama?: string | null
+          ip_user_id?: string | null
+          koreksi?: Json
+          peserta_id: string
+          var_session_id?: string | null
+        }
+        Update: {
+          catatan?: string | null
+          clear_text?: boolean | null
+          created_at?: string
+          id?: string
+          ip_nama?: string | null
+          ip_user_id?: string | null
+          koreksi?: Json
+          peserta_id?: string
+          var_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "var_keputusan_ip_peserta_id_fkey"
+            columns: ["peserta_id"]
+            isOneToOne: false
+            referencedRelation: "peserta"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "var_keputusan_ip_var_session_id_fkey"
+            columns: ["var_session_id"]
+            isOneToOne: false
+            referencedRelation: "var_clarification_session"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       var_review: {
         Row: {
           catatan: string | null
@@ -772,6 +944,53 @@ export type Database = {
           session_id?: string | null
         }
         Relationships: []
+      }
+      var_snapshot_nilai: {
+        Row: {
+          created_at: string
+          detail_sebelum: Json | null
+          detail_sesudah: Json | null
+          id: string
+          juri_id: string
+          juri_nama: string | null
+          keputusan_id: string | null
+          nilai_sebelum: number | null
+          nilai_sesudah: number | null
+          peserta_id: string
+        }
+        Insert: {
+          created_at?: string
+          detail_sebelum?: Json | null
+          detail_sesudah?: Json | null
+          id?: string
+          juri_id: string
+          juri_nama?: string | null
+          keputusan_id?: string | null
+          nilai_sebelum?: number | null
+          nilai_sesudah?: number | null
+          peserta_id: string
+        }
+        Update: {
+          created_at?: string
+          detail_sebelum?: Json | null
+          detail_sesudah?: Json | null
+          id?: string
+          juri_id?: string
+          juri_nama?: string | null
+          keputusan_id?: string | null
+          nilai_sebelum?: number | null
+          nilai_sesudah?: number | null
+          peserta_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "var_snapshot_nilai_keputusan_id_fkey"
+            columns: ["keputusan_id"]
+            isOneToOne: false
+            referencedRelation: "var_keputusan_ip"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -861,6 +1080,10 @@ export type Database = {
           isOneToOne: false
           isSetofReturn: true
         }
+      }
+      admin_putuskan_peninjauan: {
+        Args: { _catatan: string; _id: string; _setuju: boolean }
+        Returns: undefined
       }
       admin_reset_all_penilaian: { Args: never; Returns: undefined }
       admin_set_juri_aktif: {
@@ -1006,6 +1229,23 @@ export type Database = {
         Returns: string
       }
       inspektur_var_detail: { Args: { _peserta: string }; Returns: Json }
+      ip_putuskan_keberatan: {
+        Args: { _catatan: string; _id: string; _keputusan: string }
+        Returns: undefined
+      }
+      ip2_ajukan_peninjauan: {
+        Args: { _alasan: string; _peserta: string }
+        Returns: string
+      }
+      ip2_putuskan_var: {
+        Args: {
+          _catatan: string
+          _clear: boolean
+          _koreksi: Json
+          _peserta: string
+        }
+        Returns: string
+      }
       is_peserta_final: { Args: { _peserta: string }; Returns: boolean }
       is_peserta_uji: { Args: { _peserta: string }; Returns: boolean }
       is_vmix_viewer: { Args: { _uid: string }; Returns: boolean }
@@ -1024,6 +1264,7 @@ export type Database = {
         Args: { _session: string; _setuju: boolean }
         Returns: Json
       }
+      keberatan_status: { Args: { _tiket: string }; Returns: Json }
       live_ranking_sesi_list: { Args: never; Returns: Json }
       lookup_nilai: { Args: { _grade: number }; Returns: number }
       mulai_klarifikasi_var: { Args: { _peserta: string }; Returns: string }
@@ -1067,6 +1308,7 @@ export type Database = {
         Args: { _id: string; _mazmur: string }
         Returns: undefined
       }
+      var_berita_acara: { Args: { _peserta: string }; Returns: Json }
       var_detail_persepsi: { Args: { _peserta: string }; Returns: Json }
       viewer_catatan_peserta: { Args: { _peserta: string }; Returns: Json }
       viewer_peserta_list: { Args: never; Returns: Json }
@@ -1080,6 +1322,7 @@ export type Database = {
         | "inspektur"
         | "ketua_juri"
         | "operator_vmix"
+        | "inspektur_var"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1215,6 +1458,7 @@ export const Constants = {
         "inspektur",
         "ketua_juri",
         "operator_vmix",
+        "inspektur_var",
       ],
     },
   },
