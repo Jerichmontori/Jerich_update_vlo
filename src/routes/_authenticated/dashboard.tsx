@@ -3698,6 +3698,19 @@ function LihatPenilaianTab() {
     return value == null ? undefined : value;
   }
 
+  // Juri yang nilainya ditampilkan (null = semua)
+  const juriTampil = useMemo(
+    () => (juriPilih === null ? juri : juri.filter((j) => juriPilih.includes(j.id))),
+    [juri, juriPilih],
+  );
+  function toggleJuri(id: string) {
+    setJuriPilih((prev) => {
+      const cur = prev === null ? juri.map((j) => j.id) : prev;
+      const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+      return next.length === juri.length ? null : next;
+    });
+  }
+
   const kategoriList = useMemo(() => {
     const s = new Set<string>();
     peserta.forEach((p) => { if (p.kategori && p.kategori.trim()) s.add(p.kategori.trim()); });
