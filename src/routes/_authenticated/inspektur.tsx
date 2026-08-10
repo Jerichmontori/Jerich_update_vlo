@@ -85,6 +85,7 @@ function InspekturPage() {
   const [currentUser, setCurrentUser] = useState<{ nama: string; email: string; role: string } | null>(null);
   const [ringkasan, setRingkasan] = useState<Ringkasan | null>(null);
   const [monitor, setMonitor] = useState<MonitorRow[]>([]);
+  const { varMap } = useVarStatus(allowed === true);
   const MONITOR_PAGE_SIZE = 10;
   const [monitorPage, setMonitorPage] = useState(1);
   const [vars, setVars] = useState<VarRow[]>([]);
@@ -401,12 +402,13 @@ function InspekturPage() {
                   <TableHead>Bacaan Mazmur</TableHead>
                   
                   <TableHead>Status</TableHead>
+                  <TableHead>VAR</TableHead>
                   <TableHead className="text-right">Aksi</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {monitorRows.length === 0 && (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Belum ada peserta yang dinilai</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">Belum ada peserta yang dinilai</TableCell></TableRow>
                 )}
                 {monitorRows.slice((monitorPage - 1) * MONITOR_PAGE_SIZE, monitorPage * MONITOR_PAGE_SIZE).map((r) => {
                   const v = statusVariant(r.status);
@@ -418,6 +420,7 @@ function InspekturPage() {
                       <TableCell className="text-muted-foreground">{r.kategori || "—"}</TableCell>
                       <TableCell className="text-muted-foreground">{r.bacaan || "—"}</TableCell>
                       <TableCell><Badge className={v.className}>{v.label}</Badge></TableCell>
+                      <TableCell><VarBadge status={varMap[r.peserta_id]} /></TableCell>
                       <TableCell className="text-right space-x-2 whitespace-nowrap">
                         {activeSesiPesertaIds.has(r.peserta_id) && (
                           <>
