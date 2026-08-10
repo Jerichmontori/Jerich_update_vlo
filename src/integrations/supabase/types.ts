@@ -890,6 +890,7 @@ export type Database = {
           var_status: string
         }[]
       }
+      get_sesi_tampil: { Args: never; Returns: number }
       get_submission_progress: {
         Args: { _peserta: string }
         Returns: {
@@ -1057,6 +1058,7 @@ export type Database = {
         Args: { _peserta: string; _terlambat: boolean }
         Returns: undefined
       }
+      set_sesi_tampil: { Args: { _sesi: number }; Returns: number }
       submit_klarifikasi_var: {
         Args: { _peserta: string; _responses: Json }
         Returns: Json
