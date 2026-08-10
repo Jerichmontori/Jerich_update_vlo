@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Toaster, toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
+import { signInWithIdentifier } from "@/lib/auth-lookup.functions";
 
 
 export const Route = createFileRoute("/auth")({
