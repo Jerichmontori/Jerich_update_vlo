@@ -1,55 +1,87 @@
+# Rencana Pengembangan: Keberatan, Koreksi VAR oleh IP, dan Juri per Kategori
 
-# Rencana Perubahan
+Tiga pengembangan besar. Disarankan dikerjakan bertahap sesuai urutan di bawah.
 
-## 1. Halaman Inspektur — Progres Juri & Nilai
-- Tambah panel "Progres Juri" pada peserta yang sesinya aktif: daftar semua juri approved, status **Sudah Kirim** / **Belum Kirim**, dan nilai yang sudah diinput per kriteria bila sudah kirim.
-- Diperbarui otomatis (polling yang sudah ada di halaman inspektur).
-- Data via RPC baru `inspektur_progres_juri(_peserta uuid)` yang mengembalikan daftar juri + status submission + nilai per kriteria (JSONB), dibungkus `SECURITY DEFINER` dengan gate role inspektur/admin.
+## 1. E-Form Pengajuan Keberatan (publik)
 
-## 2. Pindah tombol "Akhiri Penilaian"
-- Hapus tombol **Akhiri Penilaian** di halaman **Operator** (`src/routes/_authenticated/operator.tsx`) — sisakan hanya Ubah Bacaan Mazmur.
-- Tambah tombol **Akhiri Penilaian** di halaman **Inspektur** (`src/routes/_authenticated/inspektur.tsx`) untuk sesi aktif terpilih.
-- Ketika diklik: memanggil `akhiri_sesi` (sudah ada) + menaikkan status peserta menjadi **Final** (menutup semua `var_clarification_session` yang masih terbuka untuk peserta itu → status `final`).
+Halaman publik `/keberatan` yang bisa diisi peserta atau pendamping tanpa login.
 
-## 3. Tombol "Mulai Penilaian" auto-disable
-- Di Operator, setelah **Mulai Penilaian** diklik dan sesi aktif tercipta, tombol dinonaktifkan.
-- Baru kembali aktif setelah Inspektur mengklik **Akhiri Penilaian** (state ini sudah tercermin dari `sesi` polling; hanya perlu memastikan UI tidak menampilkan tombol Mulai saat ada sesi aktif — sudah demikian).
+- Identifikasi peserta: pilih/masukkan **nomor urut + nama** peserta, lalu isi:
+  kategori keberatan (nilai, teknis, administrasi), uraian keberatan, nama pengaju,
+  hubungan dengan peserta, no. HP/WA, dan (opsional) tautan bukti.
+- Setelah kirim, pengaju menerima **nomor tiket** untuk mengecek status di
+  `/keberatan/status` (cukup nomor tiket, tanpa data pribadi ditampilkan).
+- Pengaman: validasi ketat (panjang teks, format HP), rate-limit per peserta/IP,
+  serta jendela waktu — keberatan hanya bisa diajukan dalam N menit setelah peserta
+  selesai dinilai (nilai default 60 menit, bisa diubah admin).
+- Penanganan: **Inspektur Pertandingan (IP)** melihat daftar keberatan masuk,
+  membuka detail peserta + nilai, lalu memberi keputusan
+  (diterima / ditolak / diteruskan ke koreksi VAR) beserta catatan.
+  Admin melihat semua keberatan dan rekapnya, serta bisa mengekspor ke laporan.
+- Status tiket: `baru` → `ditinjau` → `diterima`/`ditolak`, tampil di halaman status.
 
-## 4. Ajukan VAR manual (Inspektur)
-- Tombol **Ajukan VAR** di halaman Inspektur untuk sesi yang **sedang aktif** saja.
-  - Disabled jika tidak ada sesi aktif untuk peserta.
-- Dialog konfirmasi: input **Alasan VAR** (textarea wajib).
-- Membuat/mengupdate `var_clarification_session` dengan status baru `menunggu_persetujuan_juri`, `komponen_berbeda` diisi `["manual"]`, catatan disimpan di metadata review + `komponen_berbeda` menyertakan alasan.
-- RPC baru: `inspektur_ajukan_var(_peserta, _alasan)`.
+## 2. Potensi VAR diselesaikan oleh IP (bukan juri)
 
-## 5. Persetujuan VAR oleh semua juri
-- Di halaman **Juri (dashboard)**, ketika ada VAR manual berstatus `menunggu_persetujuan_juri` untuk peserta yang sedang mereka nilai, tampilkan dialog: "Inspektur mengajukan VAR — alasan: … Setujui?" dengan tombol Setuju/Tolak.
-- RPC baru: `juri_vote_var(_session_id, _setuju bool)` menyimpan suara di `var_clarification_response` (komponen=`manual_vote`, keputusan=bool).
-- Bila **semua juri approved** menyetujui: 
-  - Status VAR → `perbaikan_var_manual`.
-  - Hapus baris `penilaian_submission` untuk peserta ini (mengaktifkan kembali form juri agar bisa mengubah nilai dan kirim ulang). Baris `penilaian` (nilai lama) tetap sehingga saat form dibuka nilai sebelumnya tampil untuk diedit.
-  - Setelah semua juri kirim ulang, alur normal `after_submission_detect_var` → `potensi_var` / `final` seperti biasa.
-- Bila ada juri menolak: status → `ditolak_juri`, tidak ada perubahan nilai.
-- Kartu **Potensi VAR** tetap menampilkan riwayat VAR manual (tidak dihapus otomatis) agar jumlah kejadian VAR terlacak.
+Alur baru menggantikan klarifikasi oleh juri:
 
-## 6. Sesi selesai → tidak bisa VAR
-- Tombol Ajukan VAR disabled kecuali ada `sesi_penilaian` dengan `status='active'` untuk peserta.
+- Saat sistem mendeteksi potensi VAR (perbedaan input Perhatian antar juri),
+  kasus langsung masuk ke **antrean IP**, bukan ke form juri.
+- IP membuka detail persepsi (peta ayat & perbedaan antar juri — komponen yang sudah ada),
+  lalu memutuskan **satu keputusan berlaku untuk semua juri**:
+  **Clear Text = Ya** atau **Tidak Clear Text**, plus catatan alasan.
+- Keputusan IP menimpa komponen Clear Text pada seluruh juri untuk peserta tersebut;
+  komponen lain (salah kata, menambah/mengurangi kata, catatan juri, kriteria lain)
+  **tidak diubah**. Nilai akhir dihitung ulang otomatis setelah keputusan disimpan.
+- Nilai lama disimpan sebagai riwayat (snapshot sebelum & sesudah koreksi) supaya
+  bisa diaudit dan muncul di laporan pertanggungjawaban.
+- Juri tidak lagi diminta mengirim ulang nilai untuk kasus VAR ini; form juri tetap terkunci.
+- Halaman "Potensi VAR" di Admin tetap read-only; kolom keterangan menampilkan
+  keputusan IP dan waktu penyelesaian.
+
+## 3. Juri per kategori + sesi paralel
+
+Satu aplikasi, juri di-assign ke kategori, dan beberapa kategori bisa berjalan bersamaan.
+
+- **Penugasan juri**: admin menetapkan satu atau lebih kategori untuk tiap juri
+  (mis. Juri A–D untuk P/KB, Juri E–H untuk W/KI). Juri hanya melihat dan menilai
+  peserta pada kategori yang ditugaskan.
+- **Sesi paralel**: kontrol sesi operator berubah dari satu sesi aktif global menjadi
+  **satu sesi aktif per kategori**, sehingga P/KB dan W/KI bisa tampil bersamaan.
+  Operator memilih kategori terlebih dahulu, baru mengelola peserta di kategori itu.
+- **Pool juri & perhitungan**: jumlah juri, deteksi VAR, status "semua juri sudah kirim",
+  dan monitoring Inspektur dihitung per kategori berdasarkan juri yang ditugaskan
+  dan aktif menilai — bukan seluruh juri.
+- **Live ranking, laporan, vMix**: mengikuti kategori masing-masing; layar live
+  bisa memilih kategori mana yang ditampilkan (mekanisme filter kategori yang sudah ada).
+- Bila satu juri ditugaskan ke dua kategori, ia melihat kedua antrean dan menilai bergantian.
 
 ## Detail teknis
-Migrasi Supabase:
-- `inspektur_progres_juri(_peserta uuid)` RETURNS jsonb.
-- `inspektur_ajukan_var(_peserta uuid, _alasan text)` RETURNS uuid.
-- `juri_vote_var(_session uuid, _setuju bool)` RETURNS jsonb.
-- `inspektur_akhiri_sesi(_peserta uuid)` RETURNS void: panggil `akhiri_sesi` + finalisasi VAR session terbuka.
-- Update fungsi terkait untuk menerima status baru `menunggu_persetujuan_juri`, `perbaikan_var_manual`, `ditolak_juri` (tetap dianggap "aktif" untuk `<> 'final'` filter).
+
+Basis data:
+- Tabel `keberatan` (nomor tiket, peserta_id, kategori keberatan, uraian, pengaju, kontak,
+  status, keputusan, catatan IP, timestamps) + RLS: `anon` hanya boleh insert lewat
+  server route publik, baca status hanya lewat RPC berdasarkan nomor tiket; IP/admin baca-tulis penuh.
+- Endpoint publik `src/routes/api/public/keberatan.ts` untuk submit + cek status
+  (validasi Zod, rate limit, tanpa PII pada respons status).
+- Tabel `juri_kategori` (juri_id, kategori) untuk penugasan juri.
+- Kolom kategori pada kontrol sesi (`system_config` sesi tampil menjadi per kategori),
+  penyesuaian `mulai_sesi` / `akhiri_sesi` / `get_sesi_tampil` / `set_sesi_tampil`.
+- Penyesuaian fungsi pool & skor: `juri_in_pool`, `juri_pool_count`, `all_juri_submitted`,
+  `detect_potensi_var`, `inspektur_monitor`, `inspektur_ringkasan`, `get_ranking`.
+- RPC baru: `ip_putuskan_var(_peserta uuid, _clear boolean, _catatan text)` (security definer,
+  gate role inspektur/admin) yang menimpa komponen Clear Text semua juri, menyimpan snapshot,
+  dan me-refresh cache nilai; `ip_daftar_keberatan()`, `ip_putuskan_keberatan(...)`.
 
 Frontend:
-- `operator.tsx`: hapus tombol Akhiri + dialog konfirmasi terkait.
-- `inspektur.tsx`: 
-  - Panel progres juri per peserta (expand di kartu Monitor).
-  - Tombol Akhiri Penilaian (sesi aktif).
-  - Tombol Ajukan VAR + dialog alasan.
-- `dashboard.tsx` (juri): tambah polling status VAR manual + dialog persetujuan.
+- Halaman baru `/keberatan` dan `/keberatan/status` (publik, dengan metadata SEO tersendiri).
+- Halaman Inspektur: tab "Keberatan" dan tab "Koreksi VAR" dengan tombol
+  Clear Text / Tidak Clear Text + catatan.
+- Sidebar Admin: entri "Keberatan" (read-only + ekspor).
+- Halaman Operator: pemilih kategori dan kontrol sesi per kategori.
+- Halaman Admin > Juri: pengaturan kategori penugasan tiap juri.
 
 ## Catatan
-Perubahan besar dan menyentuh alur skoring inti. Setelah persetujuan, saya akan mengeksekusi migrasi terlebih dahulu (menunggu approval Anda), lalu menerapkan perubahan kode frontend.
+
+Bagian 3 menyentuh inti alur sesi dan perhitungan nilai, jadi sebaiknya dikerjakan setelah
+bagian 1 dan 2 stabil. Jika Anda setuju, saya mulai dari bagian 1 (E-Form Keberatan),
+lalu bagian 2, lalu bagian 3 — setiap bagian dengan migrasi database yang perlu Anda setujui.
