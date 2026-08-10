@@ -29,6 +29,8 @@ import autoTable from "jspdf-autotable";
 import BrandLogo from "@/components/BrandLogo";
 import { useBranding } from "@/hooks/useBranding";
 import BrandingSettingsButton from "@/components/BrandingSettingsButton";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import AdminSidebar, { ADMIN_SECTION_LABEL, type AdminSection } from "@/components/AdminSidebar";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: App,
@@ -51,6 +53,7 @@ type Submission = { peserta_id: string; juri_id: string };
 function App() {
   // Single-device enforcement dijalankan di layout `_authenticated/route.tsx`
   // agar berlaku untuk semua halaman (dashboard, operator, inspektur).
+  const [section, setSection] = useState<AdminSection>("dashboard");
   const [roles, setRoles] = useState<{
     isAdm: boolean; isPan: boolean; isJuri: boolean; isInsp: boolean; isKetua: boolean;
   } | null>(null);
@@ -84,31 +87,32 @@ function App() {
   // Juri murni (bukan admin/panitia/inspektur/ketua) → hanya tab Penilaian
   const juriOnly = roles.isJuri && !roles.isAdm && !roles.isPan && !roles.isInsp && !roles.isKetua;
 
-  return (
-    <div className="min-h-screen">
-      <Toaster
-        richColors
-        position="top-center"
-        expand
-        toastOptions={{
-          classNames: {
-            toast:
-              "!font-serif !border-2 !border-accent/40 !bg-gradient-to-br !from-card !to-secondary/60 !text-foreground !shadow-[0_8px_24px_-6px_hsl(var(--primary)/0.35)] !rounded-2xl",
-            title: "!text-base !tracking-wide",
-            description: "!text-muted-foreground",
-            success: "!border-accent !bg-gradient-to-br !from-accent/25 !to-card",
-            error: "!border-destructive/60 !bg-gradient-to-br !from-destructive/15 !to-card !text-destructive",
-            warning: "!border-gold !bg-gradient-to-br !from-gold/20 !to-card",
-            info: "!border-primary/50 !bg-gradient-to-br !from-primary/10 !to-card",
-          },
-        }}
-      />
-      <Header />
-      <main className="mx-auto max-w-6xl px-4 pb-16">
-        {roles.isAdm && (
-          <div className="flex flex-wrap justify-end gap-2 pt-4"><BrandingSettingsButton /><LaporanPertanggungjawabanButton /><BackupExcelButton /><ResetAllPenilaianButton /></div>
-        )}
-        {juriOnly ? (
+  const toaster = (
+    <Toaster
+      richColors
+      position="top-center"
+      expand
+      toastOptions={{
+        classNames: {
+          toast:
+            "!font-serif !border-2 !border-accent/40 !bg-gradient-to-br !from-card !to-secondary/60 !text-foreground !shadow-[0_8px_24px_-6px_hsl(var(--primary)/0.35)] !rounded-2xl",
+          title: "!text-base !tracking-wide",
+          description: "!text-muted-foreground",
+          success: "!border-accent !bg-gradient-to-br !from-accent/25 !to-card",
+          error: "!border-destructive/60 !bg-gradient-to-br !from-destructive/15 !to-card !text-destructive",
+          warning: "!border-gold !bg-gradient-to-br !from-gold/20 !to-card",
+          info: "!border-primary/50 !bg-gradient-to-br !from-primary/10 !to-card",
+        },
+      }}
+    />
+  );
+
+  if (juriOnly) {
+    return (
+      <div className="min-h-screen">
+        {toaster}
+        <Header />
+        <main className="mx-auto max-w-6xl px-4 pb-16">
           <Tabs defaultValue="penilaian" className="w-full">
             <JuriLiveRankingApproval />
             <TabsList className="grid w-full grid-cols-2 h-auto bg-secondary/60 p-1">
@@ -118,41 +122,74 @@ function App() {
             <TabsContent value="penilaian"><PenilaianTab /></TabsContent>
             <TabsContent value="hasil"><JuriHasilFinalTab /></TabsContent>
           </Tabs>
-        ) : (
-          <Tabs defaultValue="dashboard" className="w-full">
+        </main>
+      </div>
+    );
+  }
+
+  return (
+    <SidebarProvider>
+      {toaster}
+      <div className="min-h-screen flex w-full">
+        <AdminSidebar value={section} onChange={setSection} />
+        <div className="flex-1 min-w-0 flex flex-col">
+          <Header />
+          <main className="mx-auto w-full max-w-6xl px-4 pb-16">
+            <div className="flex flex-wrap items-center gap-2 pb-4">
+              <SidebarTrigger />
+              <h2 className="text-lg font-semibold">{ADMIN_SECTION_LABEL[section]}</h2>
+              {roles.isAdm && (
+                <div className="ml-auto flex flex-wrap justify-end gap-2">
+                  <BrandingSettingsButton /><LaporanPertanggungjawabanButton /><BackupExcelButton /><ResetAllPenilaianButton />
+                </div>
+              )}
+            </div>
             {roles.isJuri && <JuriLiveRankingApproval />}
-            <TabsList className="flex w-full flex-wrap justify-start gap-1 h-auto bg-secondary/60 p-1 [&>button]:flex-1 [&>button]:min-w-[7.5rem]">
-              <TabsTrigger value="dashboard" className="gap-2"><LayoutDashboard className="size-4" />Dashboard</TabsTrigger>
-              <TabsTrigger value="ranking" className="gap-2"><Trophy className="size-4" />Ranking</TabsTrigger>
-              <TabsTrigger value="live" className="gap-2"><Trophy className="size-4" />Live Ranking</TabsTrigger>
-              <TabsTrigger value="lihat" className="gap-2"><FileText className="size-4" />Lihat Nilai</TabsTrigger>
-              <TabsTrigger value="rincian" className="gap-2"><FileText className="size-4" />Rincian Nilai</TabsTrigger>
-              <TabsTrigger value="posisi" className="gap-2"><Trophy className="size-4" />Posisi</TabsTrigger>
-              <TabsTrigger value="penilaian" className="gap-2"><ClipboardCheck className="size-4" />Penilaian</TabsTrigger>
-              <TabsTrigger value="peserta" className="gap-2"><Users className="size-4" />Peserta</TabsTrigger>
-              <TabsTrigger value="juri" className="gap-2"><Gavel className="size-4" />User</TabsTrigger>
-              <TabsTrigger value="kriteria" className="gap-2"><ListChecks className="size-4" />Kriteria</TabsTrigger>
-              <TabsTrigger value="kategori" className="gap-2"><Tags className="size-4" />Kategori</TabsTrigger>
-              <TabsTrigger value="mazmur" className="gap-2"><BookOpenText className="size-4" />Mazmur</TabsTrigger>
-            </TabsList>
-            <TabsContent value="dashboard"><DashboardTab /></TabsContent>
-            <TabsContent value="ranking"><RankingTab /></TabsContent>
-            <TabsContent value="live"><SesiLiveRanking /></TabsContent>
-            <TabsContent value="lihat"><LihatPenilaianTab /></TabsContent>
+            {section === "dashboard" && <DashboardTab />}
+            {section === "hasil" && <HasilNilaiTab />}
+            {section === "live" && <SesiLiveRanking />}
+            {section === "penilaian" && <PenilaianTab />}
+            {section === "peserta" && <PesertaTab />}
+            {section === "juri" && <JuriTab />}
+            {section === "pengaturan-nilai" && <PengaturanNilaiTab />}
+            {section === "mazmur" && <MazmurTab />}
+          </main>
+        </div>
+      </div>
+    </SidebarProvider>
+  );
+}
 
-            <TabsContent value="rincian"><RincianNilaiTab /></TabsContent>
+/** Gabungan tab Ranking + Posisi + Lihat Nilai + Rincian Nilai.
+ *  Hanya tampilan aktif yang dimuat sehingga query berat tidak berjalan berulang. */
+function HasilNilaiTab() {
+  return (
+    <Tabs defaultValue="peringkat" className="w-full">
+      <TabsList className="flex w-full flex-wrap justify-start gap-1 h-auto bg-secondary/60 p-1 [&>button]:flex-1 [&>button]:min-w-[8rem]">
+        <TabsTrigger value="peringkat" className="gap-2"><Trophy className="size-4" />Peringkat</TabsTrigger>
+        <TabsTrigger value="sesi" className="gap-2"><Trophy className="size-4" />Per Sesi</TabsTrigger>
+        <TabsTrigger value="juri" className="gap-2"><FileText className="size-4" />Nilai per Juri</TabsTrigger>
+        <TabsTrigger value="rincian" className="gap-2"><FileText className="size-4" />Detail Kriteria</TabsTrigger>
+      </TabsList>
+      <TabsContent value="peringkat"><RankingTab /></TabsContent>
+      <TabsContent value="sesi"><PosisiTab /></TabsContent>
+      <TabsContent value="juri"><LihatPenilaianTab /></TabsContent>
+      <TabsContent value="rincian"><RincianNilaiTab /></TabsContent>
+    </Tabs>
+  );
+}
 
-            <TabsContent value="posisi"><PosisiTab /></TabsContent>
-            <TabsContent value="penilaian"><PenilaianTab /></TabsContent>
-            <TabsContent value="peserta"><PesertaTab /></TabsContent>
-            <TabsContent value="juri"><JuriTab /></TabsContent>
-            <TabsContent value="kriteria"><KriteriaTab /></TabsContent>
-            <TabsContent value="kategori"><KategoriTab /></TabsContent>
-            <TabsContent value="mazmur"><MazmurTab /></TabsContent>
-          </Tabs>
-        )}
-      </main>
-    </div>
+/** Gabungan tab Kriteria + Kategori. */
+function PengaturanNilaiTab() {
+  return (
+    <Tabs defaultValue="kriteria" className="w-full">
+      <TabsList className="grid w-full grid-cols-2 h-auto bg-secondary/60 p-1">
+        <TabsTrigger value="kriteria" className="gap-2"><ListChecks className="size-4" />Kriteria</TabsTrigger>
+        <TabsTrigger value="kategori" className="gap-2"><Tags className="size-4" />Kategori</TabsTrigger>
+      </TabsList>
+      <TabsContent value="kriteria"><KriteriaTab /></TabsContent>
+      <TabsContent value="kategori"><KategoriTab /></TabsContent>
+    </Tabs>
   );
 }
 
