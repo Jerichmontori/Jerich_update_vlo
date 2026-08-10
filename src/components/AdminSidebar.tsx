@@ -24,6 +24,8 @@ import {
   Eye,
   Shield,
   ExternalLink,
+  Trash2,
+
 } from "lucide-react";
 
 export type AdminSection =
@@ -35,7 +37,8 @@ export type AdminSection =
   | "peserta"
   | "juri"
   | "pengaturan-nilai"
-  | "mazmur";
+  | "mazmur"
+  | "reset";
 
 type Item = { value: AdminSection; label: string; icon: typeof LayoutDashboard };
 
@@ -58,9 +61,11 @@ const GROUPS: { label: string; items: Item[] }[] = [
       { value: "juri", label: "User", icon: Gavel },
       { value: "pengaturan-nilai", label: "Kriteria & Kategori", icon: ListChecks },
       { value: "mazmur", label: "Mazmur", icon: BookOpenText },
+      { value: "reset", label: "Reset Data", icon: Trash2 },
     ],
   },
 ];
+
 
 const LINKS: { href: string; label: string; icon: typeof LayoutDashboard }[] = [
   { href: "/operator", label: "Operator Lomba", icon: Presentation },

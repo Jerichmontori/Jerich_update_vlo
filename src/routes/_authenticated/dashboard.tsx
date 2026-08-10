@@ -139,7 +139,7 @@ function App() {
               <h2 className="text-lg font-semibold">{ADMIN_SECTION_LABEL[section]}</h2>
               {roles.isAdm && (
                 <div className="ml-auto flex flex-wrap justify-end gap-2">
-                  <BrandingSettingsButton /><LaporanPertanggungjawabanButton /><BackupExcelButton /><ResetAllPenilaianButton />
+                  <BrandingSettingsButton /><LaporanPertanggungjawabanButton /><BackupExcelButton />
                 </div>
               )}
             </div>
@@ -152,6 +152,8 @@ function App() {
             {section === "juri" && <JuriTab />}
             {section === "pengaturan-nilai" && <PengaturanNilaiTab />}
             {section === "mazmur" && <MazmurTab />}
+            {section === "reset" && <ResetTab />}
+
           </main>
         </div>
       </div>
@@ -263,7 +265,6 @@ function PesertaTab() {
   const [kategori, setKategori] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [resetting, setResetting] = useState(false);
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [page, setPage] = useState(0);
@@ -302,19 +303,7 @@ function PesertaTab() {
     if (page > maxPage) setPage(maxPage);
   }, [items.length]);
 
-  async function resetSemua() {
-    if (!confirm("Yakin ingin menghapus SEMUA daftar peserta beserta seluruh nilainya? Tindakan ini tidak dapat dibatalkan.")) return;
-    setResetting(true);
-    await supabase.from("penilaian_submission" as any).delete().not("id", "is", null);
-    const { error: pe } = await supabase.from("penilaian").delete().not("id", "is", null);
-    if (pe) { setResetting(false); return toast.error("Gagal menghapus penilaian: " + pe.message); }
-    const { error } = await supabase.from("peserta").delete().not("id", "is", null);
-    setResetting(false);
-    if (error) return toast.error(error.message);
-    toast.success("Semua peserta dihapus");
-    setEditId(null); setNomor(""); setNama(""); setAsal(""); setKategori("");
-    load();
-  }
+
 
 
   function pilihUntukEdit(p: Peserta) {
@@ -527,8 +516,8 @@ function PesertaTab() {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" size="sm" onClick={unduhTemplate} className="gap-1"><Download className="size-4" />Template</Button>
           <Button variant="secondary" size="sm" onClick={pickFile} disabled={importing} className="gap-1"><Upload className="size-4" />{importing ? "Mengimpor..." : "Impor Excel"}</Button>
-          <Button variant="destructive" size="sm" onClick={resetSemua} disabled={resetting || items.length === 0} className="gap-1"><Trash2 className="size-4" />{resetting ? "Menghapus..." : "Reset"}</Button>
           <input ref={fileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleFile} />
+
         </div>
       }
     >
@@ -3780,10 +3769,18 @@ function LihatPenilaianTab() {
     return Array.from(s).sort();
   }, [peserta]);
 
+  // Hanya peserta yang sudah memiliki nilai yang ditampilkan.
+  const pesertaBernilai = useMemo(() => {
+    const ids = new Set(penilaian.map((n) => n.peserta_id));
+    Object.keys(nilaiMap).forEach((k) => { if (nilaiMap[k] != null) ids.add(k.split("|")[1]); });
+    return peserta.filter((p) => ids.has(p.id));
+  }, [peserta, penilaian, nilaiMap]);
+
   const pesertaFiltered = useMemo(
-    () => (kategori === LIHAT_ALL ? peserta : peserta.filter((p) => (p.kategori ?? "") === kategori)),
-    [peserta, kategori]
+    () => (kategori === LIHAT_ALL ? pesertaBernilai : pesertaBernilai.filter((p) => (p.kategori ?? "") === kategori)),
+    [pesertaBernilai, kategori]
   );
+
 
   const totalBobot = useMemo(() => kriteria.reduce((s, k) => s + Number(k.bobot || 0), 0), [kriteria]);
 
@@ -4654,3 +4651,48 @@ function ResetAllPenilaianButton() {
   );
 }
 
+
+/* RESET DATA — pusat semua tombol reset */
+function ResetTab() {
+  const [busyPeserta, setBusyPeserta] = useState(false);
+
+  async function resetSemuaPeserta() {
+    if (!window.confirm("Hapus SEMUA daftar peserta beserta seluruh nilainya?\n\nTindakan ini tidak dapat dibatalkan.")) return;
+    if (!window.confirm("Konfirmasi sekali lagi: hapus semua peserta sekarang?")) return;
+    setBusyPeserta(true);
+    await supabase.from("penilaian_submission" as any).delete().not("id", "is", null);
+    const { error: pe } = await supabase.from("penilaian").delete().not("id", "is", null);
+    if (pe) { setBusyPeserta(false); return toast.error("Gagal menghapus penilaian: " + pe.message); }
+    const { error } = await supabase.from("peserta").delete().not("id", "is", null);
+    setBusyPeserta(false);
+    if (error) return toast.error(error.message);
+    toast.success("Semua peserta dihapus");
+  }
+
+  return (
+    <SectionCard
+      title="Reset Data"
+      description="Semua tindakan reset terkumpul di sini. Perhatikan: data yang dihapus tidak dapat dikembalikan."
+    >
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+          <div className="min-w-0">
+            <div className="font-medium">Reset Semua Nilai</div>
+            <p className="text-sm text-muted-foreground">Hapus seluruh penilaian dari semua juri untuk semua peserta. Daftar peserta tetap ada.</p>
+          </div>
+          <ResetAllPenilaianButton />
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+          <div className="min-w-0">
+            <div className="font-medium">Reset Daftar Peserta</div>
+            <p className="text-sm text-muted-foreground">Hapus seluruh peserta beserta semua nilainya.</p>
+          </div>
+          <Button variant="destructive" size="sm" onClick={resetSemuaPeserta} disabled={busyPeserta} className="gap-2">
+            <Trash2 className="size-4" />{busyPeserta ? "Menghapus..." : "Hapus Semua Peserta"}
+          </Button>
+        </div>
+      </div>
+    </SectionCard>
+  );
+}
