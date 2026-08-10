@@ -384,7 +384,28 @@ function ViewerPage() {
                         </button>
                         <div className="text-xs text-muted-foreground">{r.asal ?? ""}{r.kategori ? ` · ${r.kategori}` : ""}</div>
                       </TableCell>
-                      <TableCell><Badge variant="secondary">Sesi {r.sesi_no}</Badge></TableCell>
+                      <TableCell>
+                        {sesiEditId === r.peserta_id ? (
+                          <div className="flex items-center gap-1">
+                            <Input
+                              type="number"
+                              className="h-8 w-20"
+                              value={sesiVal}
+                              onChange={(e) => setSesiVal(e.target.value)}
+                            />
+                            <Button size="sm" disabled={busy === r.peserta_id} onClick={() => simpanSesi(r)}>Simpan</Button>
+                            <Button size="sm" variant="ghost" onClick={() => { setSesiEditId(null); setSesiVal(""); }}>Batal</Button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => { setSesiEditId(r.peserta_id); setSesiVal(String(r.sesi_no)); }}
+                            title="Klik untuk mengubah sesi"
+                          >
+                            <Badge variant="secondary">Sesi {r.sesi_no}</Badge>
+                          </button>
+                        )}
+                      </TableCell>
                       <TableCell>
                         {r.terlambat ? (
                           <Badge variant="destructive">Terlambat</Badge>
