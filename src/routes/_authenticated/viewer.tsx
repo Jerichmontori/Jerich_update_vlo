@@ -13,6 +13,8 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { catatanToRows } from "@/components/JuriHasilFinalTab";
 import GantiPasswordButton from "@/components/GantiPasswordButton";
+import VarBadge from "@/components/VarBadge";
+import { useVarStatus } from "@/hooks/useVarStatus";
 import BrandLogo from "@/components/BrandLogo";
 
 export const Route = createFileRoute("/_authenticated/viewer")({
@@ -523,6 +525,9 @@ function ViewerPage() {
                         ) : (
                           <Badge className="bg-muted text-foreground">Belum Tampil</Badge>
                         )}
+                      </TableCell>
+                      <TableCell>
+                        <VarBadge status={varMap[r.peserta_id]} compact />
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex flex-wrap items-center justify-end gap-1">
