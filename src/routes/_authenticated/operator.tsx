@@ -7,9 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Toaster, toast } from "sonner";
-import { ArrowUp, ArrowDown, Play, RefreshCw, Users, Gavel } from "lucide-react";
+import { ArrowUp, ArrowDown, Play, RefreshCw, Users, Gavel, SkipForward, AlertTriangle, Tv } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
+import { varStatusLabel, varStatusDetail, isVarAktif } from "@/lib/varStatus";
+
 
 export const Route = createFileRoute("/_authenticated/operator")({
   component: OperatorPage,
