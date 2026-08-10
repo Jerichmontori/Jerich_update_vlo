@@ -178,6 +178,11 @@ function InspekturPage() {
 
   usePolling(loadAll, 20000, allowed === true);
 
+  // Hanya peserta yang sudah dinilai atau sementara dinilai (bukan yang belum tampil).
+  const monitorRows = monitor.filter(
+    (r) => activeSesiPesertaIds.has(r.peserta_id) || r.status !== "Menunggu",
+  );
+
   async function openDetail(row: MonitorRow) {
     setDetailPeserta(row);
     setDetailData(null);
@@ -382,7 +387,7 @@ function InspekturPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><BookOpenText className="size-5" /> Monitoring Real-time Peserta</CardTitle>
-            <CardDescription>Status setiap peserta beserta progres juri. Diperbarui setiap 3 detik.</CardDescription>
+            <CardDescription>Hanya peserta yang sementara dinilai dan yang sudah dinilai.</CardDescription>
           </CardHeader>
           <CardContent className="overflow-x-auto">
             <Table>
@@ -398,10 +403,10 @@ function InspekturPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {monitor.length === 0 && (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Belum ada data</TableCell></TableRow>
+                {monitorRows.length === 0 && (
+                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Belum ada peserta yang dinilai</TableCell></TableRow>
                 )}
-                {monitor.slice((monitorPage - 1) * MONITOR_PAGE_SIZE, monitorPage * MONITOR_PAGE_SIZE).map((r) => {
+                {monitorRows.slice((monitorPage - 1) * MONITOR_PAGE_SIZE, monitorPage * MONITOR_PAGE_SIZE).map((r) => {
                   const v = statusVariant(r.status);
                   const hasActiveVar = r.status === "Potensi VAR" || r.status === "Perbaikan Perhatian" || vars.some((vr) => vr.peserta_id === r.peserta_id);
                   return (
@@ -448,13 +453,13 @@ function InspekturPage() {
                 })}
               </TableBody>
             </Table>
-            {monitor.length > MONITOR_PAGE_SIZE && (() => {
-              const totalPages = Math.max(1, Math.ceil(monitor.length / MONITOR_PAGE_SIZE));
+            {monitorRows.length > MONITOR_PAGE_SIZE && (() => {
+              const totalPages = Math.max(1, Math.ceil(monitorRows.length / MONITOR_PAGE_SIZE));
               const page = Math.min(monitorPage, totalPages);
               return (
                 <div className="flex items-center justify-between pt-3 text-sm">
                   <span className="text-muted-foreground">
-                    Menampilkan {(page - 1) * MONITOR_PAGE_SIZE + 1}–{Math.min(page * MONITOR_PAGE_SIZE, monitor.length)} dari {monitor.length} peserta
+                    Menampilkan {(page - 1) * MONITOR_PAGE_SIZE + 1}–{Math.min(page * MONITOR_PAGE_SIZE, monitorRows.length)} dari {monitorRows.length} peserta
                   </span>
                   <div className="flex items-center gap-2">
                     <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setMonitorPage(page - 1)}>Sebelumnya</Button>
@@ -533,62 +538,6 @@ function InspekturPage() {
           </CardContent>
         </Card>
 
-        {/* Daftar VAR */}
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2"><AlertTriangle className="size-5 text-rose-500" /> Daftar Potensi VAR</CardTitle>
-            <CardDescription>Peserta dengan perbedaan input Perhatian antar juri (Salah/Menambah/Mengurangi kata).</CardDescription>
-          </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>No.</TableHead>
-                  <TableHead>Nama</TableHead>
-                  <TableHead>Kategori</TableHead>
-                  <TableHead>Bacaan</TableHead>
-                  <TableHead>Komponen Berbeda</TableHead>
-                  <TableHead className="text-right">Aksi</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {vars.length === 0 && (
-                  <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">Tidak ada Potensi VAR saat ini.</TableCell></TableRow>
-                )}
-                {vars.map((r) => (
-                  <TableRow key={r.peserta_id}>
-                    <TableCell>{r.nomor_urut}</TableCell>
-                    <TableCell className="font-medium">{r.nama}</TableCell>
-                    <TableCell className="text-muted-foreground">{r.kategori || "—"}</TableCell>
-                    <TableCell className="text-muted-foreground text-xs">{r.bacaan || "—"}</TableCell>
-                    <TableCell className="text-xs">
-                      {Array.isArray(r.komponen_berbeda) && r.komponen_berbeda.length > 0
-                        ? r.komponen_berbeda.map((k) => (
-                            <Badge key={k} className="mr-1 bg-rose-600 text-white">{KOMP_LABEL[k] ?? k}</Badge>
-                          ))
-                        : "—"}
-                    </TableCell>
-
-                    <TableCell className="text-right space-x-2 whitespace-nowrap">
-                      <Button
-                        size="sm"
-                        className="bg-amber-600 hover:bg-amber-700 text-white"
-                        onClick={() => openConfirmBukaPerbaikan(r.peserta_id, r.nama, null, "row")}
-                      >
-                        <AlertTriangle className="size-4 mr-1" /> Buka Perbaikan
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={() => openDetail(monitor.find(m => m.peserta_id === r.peserta_id) ?? { peserta_id: r.peserta_id, nomor_urut: r.nomor_urut, nama: r.nama, kategori: r.kategori, bacaan: null, status: "Potensi VAR", juri_done: 0, juri_total: 0 })}>
-                        <Eye className="size-4 mr-1" /> Detail
-                      </Button>
-                    </TableCell>
-
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
       </main>
 
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
