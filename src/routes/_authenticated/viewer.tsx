@@ -210,6 +210,33 @@ function ViewerPage() {
     load();
   }
 
+  async function tukarPeserta() {
+    if (!tukarA || !tukarB) { toast.error("Pilih dua peserta yang akan ditukar"); return; }
+    if (tukarA === tukarB) { toast.error("Pilih dua peserta yang berbeda"); return; }
+    const a = (rows ?? []).find((r) => r.peserta_id === tukarA);
+    const b = (rows ?? []).find((r) => r.peserta_id === tukarB);
+    if (!confirm(`Tukar nomor urut & sesi antara ${a?.nomor_urut}. ${a?.nama} dan ${b?.nomor_urut}. ${b?.nama}?`)) return;
+    setTukarBusy(true);
+    const { error } = await supabase.rpc("sekretariat_tukar_peserta" as any, { _a: tukarA, _b: tukarB });
+    setTukarBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Nomor urut & sesi peserta berhasil ditukar");
+    setTukarA(""); setTukarB("");
+    load();
+  }
+
+  async function simpanSesi(r: Row) {
+    const n = Number(sesiVal);
+    if (!sesiVal || !Number.isFinite(n) || n < 1) { toast.error("Nomor sesi tidak valid"); return; }
+    setBusy(r.peserta_id);
+    const { error } = await supabase.rpc("sekretariat_set_sesi" as any, { _peserta: r.peserta_id, _sesi: n });
+    setBusy(null);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`${r.nama} dipindahkan ke Sesi ${n}`);
+    setSesiEditId(null); setSesiVal("");
+    load();
+  }
+
   async function signOut() {
     await supabase.auth.signOut();
     window.location.href = "/auth";
