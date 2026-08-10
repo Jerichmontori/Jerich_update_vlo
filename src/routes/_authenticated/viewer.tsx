@@ -58,8 +58,12 @@ function ViewerPage() {
   const [tukarA, setTukarA] = useState("");
   const [tukarB, setTukarB] = useState("");
   const [tukarBusy, setTukarBusy] = useState(false);
-  const [sesiEditId, setSesiEditId] = useState<string | null>(null);
-  const [sesiVal, setSesiVal] = useState("");
+  const [sesiTampil, setSesiTampil] = useState<number | null>(null);
+  const [sesiTampilVal, setSesiTampilVal] = useState("");
+  const [sesiTampilBusy, setSesiTampilBusy] = useState(false);
+  const [sesiKelola, setSesiKelola] = useState("");
+  const [urutBusy, setUrutBusy] = useState(false);
+
 
 
 
