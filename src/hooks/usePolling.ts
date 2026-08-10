@@ -5,12 +5,18 @@ import { useEffect, useRef } from "react";
  * (diminimalkan / pindah tab), lalu langsung menyegarkan data begitu
  * tab dibuka kembali. Menghemat beban server secara signifikan.
  */
-export function usePolling(callback: () => void | Promise<void>, intervalMs: number) {
+export function usePolling(
+  callback: () => void | Promise<void>,
+  intervalMs: number,
+  enabled: boolean = true,
+) {
   const cbRef = useRef(callback);
   cbRef.current = callback;
 
   useEffect(() => {
+    if (!enabled) return;
     let timer: ReturnType<typeof setInterval> | null = null;
+
 
     const run = () => {
       void cbRef.current();
