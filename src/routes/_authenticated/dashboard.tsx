@@ -18,8 +18,8 @@ import VarPersepsiDetail from "@/components/VarPersepsiDetail";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
 import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight, LayoutDashboard, CheckCircle2, XCircle, FileText, KeyRound, AlertTriangle, Eye, EyeOff } from "lucide-react";
-import JuriLiveRankingApproval from "@/components/JuriLiveRankingApproval";
 import SesiLiveRanking from "@/components/SesiLiveRanking";
+import AdminVarTab from "@/components/AdminVarTab";
 import BackupExcelButton from "@/components/BackupExcelButton";
 import LaporanPertanggungjawabanButton from "@/components/LaporanPertanggungjawabanButton";
 import JuriHasilFinalTab from "@/components/JuriHasilFinalTab";
@@ -114,7 +114,6 @@ function App() {
         <Header />
         <main className="mx-auto max-w-6xl px-4 pb-16">
           <Tabs defaultValue="penilaian" className="w-full">
-            <JuriLiveRankingApproval />
             <TabsList className="grid w-full grid-cols-2 h-auto bg-secondary/60 p-1">
               <TabsTrigger value="penilaian" className="gap-2"><ClipboardCheck className="size-4" />Penilaian</TabsTrigger>
               <TabsTrigger value="hasil" className="gap-2"><FileText className="size-4" />Hasil Saya</TabsTrigger>
@@ -144,11 +143,11 @@ function App() {
                 </div>
               )}
             </div>
-            {roles.isJuri && <JuriLiveRankingApproval />}
             {section === "dashboard" && <DashboardTab />}
             {section === "hasil" && <HasilNilaiTab />}
             {section === "live" && <SesiLiveRanking />}
             {section === "penilaian" && <PenilaianTab />}
+            {section === "var" && <AdminVarTab />}
             {section === "peserta" && <PesertaTab />}
             {section === "juri" && <JuriTab />}
             {section === "pengaturan-nilai" && <PengaturanNilaiTab />}

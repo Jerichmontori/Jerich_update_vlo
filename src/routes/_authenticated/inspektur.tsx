@@ -9,7 +9,6 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
-import SesiLiveRanking from "@/components/SesiLiveRanking";
 import GantiPasswordButton from "@/components/GantiPasswordButton";
 import { Shield, RefreshCw, BookOpenText, AlertTriangle, Eye, Square, Siren, CheckCircle2, XCircle } from "lucide-react";
 
@@ -378,8 +377,6 @@ function InspekturPage() {
             <CardContent className="text-2xl font-semibold text-rose-600">{ringkasan?.total_var ?? "—"}</CardContent>
           </Card>
         </div>
-
-        <SesiLiveRanking />
 
         {/* Monitoring */}
         <Card>
