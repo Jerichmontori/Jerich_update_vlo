@@ -131,6 +131,9 @@ function OperatorPage() {
     loadSesi();
   }, [allowed]);
 
+  usePolling(() => { void loadSesi(); }, 15000, allowed === true);
+
+
   async function logAudit(action: string, extra: Partial<{ session_id: string; peserta_id: string; mazmur_id: string; metadata: any }> = {}) {
     try {
       const { data: u } = await supabase.auth.getUser();
