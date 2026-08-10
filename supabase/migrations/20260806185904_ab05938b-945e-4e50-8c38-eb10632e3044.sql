@@ -1,1 +1,0 @@
-REVOKE EXECUTE ON FUNCTION public.enforce_penilaian_lengkap() FROM PUBLIC, anon, authenticated;

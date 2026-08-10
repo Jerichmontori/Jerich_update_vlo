@@ -1,11 +1,11 @@
 {
-  "version": 1,
   "asset_id": "78ad5515-9173-463a-b644-002f37ecbab8",
-  "project_id": "b36e4c49-8b05-491a-95a6-edf87dd31caf",
-  "url": "/__l5e/assets-v1/78ad5515-9173-463a-b644-002f37ecbab8/bumotik-black.png",
-  "r2_key": "a/v1/b36e4c49-8b05-491a-95a6-edf87dd31caf/78ad5515-9173-463a-b644-002f37ecbab8/bumotik-black.png",
-  "original_filename": "bumotik-black.png",
-  "size": 116224,
   "content_type": "image/png",
-  "created_at": "2026-08-05T08:24:28Z"
+  "created_at": "2026-08-05T08:24:28Z",
+  "original_filename": "bumotik-black.png",
+  "project_id": "a39f865b-52d3-4494-ad3c-9cfc89f7917f",
+  "r2_key": "a/v1/a39f865b-52d3-4494-ad3c-9cfc89f7917f/78ad5515-9173-463a-b644-002f37ecbab8/bumotik-black.png",
+  "size": 116224,
+  "url": "/__l5e/assets-v1/78ad5515-9173-463a-b644-002f37ecbab8/bumotik-black.png",
+  "version": 1
 }

@@ -1,1 +1,0 @@
-GRANT SELECT (aktif_menilai) ON public.juri TO authenticated;

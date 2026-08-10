@@ -1,1 +1,0 @@
-GRANT EXECUTE ON FUNCTION public.all_juri_submitted(uuid) TO authenticated;
