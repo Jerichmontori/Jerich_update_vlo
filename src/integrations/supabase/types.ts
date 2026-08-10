@@ -1272,6 +1272,7 @@ export type Database = {
         Args: { _mazmur: string; _peserta: string }
         Returns: string
       }
+      operator_var_status: { Args: never; Returns: Json }
       peserta_pool_cutoff: { Args: { _peserta: string }; Returns: string }
       public_live_state: { Args: never; Returns: Json }
       public_pengumuman_state: { Args: never; Returns: Json }
@@ -1300,6 +1301,7 @@ export type Database = {
         Returns: undefined
       }
       set_sesi_tampil: { Args: { _sesi: number }; Returns: number }
+      set_vmix_var_badge: { Args: { _on: boolean }; Returns: Json }
       submit_klarifikasi_var: {
         Args: { _peserta: string; _responses: Json }
         Returns: Json
