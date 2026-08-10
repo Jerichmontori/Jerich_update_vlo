@@ -152,7 +152,7 @@ function App() {
               <h2 className="text-lg font-semibold">{ADMIN_SECTION_LABEL[section]}</h2>
               {roles.isAdm && (
                 <div className="ml-auto flex flex-wrap justify-end gap-2">
-                  <BrandingSettingsButton /><LaporanPertanggungjawabanButton /><BackupExcelButton />
+                  <BrandingSettingsButton /><Top10PdfButton /><LaporanPertanggungjawabanButton /><BackupExcelButton />
                 </div>
               )}
             </div>
