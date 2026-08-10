@@ -265,7 +265,6 @@ function PesertaTab() {
   const [kategori, setKategori] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [resetting, setResetting] = useState(false);
   const [importing, setImporting] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [page, setPage] = useState(0);
@@ -304,7 +303,6 @@ function PesertaTab() {
     if (page > maxPage) setPage(maxPage);
   }, [items.length]);
 
-  void resetting; void setResetting;
 
 
 
