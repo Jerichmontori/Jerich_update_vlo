@@ -372,7 +372,7 @@ function ViewerPage() {
                   <TableRow>
                     <TableHead>No</TableHead>
                     <TableHead>Peserta</TableHead>
-                    <TableHead>Sesi</TableHead>
+                    
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
