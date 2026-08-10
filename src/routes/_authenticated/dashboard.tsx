@@ -3669,6 +3669,7 @@ function DashboardTab() {
         </div>
       )}
     </SectionCard>
+    </div>
   );
 }
 
