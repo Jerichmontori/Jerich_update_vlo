@@ -456,21 +456,33 @@ function OperatorPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               {!sesi && (
-                <Button onClick={mulaiSesi} disabled={busy} className="gap-2">
+                <Button onClick={() => mulaiSesi()} disabled={busy} className="gap-2">
                   <Play className="size-4" /> Mulai Penilaian
                 </Button>
               )}
               {sesi && (
                 <>
+                  <Button
+                    onClick={() => {
+                      if (!selectedPeserta || !selectedMazmur) return toast.error("Pilih peserta & bacaan mazmur terlebih dahulu");
+                      if (selectedPeserta === sesi.peserta_id) return toast.error("Pilih peserta berikutnya terlebih dahulu");
+                      setConfirmNext(true);
+                    }}
+                    disabled={busy}
+                    className="gap-2"
+                  >
+                    <SkipForward className="size-4" /> Tampilkan Peserta Berikutnya
+                  </Button>
                   <Button onClick={ubahMazmur} variant="outline" disabled={busy} className="gap-2">
                     <RefreshCw className="size-4" /> Ubah Bacaan Mazmur
                   </Button>
                   <div className="text-xs text-muted-foreground self-center">
-                    Sesi aktif — tombol <b>Mulai Penilaian</b> dinonaktifkan hingga Inspektur mengakhiri sesi ini.
+                    Penilaian peserta sebelumnya tetap berjalan — juri & Inspektur VAR menyelesaikannya di belakang layar.
                   </div>
                 </>
               )}
             </div>
+
           </CardContent>
         </Card>
 
