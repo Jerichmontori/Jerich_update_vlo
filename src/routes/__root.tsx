@@ -37,9 +37,23 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  const isAssetLoadError = /chunkloaderror|loading chunk|dynamically imported module|failed to fetch module script|importing a module script/i.test(errorMessage);
+
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
+
+    // A deployment can replace hashed route chunks while an older page is
+    // still open. Recover once with a clean document request instead of
+    // leaving the user trapped in the root error boundary.
+    if (!isAssetLoadError) return;
+    const recoveryKey = `asset-recovery:${window.location.pathname}`;
+    if (sessionStorage.getItem(recoveryKey)) return;
+    sessionStorage.setItem(recoveryKey, "1");
+    const url = new URL(window.location.href);
+    url.searchParams.set("refresh", Date.now().toString());
+    window.location.replace(url.toString());
+  }, [error, isAssetLoadError]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -48,7 +62,9 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           This page didn't load
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          {isAssetLoadError
+            ? "Versi aplikasi telah diperbarui. Halaman sedang dimuat ulang otomatis."
+            : "Terjadi kesalahan saat memuat halaman. Coba muat ulang atau kembali ke beranda."}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
