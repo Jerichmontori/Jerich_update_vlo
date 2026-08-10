@@ -712,7 +712,7 @@ function JuriTab() {
                   <SelectItem value="ketua_juri">Ketua Dewan Juri</SelectItem>
                   <SelectItem value="inspektur">Inspektur Pertandingan</SelectItem>
                   <SelectItem value="operator_vmix">Operator vMix</SelectItem>
-                  <SelectItem value="viewer">User (hanya melihat)</SelectItem>
+                  <SelectItem value="viewer">Sekretariat</SelectItem>
                   <SelectItem value="admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
@@ -779,7 +779,7 @@ function JuriTab() {
                       <SelectItem value="ketua_juri">Ketua Dewan Juri</SelectItem>
                       <SelectItem value="inspektur">Inspektur Pertandingan</SelectItem>
                       <SelectItem value="operator_vmix">Operator vMix</SelectItem>
-                  <SelectItem value="viewer">User (hanya melihat)</SelectItem>
+                  <SelectItem value="viewer">Sekretariat</SelectItem>
                       <SelectItem value="admin">Admin</SelectItem>
                     </SelectContent>
                   </Select>

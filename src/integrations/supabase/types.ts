@@ -1034,6 +1034,15 @@ export type Database = {
       public_live_state: { Args: never; Returns: Json }
       public_pengumuman_state: { Args: never; Returns: Json }
       refresh_nilai_cache: { Args: never; Returns: undefined }
+      sekretariat_set_sesi: {
+        Args: { _peserta: string; _sesi: number }
+        Returns: Json
+      }
+      sekretariat_tukar_peserta: {
+        Args: { _a: string; _b: string }
+        Returns: Json
+      }
+      sesi_no_of: { Args: { _nomor: number; _sesi: string }; Returns: number }
       set_branding: { Args: { _value: Json }; Returns: Json }
       set_live_ranking_kategori: {
         Args: { _kategori: string[] }

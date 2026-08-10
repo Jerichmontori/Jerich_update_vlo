@@ -71,7 +71,7 @@ const LINKS: { href: string; label: string; icon: typeof LayoutDashboard }[] = [
   { href: "/operator", label: "Operator Lomba", icon: Presentation },
   { href: "/inspektur", label: "Inspektur", icon: Shield },
   { href: "/vmix", label: "Operator vMix", icon: MonitorPlay },
-  { href: "/viewer", label: "User", icon: Eye },
+  { href: "/viewer", label: "Sekretariat", icon: Eye },
 ];
 
 export const ADMIN_SECTION_LABEL: Record<AdminSection, string> = Object.fromEntries(
