@@ -3657,6 +3657,7 @@ function LihatPenilaianTab() {
   const [loading, setLoading] = useState(true);
   const [kategori, setKategori] = useState<string>(LIHAT_ALL);
   const [pesertaPilih, setPesertaPilih] = useState<string>("");
+  const [juriPilih, setJuriPilih] = useState<string[] | null>(null); // null = semua juri
 
   async function load() {
     setLoading(true);
