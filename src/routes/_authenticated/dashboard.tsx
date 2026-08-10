@@ -879,7 +879,7 @@ function PendingPasswordResets() {
       toast.error(msg || "Gagal memuat permintaan");
     }
   }
-  useEffect(() => { load(); const t = setInterval(load, 15000); return () => clearInterval(t); }, []);
+  useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t); }, []);
 
   async function approve(id: string, ident: string) {
     if (loading) return;
@@ -1476,6 +1476,7 @@ function PenilaianTab() {
   useEffect(() => {
     let stopped = false;
     async function poll() {
+      if (typeof document !== "undefined" && document.hidden) return;
       const { data } = await supabase
         .from("sesi_penilaian" as any)
         .select("id, peserta_id, mazmur_id, status")
@@ -1488,7 +1489,7 @@ function PenilaianTab() {
       setActiveSession(row ? { id: row.id, peserta_id: row.peserta_id, mazmur_id: row.mazmur_id } : null);
     }
     poll();
-    const id = setInterval(poll, 3000);
+    const id = setInterval(poll, 10000);
     return () => { stopped = true; clearInterval(id); };
   }, []);
   // Auto-terapkan sesi aktif untuk non-admin (juri): kunci peserta & mazmur mengikuti pilihan Operator
@@ -1524,6 +1525,7 @@ function PenilaianTab() {
   useEffect(() => {
     let stopped = false;
     async function poll() {
+      if (typeof document !== "undefined" && document.hidden) return;
       const { data, error } = await supabase
         .from("var_clarification_session" as any)
         .select("peserta_id, komponen_berbeda, status")
@@ -1549,7 +1551,7 @@ function PenilaianTab() {
       setVarAktifList(rows);
     }
     poll();
-    const id = setInterval(poll, 3000);
+    const id = setInterval(poll, 10000);
     return () => { stopped = true; clearInterval(id); };
   }, []);
   // Saat VAR sedang berjalan (perbaikan perhatian, klarifikasi VAR dibuka Inspektur,
@@ -1588,6 +1590,7 @@ function PenilaianTab() {
   useEffect(() => {
     let stopped = false;
     async function poll() {
+      if (typeof document !== "undefined" && document.hidden) return;
       const { data, error } = await supabase.rpc("get_var_manual_pending" as any);
       if (stopped) return;
       if (error) { console.error("get_var_manual_pending", error.message); return; }
@@ -1622,7 +1625,7 @@ function PenilaianTab() {
       varManualSeen.current.forEach((id) => { if (!aktif.has(id)) varManualSeen.current.delete(id); });
     }
     poll();
-    const id = setInterval(poll, 3000);
+    const id = setInterval(poll, 10000);
     return () => { stopped = true; clearInterval(id); };
   }, []);
   async function voteVarManual(sessionId: string, setuju: boolean) {
@@ -1789,6 +1792,7 @@ function PenilaianTab() {
       if (wait > 0) await new Promise(r => setTimeout(r, wait));
     }
     async function tick() {
+      if (typeof document !== "undefined" && document.hidden) return;
       if (pollingInFlightRef.current) return;
       pollingInFlightRef.current = true;
       try {
@@ -1905,7 +1909,7 @@ function PenilaianTab() {
       }
     }
     tick();
-    const id = setInterval(tick, 4000);
+    const id = setInterval(tick, 12000);
     return () => { stopped = true; clearInterval(id); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submittedFor, totalJuriApproved]);
@@ -3527,7 +3531,7 @@ function DashboardTab() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); const id = setInterval(load, 8000); return () => clearInterval(id); }, []);
+  useEffect(() => { load(); const id = setInterval(load, 20000); return () => clearInterval(id); }, []);
 
   const totalPeserta = peserta.length;
 
