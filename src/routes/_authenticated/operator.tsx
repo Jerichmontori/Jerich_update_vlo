@@ -121,8 +121,10 @@ function OperatorPage() {
     const row = rows[0] as Sesi | undefined;
     setSesi(row ?? null);
     if (row) {
-      setSelectedPeserta(row.peserta_id);
-      if (row.mazmur_id) setSelectedMazmur(row.mazmur_id);
+      // Jangan paksa pilihan operator: hanya isi bila belum memilih peserta berikutnya
+      setSelectedPeserta(prev => prev || row.peserta_id);
+      if (row.mazmur_id) setSelectedMazmur(prev => prev || (row.mazmur_id as string));
+
       const { data: subs } = await supabase
         .from("penilaian_submission" as any)
         .select("juri_id")
