@@ -56,6 +56,10 @@ function OperatorPage() {
   const PESERTA_PAGE_SIZE = 10;
   const [pesertaPage, setPesertaPage] = useState(1);
   const [sesiTampil, setSesiTampil] = useState<number | null>(null);
+  const [varMap, setVarMap] = useState<Record<string, string>>({});
+  const [vmixVarBadge, setVmixVarBadge] = useState<boolean>(true);
+  const [confirmNext, setConfirmNext] = useState(false);
+
 
   
 
