@@ -8,7 +8,7 @@ export const Route = createFileRoute("/vmix/varwarning")({
   validateSearch: (s: Record<string, unknown>): Search => ({
     bg: typeof s.bg === "string" ? s.bg : "transparent",
     pos: s.pos === "top" || s.pos === "center" || s.pos === "bottom" ? s.pos : "top",
-    force: s.force === true || s.force === "true" || s.force === "1",
+    force: String(s.force) === "true" || String(s.force) === "1",
   }),
   head: () => ({
     meta: [
