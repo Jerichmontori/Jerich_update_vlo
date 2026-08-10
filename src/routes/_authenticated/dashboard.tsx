@@ -37,7 +37,17 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
 });
 
 type Peserta = { id: string; nomor_urut: number; nama: string; asal: string | null; sesi: string | null; kategori: string | null };
-type Juri = { id: string; nama: string; jabatan: string | null; email: string | null; role: "admin" | "juri" | "viewer" | null; approved: boolean; user_id: string | null; aktif_menilai?: boolean };
+type AppRole = "admin" | "juri" | "panitia" | "inspektur" | "ketua_juri" | "viewer" | "operator_vmix";
+const ROLE_LABEL: Record<AppRole, string> = {
+  admin: "Admin",
+  juri: "Juri",
+  panitia: "Panitia",
+  inspektur: "Inspektur Pertandingan",
+  ketua_juri: "Ketua Dewan Juri",
+  viewer: "Sekretariat",
+  operator_vmix: "Operator vMix",
+};
+type Juri = { id: string; nama: string; jabatan: string | null; email: string | null; role: AppRole | null; approved: boolean; user_id: string | null; aktif_menilai?: boolean };
 type Kriteria = { id: string; nama: string; bobot: number; batas_atas: number; batas_bawah: number };
 type Mazmur = { id: string; bacaan: string; jumlah_ayat: number; kategori: string | null };
 type PenilaianDetail =
