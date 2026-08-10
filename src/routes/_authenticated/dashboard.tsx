@@ -22,6 +22,7 @@ import SesiLiveRanking from "@/components/SesiLiveRanking";
 import AdminVarTab from "@/components/AdminVarTab";
 import BackupExcelButton from "@/components/BackupExcelButton";
 import LaporanPertanggungjawabanButton from "@/components/LaporanPertanggungjawabanButton";
+import Top10PdfButton from "@/components/Top10PdfButton";
 import JuriHasilFinalTab from "@/components/JuriHasilFinalTab";
 import GantiPasswordButton from "@/components/GantiPasswordButton";
 import jsPDF from "jspdf";
@@ -152,7 +153,7 @@ function App() {
               <h2 className="text-lg font-semibold">{ADMIN_SECTION_LABEL[section]}</h2>
               {roles.isAdm && (
                 <div className="ml-auto flex flex-wrap justify-end gap-2">
-                  <BrandingSettingsButton /><LaporanPertanggungjawabanButton /><BackupExcelButton />
+                  <BrandingSettingsButton /><Top10PdfButton /><LaporanPertanggungjawabanButton /><BackupExcelButton />
                 </div>
               )}
             </div>
