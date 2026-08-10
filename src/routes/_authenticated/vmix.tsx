@@ -117,11 +117,7 @@ function AyatVar({ pesertaId }: { pesertaId: string }) {
     setRows(((data as any)?.juri ?? []) as JuriDetail[]);
   }, [pesertaId]);
 
-  useEffect(() => {
-    load();
-    const id = setInterval(load, 8000);
-    return () => clearInterval(id);
-  }, [load]);
+  usePolling(load, 20000);
 
   const data = rows ?? [];
   const total = data.length;
@@ -295,11 +291,7 @@ function VarTab() {
     setRows((data as unknown as VarRow[]) ?? []);
   }, []);
 
-  useEffect(() => {
-    load();
-    const id = setInterval(load, 10000);
-    return () => clearInterval(id);
-  }, [load]);
+  usePolling(load, 25000);
 
   const filtered = rows.filter(
     (r) => !q.trim() || r.nama.toLowerCase().includes(q.toLowerCase()) || String(r.nomor_urut).includes(q.trim()),

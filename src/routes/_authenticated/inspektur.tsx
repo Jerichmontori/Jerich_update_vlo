@@ -177,12 +177,7 @@ function InspekturPage() {
     }
   }, []);
 
-  useEffect(() => {
-    if (!allowed) return;
-    loadAll();
-    const id = setInterval(loadAll, 3000);
-    return () => clearInterval(id);
-  }, [allowed, loadAll]);
+  usePolling(loadAll, 20000, allowed);
 
   async function openDetail(row: MonitorRow) {
     setDetailPeserta(row);

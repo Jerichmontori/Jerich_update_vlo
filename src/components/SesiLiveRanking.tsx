@@ -91,11 +91,7 @@ export default function SesiLiveRanking() {
     setRows((data as unknown as SesiRow[]) ?? []);
   }, []);
 
-  useEffect(() => {
-    load();
-    const id = setInterval(load, 6000);
-    return () => clearInterval(id);
-  }, [load]);
+  usePolling(load, 25000);
 
   async function ajukan(sesi: number) {
     setBusy(sesi);

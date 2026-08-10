@@ -129,8 +129,6 @@ function OperatorPage() {
     loadMazmur();
     loadJuriCount();
     loadSesi();
-    const id = setInterval(loadSesi, 3000);
-    return () => clearInterval(id);
   }, [allowed]);
 
   async function logAudit(action: string, extra: Partial<{ session_id: string; peserta_id: string; mazmur_id: string; metadata: any }> = {}) {

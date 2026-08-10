@@ -65,11 +65,7 @@ function ViewerPage() {
     setRows((data as unknown as Row[]) ?? []);
   }, []);
 
-  useEffect(() => {
-    load();
-    const id = setInterval(load, 8000);
-    return () => clearInterval(id);
-  }, [load]);
+  usePolling(load, 25000);
 
   useEffect(() => {
     (async () => {

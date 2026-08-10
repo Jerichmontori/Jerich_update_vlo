@@ -55,11 +55,7 @@ export default function VarPersepsiDetail({
     if (open) load();
   }, [open, load]);
 
-  useEffect(() => {
-    if (!open) return;
-    const id = setInterval(load, 5000);
-    return () => clearInterval(id);
-  }, [open, load]);
+  usePolling(load, 20000, open);
 
   const data = rows ?? [];
 
