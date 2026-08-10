@@ -19,10 +19,10 @@ export const Route = createFileRoute("/_authenticated/viewer")({
   component: ViewerPage,
   head: () => ({
     meta: [
-      { title: "Urutan Peserta · Sistem Penjurian Baca Mazmur" },
-      { name: "description", content: "Lihat urutan peserta, peserta yang sedang tampil, dan unduh catatan juri peserta yang sudah selesai dinilai." },
-      { property: "og:title", content: "Urutan Peserta · Sistem Penjurian Baca Mazmur" },
-      { property: "og:description", content: "Urutan peserta, peserta yang sedang tampil, dan catatan juri." },
+      { title: "Sekretariat · Urutan & Sesi Peserta" },
+      { name: "description", content: "Sekretariat: kelola urutan peserta, tukar nomor urut dan sesi, serta unduh catatan juri peserta yang sudah selesai dinilai." },
+      { property: "og:title", content: "Sekretariat · Urutan & Sesi Peserta" },
+      { property: "og:description", content: "Kelola urutan peserta, sesi tampil, dan catatan juri." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
     ],
