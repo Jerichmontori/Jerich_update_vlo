@@ -512,20 +512,23 @@ function OperatorPage() {
                     const done = submissionCounts[p.id] ?? 0;
                     const pool = poolJuri(p.kategori);
                     const sudahDinilai = pool > 0 && done >= pool;
+                    const st = statusPeserta(p);
+                    const varLabel = varStatusLabel(varMap[p.id]);
                     return (
-                      <TableRow key={p.id} className={sudahDinilai ? "opacity-70" : ""}>
+                      <TableRow key={p.id} className={st.key === "final" ? "opacity-70" : ""}>
                         <TableCell className="font-medium">{p.nomor_urut}</TableCell>
                         <TableCell>{p.nama}</TableCell>
                         <TableCell className="text-muted-foreground">{p.asal || "—"}</TableCell>
                         <TableCell className="text-muted-foreground">{p.kategori || "—"}</TableCell>
                         <TableCell>
-                          {sudahDinilai ? (
-                            <Badge className="bg-accent text-accent-foreground">Sudah dinilai</Badge>
-                          ) : done > 0 ? (
-                            <Badge variant="outline">{done}/{pool} juri</Badge>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">Belum dinilai</span>
-                          )}
+                          <div className="flex flex-wrap items-center gap-1">
+                            <Badge className={st.cls} variant={st.variant}>{st.label}</Badge>
+                            {varLabel && (
+                              <Badge variant="destructive" className="gap-1">
+                                <AlertTriangle className="size-3" /> {varLabel}
+                              </Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-right space-x-1">
                           <Button size="icon" variant="ghost" disabled={busy} onClick={() => pindahkanUrutan(p.id, "atas")}>
@@ -537,13 +540,17 @@ function OperatorPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            disabled={!!sesi || sudahDinilai}
+                            disabled={sudahDinilai || sesi?.peserta_id === p.id}
                             title={sudahDinilai ? "Peserta ini sudah dinilai semua juri" : undefined}
-                            onClick={() => { setSelectedPeserta(p.id); logAudit("pilih_peserta", { peserta_id: p.id }); toast.success(`Peserta dipilih: ${p.nama}`); }}
+                            onClick={() => { setSelectedPeserta(p.id); setSelectedMazmur(""); logAudit("pilih_peserta", { peserta_id: p.id }); toast.success(`Peserta dipilih: ${p.nama}`); }}
                           >
-                            {sudahDinilai ? "Selesai" : "Pilih"}
+                            {sudahDinilai ? "Selesai" : sesi?.peserta_id === p.id ? "Tampil" : "Pilih"}
                           </Button>
                         </TableCell>
+                      </TableRow>
+                    );
+                  })}
+
                       </TableRow>
                     );
                   })}
