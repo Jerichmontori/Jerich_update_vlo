@@ -3501,13 +3501,13 @@ function DashboardTab() {
       supabase.from("peserta").select("*"),
       supabase.rpc("admin_list_penilaian" as any),
       supabase.from("kriteria").select("*"),
-      supabase.from("penilaian_submission" as any).select("peserta_id, juri_id"),
+      supabase.from("penilaian_submission" as any).select("peserta_id, juri_id, nilai_cache"),
       supabase.rpc("inspektur_ringkasan" as any),
     ]);
     const juriList = (j.data as unknown as Juri[]) || [];
     const pesertaList = (p.data as Peserta[]) || [];
     const penilaianList = (n.data as unknown as Penilaian[]) || [];
-    const submitted = ((s.data ?? []) as unknown as Array<{ peserta_id: string; juri_id: string }>);
+    const submitted = ((s.data ?? []) as unknown as Array<{ peserta_id: string; juri_id: string; nilai_cache: number | null }>);
     setJuri(juriList);
     setPeserta(pesertaList);
     setPenilaian(penilaianList);
@@ -3515,23 +3515,18 @@ function DashboardTab() {
     setSubmissionRows(submitted);
     setRingkasan((rk.data as any) ?? null);
 
-    // Hitung nilai per (juri, peserta) via RPC (menerapkan rentang kategori)
-    const pairs = new Set<string>();
-    submitted.forEach((r) => pairs.add(`${r.juri_id}|${r.peserta_id}`));
-    const entries = await Promise.all(
-      Array.from(pairs).map(async (key) => {
-        const [ji, pi] = key.split("|");
-        const { data } = await supabase.rpc("hitung_nilai_juri" as any, { _peserta: pi, _juri: ji });
-        return [key, data == null ? null : Number(data)] as const;
-      })
-    );
+    // Nilai per (juri, peserta) dibaca dari cache yang sudah dihitung server
+    // saat juri mengirim penilaian — tidak perlu menghitung ulang satu per satu.
     const map: Record<string, number | null> = {};
-    entries.forEach(([k, v]) => { map[k] = v; });
+    submitted.forEach((r) => {
+      map[`${r.juri_id}|${r.peserta_id}`] = r.nilai_cache == null ? null : Number(r.nilai_cache);
+    });
     setNilaiMap(map);
     setLoading(false);
   }
 
-  useEffect(() => { load(); const id = setInterval(load, 20000); return () => clearInterval(id); }, []);
+  usePolling(load, 30000);
+
 
   const totalPeserta = peserta.length;
 
