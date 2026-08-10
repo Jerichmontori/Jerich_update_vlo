@@ -96,17 +96,19 @@ Basis data:
   penyesuaian `mulai_sesi` / `akhiri_sesi` / `get_sesi_tampil` / `set_sesi_tampil`.
 - Penyesuaian fungsi pool & skor: `juri_in_pool`, `juri_pool_count`, `all_juri_submitted`,
   `detect_potensi_var`, `inspektur_monitor`, `inspektur_ringkasan`, `get_ranking`.
-- Dua slot IP: role `inspektur` tetap, ditambah penanda urutan (IP 1 / IP 2) pada data juri,
-  atau role kedua `inspektur_2` — dipilih saat implementasi agar tidak menabrak data lama.
-- Tabel `var_keputusan_ip` (session VAR, ip_user_id, urutan IP, keputusan clear boolean,
-  catatan, waktu) — satu baris per IP, unik per (session, IP).
+- Dua peran IP: role baru `inspektur_var` (IP 2) di samping `inspektur` (IP 1),
+  sehingga hak akses finalisasi normal dan hak koreksi VAR/keberatan terpisah.
+- Tabel `var_keputusan_ip` (session VAR, ip_user_id, keputusan clear boolean,
+  koreksi 4 komponen (jsonb), catatan, waktu).
 - Tabel `var_snapshot_nilai` (session VAR, juri_id, kriteria/komponen, nilai sebelum, nilai sesudah)
-  untuk berita acara; tidak boleh diubah/dihapus (hanya insert).
-- RPC baru: `ip_putuskan_var(_peserta uuid, _clear boolean, _catatan text)` — mencatat keputusan
-  satu IP; bila kedua IP sepakat, menimpa komponen Clear Text semua juri, menyimpan snapshot,
-  dan me-refresh cache nilai. `ketua_putuskan_var(...)` untuk kasus beda pendapat.
-  `var_berita_acara(_session uuid)` mengembalikan seluruh data report.
+  untuk berita acara; hanya insert (tidak bisa diubah/dihapus).
+- Tabel `peninjauan_kembali` (peserta_id, pemohon IP 2, alasan, status, admin penyetuju, waktu).
+- RPC baru: `ip2_putuskan_var(_peserta uuid, _clear boolean, _koreksi jsonb, _catatan text)` —
+  menimpa Clear Text + 4 komponen VAR semua juri, menyimpan snapshot, refresh cache nilai;
+  `ip2_ajukan_peninjauan(_peserta uuid, _alasan text)` dan `admin_putuskan_peninjauan(...)`;
+  `var_berita_acara(_session uuid)` untuk data report;
   `ip_daftar_keberatan()`, `ip_putuskan_keberatan(...)`.
+
 
 Frontend:
 - Halaman baru `/keberatan` dan `/keberatan/status` (publik, dengan metadata SEO tersendiri).
