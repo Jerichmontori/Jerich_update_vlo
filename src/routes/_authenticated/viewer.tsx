@@ -394,6 +394,87 @@ function ViewerPage() {
           </CardContent>
         </Card>
 
+        <Card className="border-primary/40">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base"><Play className="size-4 text-primary" /> Kontrol Sesi Tampil</CardTitle>
+            <CardDescription>
+              Tentukan sesi yang sedang berlangsung. Operator Lomba hanya dapat memilih peserta dari sesi ini.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap items-center gap-3">
+              <Badge variant="secondary">Sesi aktif saat ini: {sesiTampil ?? "—"}</Badge>
+              <select
+                className="h-10 rounded-md border bg-background px-3 text-sm"
+                value={sesiTampilVal}
+                onChange={(e) => setSesiTampilVal(e.target.value)}
+              >
+                <option value="">Pilih sesi…</option>
+                {sesiOptions.map((n) => (
+                  <option key={n} value={String(n)}>Sesi {n}</option>
+                ))}
+              </select>
+              <Button onClick={simpanSesiTampil} disabled={sesiTampilBusy || !sesiTampilVal}>
+                Tetapkan Sesi Tampil
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base"><ListOrdered className="size-4 text-accent" /> Urutan Tampil per Sesi</CardTitle>
+            <CardDescription>Pilih sesi, lalu atur urutan tampil peserta atau pindahkan peserta ke sesi lain.</CardDescription>
+            <div className="pt-2">
+              <select
+                className="h-10 rounded-md border bg-background px-3 text-sm"
+                value={sesiKelola}
+                onChange={(e) => setSesiKelola(e.target.value)}
+              >
+                {sesiOptions.map((n) => (
+                  <option key={n} value={String(n)}>Sesi {n}</option>
+                ))}
+              </select>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {pesertaSesi.length === 0 ? (
+              <div className="text-sm text-muted-foreground">Belum ada peserta pada sesi ini.</div>
+            ) : (
+              <div className="space-y-2">
+                {pesertaSesi.map((r, i) => (
+                  <div key={r.peserta_id} className="flex flex-wrap items-center gap-2 rounded-lg border p-2">
+                    <span className="w-8 text-center text-sm font-semibold">{i + 1}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium truncate">{r.nomor_urut}. {r.nama}</div>
+                      <div className="text-xs text-muted-foreground truncate">{r.asal ?? ""}{r.kategori ? ` · ${r.kategori}` : ""}</div>
+                    </div>
+                    <Button size="icon" variant="ghost" disabled={urutBusy || i === 0} onClick={() => geserUrutan(r, pesertaSesi[i - 1])}>
+                      <ArrowUp className="size-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" disabled={urutBusy || i === pesertaSesi.length - 1} onClick={() => geserUrutan(r, pesertaSesi[i + 1])}>
+                      <ArrowDown className="size-4" />
+                    </Button>
+                    <select
+                      className="h-9 rounded-md border bg-background px-2 text-sm"
+                      value={String(r.sesi_no)}
+                      disabled={busy === r.peserta_id}
+                      onChange={(e) => pindahSesi(r, Number(e.target.value))}
+                    >
+                      {Array.from(new Set([...sesiOptions, Number(r.sesi_no), (sesiOptions[sesiOptions.length - 1] ?? 0) + 1]))
+                        .sort((a, b) => a - b)
+                        .map((n) => (
+                          <option key={n} value={String(n)}>Sesi {n}</option>
+                        ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Urutan Peserta</CardTitle>
