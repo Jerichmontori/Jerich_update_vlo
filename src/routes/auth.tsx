@@ -75,8 +75,8 @@ function AuthPage() {
     }
     setLoading(true);
     try {
-      const { signInWithIdentifier } = await import("@/lib/auth-lookup.functions");
       const res = await signInWithIdentifier({
+
         data: { identifier: identifier.trim(), password },
       });
       const { error: setErr, data: setData } = await supabase.auth.setSession({
