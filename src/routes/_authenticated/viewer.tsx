@@ -86,7 +86,32 @@ function ViewerPage() {
     })();
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.rpc("get_sesi_tampil" as any);
+      const n = data == null ? null : Number(data);
+      setSesiTampil(Number.isFinite(n as number) ? (n as number) : null);
+      if (n != null) setSesiTampilVal(String(n));
+    })();
+  }, []);
+
+  const sesiOptions = useMemo(() => {
+    const s = new Set<number>();
+    (rows ?? []).forEach((r) => s.add(Number(r.sesi_no)));
+    return Array.from(s).filter((n) => Number.isFinite(n)).sort((a, b) => a - b);
+  }, [rows]);
+
+  useEffect(() => {
+    if (!sesiKelola && sesiOptions.length > 0) setSesiKelola(String(sesiTampil ?? sesiOptions[0]));
+  }, [sesiOptions, sesiTampil, sesiKelola]);
+
+  const pesertaSesi = useMemo(
+    () => (rows ?? []).filter((r) => String(r.sesi_no) === sesiKelola).sort((a, b) => a.nomor_urut - b.nomor_urut),
+    [rows, sesiKelola]
+  );
+
   const tampil = useMemo(() => (rows ?? []).filter((r) => r.sedang_tampil), [rows]);
+
   const list = useMemo(() => {
     const s = q.trim().toLowerCase();
     return (rows ?? []).filter((r) => !s || r.nama.toLowerCase().includes(s) || String(r.nomor_urut) === s);
