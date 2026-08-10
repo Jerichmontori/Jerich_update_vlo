@@ -20,22 +20,33 @@ Halaman publik `/keberatan` yang bisa diisi peserta atau pendamping tanpa login.
   Admin melihat semua keberatan dan rekapnya, serta bisa mengekspor ke laporan.
 - Status tiket: `baru` → `ditinjau` → `diterima`/`ditolak`, tampil di halaman status.
 
-## 2. Potensi VAR diselesaikan oleh 2 IP (bukan juri) + report per kasus
+## 2. Pembagian tugas IP 1 & IP 2 + report VAR per kasus
 
-Alur baru menggantikan klarifikasi oleh juri:
+Dua Inspektur Pertandingan dengan tugas terpisah:
 
-- Saat sistem mendeteksi potensi VAR (perbedaan input Perhatian antar juri),
-  kasus langsung masuk ke **antrean IP**, bukan ke form juri.
-- Ada **dua Inspektur Pertandingan (IP 1 dan IP 2)**. Keduanya melihat detail persepsi
-  (peta ayat & perbedaan antar juri — komponen yang sudah ada) dan masing-masing memberi
-  keputusan **Clear Text = Ya** atau **Tidak Clear Text** beserta catatan alasan.
-- Keputusan baru **sah bila kedua IP sepakat**. Bila berbeda, kasus berstatus
-  **"beda pendapat"** dan diteruskan ke **Ketua Dewan Juri** sebagai pemutus akhir.
-  Selama belum sah, nilai peserta tidak berubah.
-- Keputusan sah berlaku **sama untuk semua juri**: menimpa komponen Clear Text pada
-  seluruh juri peserta tersebut; komponen lain (salah kata, menambah/mengurangi kata,
-  catatan juri, kriteria lain) **tidak diubah**. Nilai akhir dihitung ulang otomatis.
-- Juri tidak lagi diminta mengirim ulang nilai untuk kasus VAR ini; form juri tetap terkunci.
+**IP 1 — jalannya penilaian (kondisi normal)**
+- Memantau sesi berjalan dan progres juri.
+- Mengakhiri sesi dan **memfinalisasi nilai** peserta pada kondisi normal (tanpa VAR/keberatan).
+- Tidak berwenang mengoreksi nilai juri.
+
+**IP 2 — penyelesaian VAR & keberatan**
+- Saat sistem mendeteksi potensi VAR, kasus langsung masuk ke **antrean IP 2**, bukan ke form juri.
+- IP 2 membuka detail persepsi (peta ayat & perbedaan antar juri) lalu memutuskan
+  **satu keputusan berlaku untuk semua juri**:
+  - **Clear Text = Ya / Tidak Clear Text**, dan
+  - koreksi pilihan juri pada **4 komponen VAR** (clear text, salah kata,
+    menambah kata, mengurangi kata) bila diperlukan.
+- Kriteria lain dan catatan juri **tidak diubah**. Nilai akhir dihitung ulang otomatis
+  setelah keputusan disimpan, dengan catatan alasan wajib diisi.
+- IP 2 juga menangani **e-form keberatan** (bagian 1) sampai keputusan diterima/ditolak.
+- Juri tidak diminta mengirim ulang nilai; form juri tetap terkunci.
+
+**Peninjauan Kembali (nilai sudah final)**
+- Bila nilai sudah difinalisasi IP 1 lalu muncul VAR/keberatan, IP 2 **mengajukan
+  Peninjauan Kembali** ke Admin (dengan alasan).
+- Admin menyetujui/menolak. Setelah disetujui, kasus terbuka untuk dikoreksi IP 2
+  sebatas Clear Text dan 4 komponen VAR; setelah selesai nilai difinalkan kembali.
+- Seluruh langkah (pengajuan, persetujuan admin, koreksi, finalisasi ulang) tercatat di audit log.
 
 ### Report VAR per kasus (dapat dipertanggungjawabkan)
 
@@ -44,14 +55,15 @@ Setiap kasus VAR menghasilkan **satu berita acara** yang bisa dicetak/di-PDF, be
 - Nomor kasus VAR, waktu deteksi, peserta (no. urut, nama, kategori), bacaan/mazmur.
 - Rincian perbedaan antar juri: komponen dan ayat mana yang berbeda, siapa menandai apa.
 - **Snapshot nilai sebelum koreksi** dan **nilai sesudah koreksi** per juri dan nilai akhir.
-- Keputusan IP 1 dan IP 2 (masing-masing dengan nama, waktu, catatan), serta keputusan
-  Ketua Dewan Juri bila terjadi beda pendapat.
+- Keputusan IP 2 (nama, waktu, catatan), dan bila melalui Peninjauan Kembali:
+  alasan pengajuan + nama admin yang menyetujui beserta waktunya.
 - Kolom tanda tangan: IP 1, IP 2, Ketua Dewan Juri.
-- Jejak audit lengkap (siapa, kapan, aksi apa) tidak bisa dihapus atau diubah.
+- Jejak audit lengkap (siapa, kapan, aksi apa) hanya bisa ditambah, tidak bisa diubah/dihapus.
 
 Halaman "Potensi VAR" di Admin tetap read-only, kini menampilkan status
-(menunggu IP 1 / menunggu IP 2 / beda pendapat / selesai) dan tombol **Unduh Berita Acara**,
+(menunggu IP 2 / menunggu persetujuan admin / selesai) dan tombol **Unduh Berita Acara**,
 serta rekap seluruh kasus VAR ikut masuk ke Laporan Pertanggungjawaban.
+
 
 
 ## 3. Juri per kategori + sesi paralel
