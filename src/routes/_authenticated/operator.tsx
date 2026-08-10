@@ -571,6 +571,35 @@ function OperatorPage() {
         </Card>
       </main>
 
+      <AlertDialog open={confirmNext} onOpenChange={setConfirmNext}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tampilkan peserta berikutnya?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <div>
+                  Peserta sebelumnya: <b>{pesertaAktif?.nama ?? "—"}</b> — {juriDone} dari {juriTotal} juri sudah mengirim
+                  {varStatusLabel(varMap[pesertaAktif?.id ?? ""]) ? `; ${varStatusLabel(varMap[pesertaAktif?.id ?? ""])}` : ""}.
+                </div>
+                <div>
+                  Nilai & catatan juri peserta sebelumnya <b>tidak dihapus</b>. Juri yang belum mengirim tetap dapat
+                  menyelesaikan, dan kasus VAR tetap ditangani Inspektur VAR (IP 2).
+                </div>
+                <div>
+                  Akan ditampilkan: <b>{pesertaTerpilih?.nomor_urut}. {pesertaTerpilih?.nama}</b>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setConfirmNext(false); void mulaiSesi(true); }}>
+              Ya, tampilkan
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+
   );
 }
