@@ -1,5 +1,7 @@
 import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useLiveState } from "@/lib/liveState";
+import { varStatusLabel } from "@/lib/varStatus";
+
 
 type Search = { bg?: string };
 
