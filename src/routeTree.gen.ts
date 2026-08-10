@@ -29,6 +29,7 @@ import { Route as AuthenticatedOperatorRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedInspekturVarRouteImport } from './routes/_authenticated/inspektur-var'
 import { Route as AuthenticatedInspekturRouteImport } from './routes/_authenticated/inspektur'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as ApiPublicTmpCreateAdminRouteImport } from './routes/api/public/tmp-create-admin'
 import { Route as ApiPublicSkorDotxmlRouteImport } from './routes/api/public/skor[.]xml'
 import { Route as ApiPublicSkorDotjsonRouteImport } from './routes/api/public/skor[.]json'
 import { Route as ApiPublicNowreadingDotxmlRouteImport } from './routes/api/public/nowreading[.]xml'
@@ -140,6 +141,11 @@ const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const ApiPublicTmpCreateAdminRoute = ApiPublicTmpCreateAdminRouteImport.update({
+  id: '/api/public/tmp-create-admin',
+  path: '/api/public/tmp-create-admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicSkorDotxmlRoute = ApiPublicSkorDotxmlRouteImport.update({
   id: '/api/public/skor.xml',
   path: '/api/public/skor.xml',
@@ -223,6 +229,7 @@ export interface FileRoutesByFullPath {
   '/api/public/nowreading.xml': typeof ApiPublicNowreadingDotxmlRoute
   '/api/public/skor.json': typeof ApiPublicSkorDotjsonRoute
   '/api/public/skor.xml': typeof ApiPublicSkorDotxmlRoute
+  '/api/public/tmp-create-admin': typeof ApiPublicTmpCreateAdminRoute
   '/api/public/vmix/leaderboard.html': typeof ApiPublicVmixLeaderboardDothtmlRoute
   '/api/public/vmix/nowreading.html': typeof ApiPublicVmixNowreadingDothtmlRoute
   '/api/public/vmix/skor.html': typeof ApiPublicVmixSkorDothtmlRoute
@@ -254,6 +261,7 @@ export interface FileRoutesByTo {
   '/api/public/nowreading.xml': typeof ApiPublicNowreadingDotxmlRoute
   '/api/public/skor.json': typeof ApiPublicSkorDotjsonRoute
   '/api/public/skor.xml': typeof ApiPublicSkorDotxmlRoute
+  '/api/public/tmp-create-admin': typeof ApiPublicTmpCreateAdminRoute
   '/api/public/vmix/leaderboard.html': typeof ApiPublicVmixLeaderboardDothtmlRoute
   '/api/public/vmix/nowreading.html': typeof ApiPublicVmixNowreadingDothtmlRoute
   '/api/public/vmix/skor.html': typeof ApiPublicVmixSkorDothtmlRoute
@@ -287,6 +295,7 @@ export interface FileRoutesById {
   '/api/public/nowreading.xml': typeof ApiPublicNowreadingDotxmlRoute
   '/api/public/skor.json': typeof ApiPublicSkorDotjsonRoute
   '/api/public/skor.xml': typeof ApiPublicSkorDotxmlRoute
+  '/api/public/tmp-create-admin': typeof ApiPublicTmpCreateAdminRoute
   '/api/public/vmix/leaderboard.html': typeof ApiPublicVmixLeaderboardDothtmlRoute
   '/api/public/vmix/nowreading.html': typeof ApiPublicVmixNowreadingDothtmlRoute
   '/api/public/vmix/skor.html': typeof ApiPublicVmixSkorDothtmlRoute
@@ -320,6 +329,7 @@ export interface FileRouteTypes {
     | '/api/public/nowreading.xml'
     | '/api/public/skor.json'
     | '/api/public/skor.xml'
+    | '/api/public/tmp-create-admin'
     | '/api/public/vmix/leaderboard.html'
     | '/api/public/vmix/nowreading.html'
     | '/api/public/vmix/skor.html'
@@ -351,6 +361,7 @@ export interface FileRouteTypes {
     | '/api/public/nowreading.xml'
     | '/api/public/skor.json'
     | '/api/public/skor.xml'
+    | '/api/public/tmp-create-admin'
     | '/api/public/vmix/leaderboard.html'
     | '/api/public/vmix/nowreading.html'
     | '/api/public/vmix/skor.html'
@@ -383,6 +394,7 @@ export interface FileRouteTypes {
     | '/api/public/nowreading.xml'
     | '/api/public/skor.json'
     | '/api/public/skor.xml'
+    | '/api/public/tmp-create-admin'
     | '/api/public/vmix/leaderboard.html'
     | '/api/public/vmix/nowreading.html'
     | '/api/public/vmix/skor.html'
@@ -409,6 +421,7 @@ export interface RootRouteChildren {
   ApiPublicNowreadingDotxmlRoute: typeof ApiPublicNowreadingDotxmlRoute
   ApiPublicSkorDotjsonRoute: typeof ApiPublicSkorDotjsonRoute
   ApiPublicSkorDotxmlRoute: typeof ApiPublicSkorDotxmlRoute
+  ApiPublicTmpCreateAdminRoute: typeof ApiPublicTmpCreateAdminRoute
   ApiPublicVmixLeaderboardDothtmlRoute: typeof ApiPublicVmixLeaderboardDothtmlRoute
   ApiPublicVmixNowreadingDothtmlRoute: typeof ApiPublicVmixNowreadingDothtmlRoute
   ApiPublicVmixSkorDothtmlRoute: typeof ApiPublicVmixSkorDothtmlRoute
@@ -556,6 +569,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/api/public/tmp-create-admin': {
+      id: '/api/public/tmp-create-admin'
+      path: '/api/public/tmp-create-admin'
+      fullPath: '/api/public/tmp-create-admin'
+      preLoaderRoute: typeof ApiPublicTmpCreateAdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/skor.xml': {
       id: '/api/public/skor.xml'
       path: '/api/public/skor.xml'
@@ -673,6 +693,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicNowreadingDotxmlRoute: ApiPublicNowreadingDotxmlRoute,
   ApiPublicSkorDotjsonRoute: ApiPublicSkorDotjsonRoute,
   ApiPublicSkorDotxmlRoute: ApiPublicSkorDotxmlRoute,
+  ApiPublicTmpCreateAdminRoute: ApiPublicTmpCreateAdminRoute,
   ApiPublicVmixLeaderboardDothtmlRoute: ApiPublicVmixLeaderboardDothtmlRoute,
   ApiPublicVmixNowreadingDothtmlRoute: ApiPublicVmixNowreadingDothtmlRoute,
   ApiPublicVmixSkorDothtmlRoute: ApiPublicVmixSkorDothtmlRoute,
