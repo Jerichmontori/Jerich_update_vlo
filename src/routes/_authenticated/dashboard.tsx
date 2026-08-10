@@ -3485,15 +3485,20 @@ function DashboardTab() {
   const [nilaiMap, setNilaiMap] = useState<Record<string, number | null>>({});
   const [submissionRows, setSubmissionRows] = useState<Array<{ peserta_id: string; juri_id: string }>>([]);
   const [loading, setLoading] = useState(true);
+  const [ringkasan, setRingkasan] = useState<{
+    total_peserta: number; sudah_tampil: number; belum_tampil: number;
+    sedang_tampil: number; sesi_aktif: number; sesi_selesai: number; total_var: number;
+  } | null>(null);
 
   async function load() {
     setLoading(true);
-    const [j, p, n, k, s] = await Promise.all([
+    const [j, p, n, k, s, rk] = await Promise.all([
       supabase.from("juri_public" as any).select("*").eq("approved", true).eq("role", "juri").neq("aktif_menilai", false).order("nama"),
       supabase.from("peserta").select("*"),
       supabase.rpc("admin_list_penilaian" as any),
       supabase.from("kriteria").select("*"),
       supabase.from("penilaian_submission" as any).select("peserta_id, juri_id"),
+      supabase.rpc("inspektur_ringkasan" as any),
     ]);
     const juriList = (j.data as unknown as Juri[]) || [];
     const pesertaList = (p.data as Peserta[]) || [];
@@ -3504,6 +3509,7 @@ function DashboardTab() {
     setPenilaian(penilaianList);
     setKriteria((k.data as Kriteria[]) || []);
     setSubmissionRows(submitted);
+    setRingkasan((rk.data as any) ?? null);
 
     // Hitung nilai per (juri, peserta) via RPC (menerapkan rentang kategori)
     const pairs = new Set<string>();
@@ -3521,7 +3527,7 @@ function DashboardTab() {
     setLoading(false);
   }
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); const id = setInterval(load, 8000); return () => clearInterval(id); }, []);
 
   const totalPeserta = peserta.length;
 
