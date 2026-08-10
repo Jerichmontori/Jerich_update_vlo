@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { RefreshCw, FileWarning } from "lucide-react";
+import KeberatanDeadlineSetting from "@/components/KeberatanDeadlineSetting";
 
 type Row = {
   id: string;
@@ -32,7 +33,7 @@ const STATUS_TONE: Record<string, string> = {
 };
 
 /** Daftar keberatan + keputusan IP (khusus admin & Inspektur VAR). */
-export default function KeberatanTab({ canDecide = true }: { canDecide?: boolean }) {
+export default function KeberatanTab({ canDecide = true, canConfig = false }: { canDecide?: boolean; canConfig?: boolean }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [catatan, setCatatan] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
@@ -70,6 +71,8 @@ export default function KeberatanTab({ canDecide = true }: { canDecide?: boolean
   }
 
   return (
+    <div className="space-y-4">
+    {canConfig && <KeberatanDeadlineSetting />}
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="flex items-center gap-2"><FileWarning className="size-5" />Pengajuan Keberatan</CardTitle>
@@ -126,5 +129,6 @@ export default function KeberatanTab({ canDecide = true }: { canDecide?: boolean
         ))}
       </CardContent>
     </Card>
+    </div>
   );
 }

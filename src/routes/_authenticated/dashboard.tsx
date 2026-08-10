@@ -162,7 +162,7 @@ function App() {
             {section === "live" && <SesiLiveRanking />}
             {section === "penilaian" && <PenilaianTab />}
             {section === "var" && <AdminVarTab />}
-            {section === "keberatan" && <KeberatanTab canDecide={roles.isAdm} />}
+            {section === "keberatan" && <KeberatanTab canDecide={roles.isAdm} canConfig={roles.isAdm} />}
             {section === "peninjauan" && <PeninjauanTab canDecide={roles.isAdm} />}
             {section === "peserta" && <PesertaTab />}
             {section === "juri" && <JuriTab />}
