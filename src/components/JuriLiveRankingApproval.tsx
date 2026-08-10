@@ -24,11 +24,8 @@ export default function JuriLiveRankingApproval() {
     setRows((data as unknown as Pending[]) ?? []);
   }, []);
 
-  useEffect(() => {
-    load();
-    const id = setInterval(load, 6000);
-    return () => clearInterval(id);
-  }, [load]);
+  usePolling(load, 20000);
+
 
   async function vote(sesi: number, setuju: boolean) {
     setBusy(sesi);
