@@ -194,9 +194,6 @@ function PengaturanNilaiTab() {
 
 function Header() {
   const branding = useBranding();
-  const [canOperate, setCanOperate] = useState(false);
-  const [canInspect, setCanInspect] = useState(false);
-  const [canAnnounce, setCanAnnounce] = useState(false);
   const [currentUser, setCurrentUser] = useState<{ nama: string; email: string; role: string } | null>(null);
   useEffect(() => {
     (async () => {
@@ -210,9 +207,6 @@ function Header() {
         supabase.rpc("has_role", { _user_id: uid, _role: "inspektur" as any }),
         supabase.rpc("has_role", { _user_id: uid, _role: "ketua_juri" as any }),
       ]);
-      setCanOperate(!!isPan || !!isAdm);
-      setCanInspect(!!isInsp || !!isAdm);
-      setCanAnnounce(!!isAdm);
       // Inspektur-only users are read-only observers; send them to their own page.
       if (isInsp && !isAdm && !isPan && !isJuri && !isKetua) {
         window.location.href = "/inspektur";
@@ -248,21 +242,6 @@ function Header() {
               <div className="font-semibold leading-tight">{currentUser.nama}</div>
               <div className="text-xs text-muted-foreground">{currentUser.role}{currentUser.email ? ` · ${currentUser.email}` : ""}</div>
             </div>
-          )}
-          {canOperate && (
-            <Button variant="secondary" onClick={() => (window.location.href = "/operator")}>
-              Operator Lomba
-            </Button>
-          )}
-          {canInspect && (
-            <Button variant="secondary" onClick={() => (window.location.href = "/inspektur")}>
-              Inspektur
-            </Button>
-          )}
-          {canAnnounce && (
-            <Button variant="secondary" onClick={() => (window.location.href = "/skor")}>
-              Pengumuman Nilai
-            </Button>
           )}
           <GantiPasswordButton variant="outline" />
           <Button variant="outline" onClick={signOut}>Keluar</Button>

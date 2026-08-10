@@ -19,6 +19,11 @@ import {
   ListChecks,
   BookOpenText,
   AlertTriangle,
+  MonitorPlay,
+  Presentation,
+  Eye,
+  Shield,
+  ExternalLink,
 } from "lucide-react";
 
 export type AdminSection =
@@ -55,6 +60,13 @@ const GROUPS: { label: string; items: Item[] }[] = [
       { value: "mazmur", label: "Mazmur", icon: BookOpenText },
     ],
   },
+];
+
+const LINKS: { href: string; label: string; icon: typeof LayoutDashboard }[] = [
+  { href: "/operator", label: "Operator Lomba", icon: Presentation },
+  { href: "/inspektur", label: "Inspektur", icon: Shield },
+  { href: "/vmix", label: "Operator vMix", icon: MonitorPlay },
+  { href: "/viewer", label: "User", icon: Eye },
 ];
 
 export const ADMIN_SECTION_LABEL: Record<AdminSection, string> = Object.fromEntries(
@@ -98,6 +110,32 @@ export default function AdminSidebar({
             </SidebarGroupContent>
           </SidebarGroup>
         ))}
+        <SidebarGroup>
+          {!collapsed && <SidebarGroupLabel>Halaman Lain</SidebarGroupLabel>}
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {LINKS.map((l) => (
+                <SidebarMenuItem key={l.href}>
+                  <SidebarMenuButton
+                    tooltip={l.label}
+                    onClick={() => {
+                      if (isMobile) setOpenMobile(false);
+                      window.location.href = l.href;
+                    }}
+                  >
+                    <l.icon className="size-4" />
+                    {!collapsed && (
+                      <span className="flex items-center gap-1">
+                        {l.label}
+                        <ExternalLink className="size-3 opacity-60" />
+                      </span>
+                    )}
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
     </Sidebar>
   );
