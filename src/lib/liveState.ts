@@ -10,6 +10,7 @@ export type ActiveSession = {
   bacaan: string | null;
   jumlah_ayat: number | null;
   started_at: string;
+  var_status?: string | null;
 };
 
 export type RankingRow = {
@@ -30,7 +31,9 @@ export type LiveState = {
   active: ActiveSession[];
   ranking: RankingRow[];
   sesi_tayang?: number[];
+  vmix_var_badge?: boolean;
 };
+
 
 export function useLiveState(intervalMs = 4000) {
   const [state, setState] = useState<LiveState | null>(null);
