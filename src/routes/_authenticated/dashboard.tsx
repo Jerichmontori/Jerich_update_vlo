@@ -3727,7 +3727,7 @@ function LihatPenilaianTab() {
       supabase.from("juri_public" as any).select("*").order("created_at"),
       supabase.from("kriteria").select("*").order("created_at"),
       supabase.from("penilaian").select("*"),
-      supabase.from("penilaian_submission" as any).select("peserta_id, juri_id"),
+      supabase.from("penilaian_submission" as any).select("peserta_id, juri_id, nilai_cache"),
       supabase.rpc("get_ranking" as any),
       supabase.from("kategori").select("*"),
     ]);
@@ -3740,12 +3740,11 @@ function LihatPenilaianTab() {
     setKriteria((k.data ?? []) as Kriteria[]);
     setPenilaian((n.data ?? []) as Penilaian[]);
     setKategoriRows((kat.data ?? []) as Kategori[]);
-    const submitted = ((s.data ?? []) as unknown as Submission[]);
-    const nilaiEntries = await Promise.all(submitted.map(async (row) => {
-      const key = `${row.juri_id}|${row.peserta_id}`;
-      const { data } = await supabase.rpc("hitung_nilai_juri" as any, { _peserta: row.peserta_id, _juri: row.juri_id });
-      return [key, data == null ? null : Number(data)] as const;
-    }));
+    // Nilai per (juri, peserta) diambil dari cache server — tidak menghitung ulang satu per satu.
+    const submitted = ((s.data ?? []) as unknown as Array<Submission & { nilai_cache: number | null }>);
+    const nilaiEntries = submitted.map((row) =>
+      [`${row.juri_id}|${row.peserta_id}`, row.nilai_cache == null ? null : Number(row.nilai_cache)] as const,
+    );
     setNilaiMap(Object.fromEntries(nilaiEntries));
     const nextRankMap: Record<string, Ranking> = {};
     ((rank.data ?? []) as unknown as Ranking[]).forEach((r) => { nextRankMap[r.peserta_id] = r; });
@@ -4161,7 +4160,7 @@ function RincianNilaiTab() {
       supabase.from("kategori").select("*").order("updated_at", { ascending: false }).order("created_at", { ascending: false }),
       supabase.from("mazmur").select("*"),
       supabase.rpc("get_ranking" as any),
-      supabase.from("penilaian_submission" as any).select("peserta_id, juri_id"),
+      supabase.from("penilaian_submission" as any).select("peserta_id, juri_id, nilai_cache"),
       supabase.from("masukan_juri" as any).select("peserta_id, juri_id, mazmur_id, catatan"),
     ]);
     for (const r of [p, j, k, n, kt, m, rank, s]) {
@@ -4180,12 +4179,11 @@ function RincianNilaiTab() {
     const map: Record<string, number | null> = {};
     ((rank.data ?? []) as any[]).forEach((r) => { map[r.peserta_id] = r.nilai_akhir != null ? Number(r.nilai_akhir) : null; });
     setNilaiAkhirMap(map);
-    const submitted = ((s.data ?? []) as unknown as Submission[]);
-    const nilaiEntries = await Promise.all(submitted.map(async (row) => {
-      const key = `${row.juri_id}|${row.peserta_id}`;
-      const { data } = await supabase.rpc("hitung_nilai_juri" as any, { _peserta: row.peserta_id, _juri: row.juri_id });
-      return [key, data == null ? null : Number(data)] as const;
-    }));
+    // Nilai per (juri, peserta) diambil dari cache server — tidak menghitung ulang satu per satu.
+    const submitted = ((s.data ?? []) as unknown as Array<Submission & { nilai_cache: number | null }>);
+    const nilaiEntries = submitted.map((row) =>
+      [`${row.juri_id}|${row.peserta_id}`, row.nilai_cache == null ? null : Number(row.nilai_cache)] as const,
+    );
     setNilaiJuriMap(Object.fromEntries(nilaiEntries));
     setLoading(false);
   }
