@@ -607,6 +607,11 @@ function KoneksiTab() {
       ket: "Nama peserta & bacaan yang sedang tampil.",
     },
     {
+      judul: "Warning Potensi VAR",
+      url: `${origin}/vmix/varwarning?bg=transparent&pos=top`,
+      ket: "Banner peringatan otomatis muncul saat peserta yang sedang tampil berstatus Potensi VAR / proses VAR. Ikut tombol 'Badge VAR di vMix' pada halaman Operator Lomba. Opsi: pos=top|center|bottom, force=1 untuk pratinjau.",
+    },
+    {
       judul: "Data Source XML",
       url: `${origin}/api/public/skor.xml`,
       ket: "Untuk Title buatan sendiri. Field: nama, nomor_urut, asal, juri1..5_nama/nilai, nilai_akhir, status. Auto Refresh 1–2 detik.",
@@ -618,35 +623,63 @@ function KoneksiTab() {
     },
   ];
 
+  const salin = (url: string) => {
+    navigator.clipboard?.writeText(url);
+    toast.success("URL disalin");
+  };
+
   return (
-    <Card className="mt-4">
-      <CardHeader>
-        <CardTitle className="text-base">Sumber tayangan untuk vMix</CardTitle>
-        <CardDescription>
-          Gunakan URL berikut sebagai Browser Input / Data Source, bukan tangkapan layar aplikasi.
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4 text-sm">
-        {items.map((it) => (
-          <div key={it.url}>
-            <div className="font-medium">{it.judul}</div>
-            <div className="mt-1 flex items-center gap-2">
-              <code className="block flex-1 rounded bg-muted px-2 py-1 break-all">{it.url}</code>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  navigator.clipboard?.writeText(it.url);
-                  toast.success("URL disalin");
-                }}
-              >
-                Salin
-              </Button>
+    <div className="mt-4 space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Sumber tayangan untuk vMix / OBS</CardTitle>
+          <CardDescription>
+            Gunakan URL berikut sebagai Browser Input (vMix) atau Browser Source (OBS), bukan tangkapan layar aplikasi.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4 text-sm">
+          {items.map((it) => (
+            <div key={it.url}>
+              <div className="font-medium">{it.judul}</div>
+              <div className="mt-1 flex items-center gap-2">
+                <code className="block flex-1 rounded bg-muted px-2 py-1 break-all">{it.url}</code>
+                <Button variant="outline" size="sm" onClick={() => salin(it.url)}>
+                  Salin
+                </Button>
+              </div>
+              <p className="text-muted-foreground mt-1">{it.ket}</p>
             </div>
-            <p className="text-muted-foreground mt-1">{it.ket}</p>
-          </div>
-        ))}
-      </CardContent>
-    </Card>
+          ))}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Cara pasang di OBS Studio</CardTitle>
+          <CardDescription>Semua overlay di atas kompatibel dengan OBS Browser Source.</CardDescription>
+        </CardHeader>
+        <CardContent className="text-sm space-y-2 text-muted-foreground">
+          <p>1. Di panel <b>Sources</b>, klik <b>+</b> → <b>Browser</b>, beri nama (mis. "Warning VAR").</p>
+          <p>2. Tempel URL overlay pada kolom <b>URL</b>.</p>
+          <p>3. Isi <b>Width</b> 1920, <b>Height</b> 1080 (samakan dengan canvas).</p>
+          <p>4. Centang <b>Shutdown source when not visible</b> dan <b>Refresh browser when scene becomes active</b>.</p>
+          <p>5. Latar sudah transparan (<code>bg=transparent</code>); tidak perlu chroma key. Bila ingin latar solid untuk key manual, ganti menjadi <code>?bg=00FF00</code>.</p>
+          <p>6. Data diperbarui otomatis tiap 2–3 detik — tidak perlu refresh manual.</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Cara pasang di vMix</CardTitle>
+        </CardHeader>
+        <CardContent className="text-sm space-y-2 text-muted-foreground">
+          <p>1. <b>Add Input</b> → <b>Web Browser</b>, tempel URL, set 1920×1080.</p>
+          <p>2. Aktifkan <b>Transparent Background</b> pada input tersebut.</p>
+          <p>3. Tempatkan sebagai <b>Overlay 1–4</b> agar bisa di-on/off saat siaran.</p>
+          <p>4. Untuk Title buatan sendiri, pakai Data Source XML/JSON dengan Auto Refresh 1–2 detik.</p>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
+

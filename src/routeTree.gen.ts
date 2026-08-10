@@ -18,6 +18,7 @@ import { Route as DaftarRouteImport } from './routes/daftar'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VmixVarwarningRouteImport } from './routes/vmix.varwarning'
 import { Route as VmixSkorRouteImport } from './routes/vmix.skor'
 import { Route as VmixNowreadingRouteImport } from './routes/vmix.nowreading'
 import { Route as VmixLeaderboardRouteImport } from './routes/vmix.leaderboard'
@@ -81,6 +82,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VmixVarwarningRoute = VmixVarwarningRouteImport.update({
+  id: '/vmix/varwarning',
+  path: '/vmix/varwarning',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VmixSkorRoute = VmixSkorRouteImport.update({
@@ -209,6 +215,7 @@ export interface FileRoutesByFullPath {
   '/vmix/leaderboard': typeof VmixLeaderboardRoute
   '/vmix/nowreading': typeof VmixNowreadingRoute
   '/vmix/skor': typeof VmixSkorRoute
+  '/vmix/varwarning': typeof VmixVarwarningRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/api/public/bootstrap-juri-dummy': typeof ApiPublicBootstrapJuriDummyRoute
   '/api/public/keberatan': typeof ApiPublicKeberatanRoute
@@ -239,6 +246,7 @@ export interface FileRoutesByTo {
   '/vmix/leaderboard': typeof VmixLeaderboardRoute
   '/vmix/nowreading': typeof VmixNowreadingRoute
   '/vmix/skor': typeof VmixSkorRoute
+  '/vmix/varwarning': typeof VmixVarwarningRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/api/public/bootstrap-juri-dummy': typeof ApiPublicBootstrapJuriDummyRoute
   '/api/public/keberatan': typeof ApiPublicKeberatanRoute
@@ -271,6 +279,7 @@ export interface FileRoutesById {
   '/vmix/leaderboard': typeof VmixLeaderboardRoute
   '/vmix/nowreading': typeof VmixNowreadingRoute
   '/vmix/skor': typeof VmixSkorRoute
+  '/vmix/varwarning': typeof VmixVarwarningRoute
   '/api/public/bootstrap-admin': typeof ApiPublicBootstrapAdminRoute
   '/api/public/bootstrap-juri-dummy': typeof ApiPublicBootstrapJuriDummyRoute
   '/api/public/keberatan': typeof ApiPublicKeberatanRoute
@@ -303,6 +312,7 @@ export interface FileRouteTypes {
     | '/vmix/leaderboard'
     | '/vmix/nowreading'
     | '/vmix/skor'
+    | '/vmix/varwarning'
     | '/api/public/bootstrap-admin'
     | '/api/public/bootstrap-juri-dummy'
     | '/api/public/keberatan'
@@ -333,6 +343,7 @@ export interface FileRouteTypes {
     | '/vmix/leaderboard'
     | '/vmix/nowreading'
     | '/vmix/skor'
+    | '/vmix/varwarning'
     | '/api/public/bootstrap-admin'
     | '/api/public/bootstrap-juri-dummy'
     | '/api/public/keberatan'
@@ -364,6 +375,7 @@ export interface FileRouteTypes {
     | '/vmix/leaderboard'
     | '/vmix/nowreading'
     | '/vmix/skor'
+    | '/vmix/varwarning'
     | '/api/public/bootstrap-admin'
     | '/api/public/bootstrap-juri-dummy'
     | '/api/public/keberatan'
@@ -389,6 +401,7 @@ export interface RootRouteChildren {
   VmixLeaderboardRoute: typeof VmixLeaderboardRoute
   VmixNowreadingRoute: typeof VmixNowreadingRoute
   VmixSkorRoute: typeof VmixSkorRoute
+  VmixVarwarningRoute: typeof VmixVarwarningRoute
   ApiPublicBootstrapAdminRoute: typeof ApiPublicBootstrapAdminRoute
   ApiPublicBootstrapJuriDummyRoute: typeof ApiPublicBootstrapJuriDummyRoute
   ApiPublicKeberatanRoute: typeof ApiPublicKeberatanRoute
@@ -464,6 +477,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vmix/varwarning': {
+      id: '/vmix/varwarning'
+      path: '/vmix/varwarning'
+      fullPath: '/vmix/varwarning'
+      preLoaderRoute: typeof VmixVarwarningRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/vmix/skor': {
@@ -645,6 +665,7 @@ const rootRouteChildren: RootRouteChildren = {
   VmixLeaderboardRoute: VmixLeaderboardRoute,
   VmixNowreadingRoute: VmixNowreadingRoute,
   VmixSkorRoute: VmixSkorRoute,
+  VmixVarwarningRoute: VmixVarwarningRoute,
   ApiPublicBootstrapAdminRoute: ApiPublicBootstrapAdminRoute,
   ApiPublicBootstrapJuriDummyRoute: ApiPublicBootstrapJuriDummyRoute,
   ApiPublicKeberatanRoute: ApiPublicKeberatanRoute,
