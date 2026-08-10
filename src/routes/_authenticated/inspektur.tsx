@@ -96,9 +96,6 @@ function InspekturPage() {
   const [catatan, setCatatan] = useState("");
   const [savingCatatan, setSavingCatatan] = useState(false);
   const [terapkanLoading, setTerapkanLoading] = useState(false);
-  const [confirmOpen, setConfirmOpen] = useState(false);
-  const [confirmTarget, setConfirmTarget] = useState<{ pesertaId: string; nama: string; catatan: string | null; source: "row" | "detail" } | null>(null);
-  const [confirmLoading, setConfirmLoading] = useState(false);
   // Ajukan VAR manual
   const [ajukanVarOpen, setAjukanVarOpen] = useState(false);
   const [ajukanVarTarget, setAjukanVarTarget] = useState<{ pesertaId: string; nama: string } | null>(null);
@@ -269,31 +266,6 @@ function InspekturPage() {
     window.location.href = "/auth";
   }
 
-  function openConfirmBukaPerbaikan(pesertaId: string, nama: string, catatan: string | null, source: "row" | "detail") {
-    setConfirmTarget({ pesertaId, nama, catatan, source });
-    setConfirmOpen(true);
-  }
-
-  async function handleConfirmBukaPerbaikan() {
-    if (!confirmTarget) return;
-    setConfirmLoading(true);
-    try {
-      const { error } = await supabase.rpc("inspektur_buka_perhatian" as any, {
-        _peserta: confirmTarget.pesertaId,
-        _catatan: confirmTarget.catatan || null,
-      });
-      if (error) throw error;
-      toast.success("Form Perhatian dibuka kembali untuk semua juri");
-      setConfirmOpen(false);
-      if (confirmTarget.source === "detail") setDetailOpen(false);
-      loadAll();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Gagal membuka perbaikan");
-    } finally {
-      setConfirmLoading(false);
-    }
-  }
-
   function openAjukanVar(pesertaId: string, nama: string) {
     setAjukanVarTarget({ pesertaId, nama });
     setAjukanVarAlasan("");
@@ -439,15 +411,6 @@ function InspekturPage() {
                               <Square className="size-4 mr-1" /> Akhiri & Finalkan
                             </Button>
                           </>
-                        )}
-                        {hasActiveVar && (
-                          <Button
-                            size="sm"
-                            className="bg-amber-600 hover:bg-amber-700 text-white"
-                            onClick={() => openConfirmBukaPerbaikan(r.peserta_id, r.nama, null, "row")}
-                          >
-                            <AlertTriangle className="size-4 mr-1" /> Buka Perbaikan
-                          </Button>
                         )}
                         <Button size="sm" variant="outline" onClick={() => openDetail(r)}>
                           <Eye className="size-4 mr-1" /> Detail
@@ -768,60 +731,19 @@ function InspekturPage() {
 
           <DialogFooter className="flex-wrap gap-2">
             {detailData?.var_session && (
-              <>
-                <Button
-                  className="bg-amber-600 hover:bg-amber-700 text-white"
-                  onClick={() => {
-                    if (!detailPeserta) return;
-                    openConfirmBukaPerbaikan(detailPeserta.peserta_id, detailPeserta.nama, catatan.trim() || null, "detail");
-                  }}
-                >
-                  <AlertTriangle className="size-4 mr-1" /> Buka Perbaikan Perhatian
-                </Button>
-                <Button
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                  onClick={terapkanPerubahan}
-                  disabled={terapkanLoading}
-                >
-                  {terapkanLoading ? "Menerapkan…" : "Terapkan Perubahan Juri & Finalkan"}
-                </Button>
-              </>
+              <Button
+                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                onClick={terapkanPerubahan}
+                disabled={terapkanLoading}
+              >
+                {terapkanLoading ? "Menerapkan…" : "Terapkan Perubahan Juri & Finalkan"}
+              </Button>
             )}
             <Button variant="outline" onClick={() => setDetailOpen(false)}>Tutup</Button>
             <Button onClick={simpanCatatan} disabled={savingCatatan}>{savingCatatan ? "Menyimpan…" : "Simpan Catatan"}</Button>
           </DialogFooter>
 
 
-        </DialogContent>
-      </Dialog>
-
-      {/* Konfirmasi Buka Perbaikan Perhatian */}
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-amber-900">
-              <AlertTriangle className="size-5 text-amber-600" /> Konfirmasi Buka Perbaikan
-            </DialogTitle>
-            <DialogDescription>
-              Anda akan membuka kembali form <b>Perhatian</b> untuk peserta berikut.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="rounded-lg border bg-amber-50 p-4 text-sm space-y-2">
-            <div className="text-base font-semibold text-amber-950">{confirmTarget?.nama ?? "—"}</div>
-            <div className="text-amber-900/80 leading-relaxed">
-              Semua juri akan diminta menilai ulang komponen <b>Perhatian</b>. Nilai kriteria lain tetap tersimpan. Lanjutkan?
-            </div>
-          </div>
-          <DialogFooter className="flex-col sm:flex-row gap-2">
-            <Button variant="outline" className="sm:w-auto w-full" onClick={() => setConfirmOpen(false)} disabled={confirmLoading}>Batal</Button>
-            <Button
-              className="bg-amber-600 hover:bg-amber-700 text-white sm:w-auto w-full"
-              onClick={handleConfirmBukaPerbaikan}
-              disabled={confirmLoading}
-            >
-              {confirmLoading ? "Memproses…" : <><AlertTriangle className="size-4 mr-1" /> Ya, Buka Perbaikan</>}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
