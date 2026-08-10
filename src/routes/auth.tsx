@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Toaster, toast } from "sonner";
 import { Eye, EyeOff } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
+import { signInWithIdentifier } from "@/lib/auth-lookup.functions";
+import { requestPasswordReset } from "@/lib/password-reset.functions";
 
 
 export const Route = createFileRoute("/auth")({
@@ -50,7 +52,6 @@ function AuthPage() {
     }
     setForgotLoading(true);
     try {
-      const { requestPasswordReset } = await import("@/lib/password-reset.functions");
       await requestPasswordReset({ data: { identifier: ident } });
       toast.success("Permintaan dikirim. Admin akan menetapkan kata sandi baru untuk Anda.");
       setForgotOpen(false);
@@ -74,8 +75,8 @@ function AuthPage() {
     }
     setLoading(true);
     try {
-      const { signInWithIdentifier } = await import("@/lib/auth-lookup.functions");
       const res = await signInWithIdentifier({
+
         data: { identifier: identifier.trim(), password },
       });
       const { error: setErr, data: setData } = await supabase.auth.setSession({
