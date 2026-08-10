@@ -228,17 +228,35 @@ function ViewerPage() {
     load();
   }
 
-  async function simpanSesi(r: Row) {
-    const n = Number(sesiVal);
-    if (!sesiVal || !Number.isFinite(n) || n < 1) { toast.error("Nomor sesi tidak valid"); return; }
+  async function pindahSesi(r: Row, n: number) {
+    if (!Number.isFinite(n) || n < 1) { toast.error("Nomor sesi tidak valid"); return; }
     setBusy(r.peserta_id);
     const { error } = await supabase.rpc("sekretariat_set_sesi" as any, { _peserta: r.peserta_id, _sesi: n });
     setBusy(null);
     if (error) { toast.error(error.message); return; }
     toast.success(`${r.nama} dipindahkan ke Sesi ${n}`);
-    setSesiEditId(null); setSesiVal("");
     load();
   }
+
+  async function geserUrutan(a: Row, b: Row) {
+    setUrutBusy(true);
+    const { error } = await supabase.rpc("sekretariat_tukar_peserta" as any, { _a: a.peserta_id, _b: b.peserta_id });
+    setUrutBusy(false);
+    if (error) { toast.error(error.message); return; }
+    load();
+  }
+
+  async function simpanSesiTampil() {
+    const n = Number(sesiTampilVal);
+    if (!sesiTampilVal || !Number.isFinite(n) || n < 1) { toast.error("Pilih sesi yang akan tampil"); return; }
+    setSesiTampilBusy(true);
+    const { error } = await supabase.rpc("set_sesi_tampil" as any, { _sesi: n });
+    setSesiTampilBusy(false);
+    if (error) { toast.error(error.message); return; }
+    setSesiTampil(n);
+    toast.success(`Sesi ${n} ditetapkan sebagai sesi yang sedang tampil`);
+  }
+
 
   async function signOut() {
     await supabase.auth.signOut();
