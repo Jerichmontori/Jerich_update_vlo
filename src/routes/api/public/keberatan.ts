@@ -87,6 +87,19 @@ export const Route = createFileRoute("/api/public/keberatan")({
         const v = parsed.data;
         const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
+        // batas waktu pengajuan (diatur admin)
+        {
+          const sb = publicClient();
+          const { data: win } = await sb.rpc("keberatan_window" as never, { _peserta: v.peserta_id } as never);
+          const w = (win ?? null) as { open?: boolean; alasan?: string | null } | null;
+          if (w && w.open === false) {
+            return new Response(
+              JSON.stringify({ error: w.alasan ?? "Batas waktu pengajuan keberatan telah berakhir." }),
+              { status: 403, headers: CORS },
+            );
+          }
+        }
+
         // batasi maksimal 3 pengajuan terbuka per peserta
         const { count } = await supabaseAdmin
           .from("keberatan")
