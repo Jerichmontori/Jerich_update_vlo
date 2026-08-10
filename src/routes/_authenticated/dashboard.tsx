@@ -20,6 +20,7 @@ import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpe
 import JuriLiveRankingApproval from "@/components/JuriLiveRankingApproval";
 import SesiLiveRanking from "@/components/SesiLiveRanking";
 import BackupExcelButton from "@/components/BackupExcelButton";
+import LaporanPertanggungjawabanButton from "@/components/LaporanPertanggungjawabanButton";
 import JuriHasilFinalTab from "@/components/JuriHasilFinalTab";
 import GantiPasswordButton from "@/components/GantiPasswordButton";
 import jsPDF from "jspdf";
@@ -104,7 +105,7 @@ function App() {
       <Header />
       <main className="mx-auto max-w-6xl px-4 pb-16">
         {roles.isAdm && (
-          <div className="flex flex-wrap justify-end gap-2 pt-4"><BrandingSettingsButton /><BackupExcelButton /><ResetAllPenilaianButton /></div>
+          <div className="flex flex-wrap justify-end gap-2 pt-4"><BrandingSettingsButton /><LaporanPertanggungjawabanButton /><BackupExcelButton /><ResetAllPenilaianButton /></div>
         )}
         {juriOnly ? (
           <Tabs defaultValue="penilaian" className="w-full">
