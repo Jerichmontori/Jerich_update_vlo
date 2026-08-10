@@ -643,11 +643,11 @@ function JuriTab() {
     }
   }
 
-  async function ubahRole(id: string, role: "admin" | "juri" | "panitia" | "inspektur" | "ketua_juri" | "viewer" | "operator_vmix") {
+  async function ubahRole(id: string, role: AppRole) {
     try {
       const { setJuriRole } = await import("@/lib/juri-users.functions");
       await setJuriRole({ data: { juriId: id, role } });
-      toast.success(`Role diubah menjadi ${role}`);
+      toast.success(`Role diubah menjadi ${ROLE_LABEL[role]}`);
       load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Gagal mengubah role");
