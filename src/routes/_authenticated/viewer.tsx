@@ -251,8 +251,8 @@ function ViewerPage() {
           <div className="flex items-center gap-3 min-w-0">
             <BrandLogo className="h-9 sm:h-10 w-auto shrink-0 object-contain" />
             <div className="min-w-0">
-              <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">Pengguna</p>
-              <h1 className="truncate text-xl sm:text-2xl font-serif font-semibold">Urutan &amp; Catatan Peserta</h1>
+              <p className="text-xs uppercase tracking-[0.3em] text-accent font-semibold">Sekretariat</p>
+              <h1 className="truncate text-xl sm:text-2xl font-serif font-semibold">Urutan, Sesi &amp; Catatan Peserta</h1>
             </div>
           </div>
           <div className="flex items-center gap-2">
