@@ -498,6 +498,7 @@ function ViewerPage() {
                     <TableHead>Peserta</TableHead>
                     
                     <TableHead>Status</TableHead>
+                    <TableHead>VAR</TableHead>
                     <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>

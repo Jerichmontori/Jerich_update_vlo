@@ -10,6 +10,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
 import GantiPasswordButton from "@/components/GantiPasswordButton";
+import VarBadge from "@/components/VarBadge";
+import { useVarStatus } from "@/hooks/useVarStatus";
 import { Shield, RefreshCw, BookOpenText, AlertTriangle, Eye, Square, Siren, CheckCircle2, XCircle } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/inspektur")({
