@@ -309,6 +309,47 @@ function ViewerPage() {
 
         <Card>
           <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base"><ArrowLeftRight className="size-4 text-accent" /> Tukar Nomor Peserta &amp; Sesi</CardTitle>
+            <CardDescription>
+              Pilih dua peserta untuk saling menukar nomor urut sekaligus sesi tampilnya. Sesi ini juga dipakai
+              sebagai acuan penayangan Live Ranking.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-3 sm:grid-cols-[1fr_1fr_auto]">
+              <select
+                className="h-10 rounded-md border bg-background px-3 text-sm"
+                value={tukarA}
+                onChange={(e) => setTukarA(e.target.value)}
+              >
+                <option value="">Pilih peserta pertama…</option>
+                {(rows ?? []).map((r) => (
+                  <option key={r.peserta_id} value={r.peserta_id}>
+                    {r.nomor_urut}. {r.nama} (Sesi {r.sesi_no})
+                  </option>
+                ))}
+              </select>
+              <select
+                className="h-10 rounded-md border bg-background px-3 text-sm"
+                value={tukarB}
+                onChange={(e) => setTukarB(e.target.value)}
+              >
+                <option value="">Pilih peserta kedua…</option>
+                {(rows ?? []).map((r) => (
+                  <option key={r.peserta_id} value={r.peserta_id}>
+                    {r.nomor_urut}. {r.nama} (Sesi {r.sesi_no})
+                  </option>
+                ))}
+              </select>
+              <Button onClick={tukarPeserta} disabled={tukarBusy || !tukarA || !tukarB}>
+                <ArrowLeftRight className="size-4 mr-1" /> Tukar
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
             <CardTitle className="text-base">Urutan Peserta</CardTitle>
             <CardDescription>
               Klik nama peserta untuk mengubah datanya. Tombol <b>Terlambat</b> menandai peserta yang tidak naik panggung —
