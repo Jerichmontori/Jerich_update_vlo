@@ -7,9 +7,16 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Toaster, toast } from "sonner";
-import { ArrowUp, ArrowDown, Play, RefreshCw, Users, Gavel } from "lucide-react";
+import { ArrowUp, ArrowDown, Play, RefreshCw, Users, Gavel, SkipForward, AlertTriangle, Tv } from "lucide-react";
 import BrandLogo from "@/components/BrandLogo";
+import { varStatusLabel, varStatusDetail, isVarAktif } from "@/lib/varStatus";
+
 
 export const Route = createFileRoute("/_authenticated/operator")({
   component: OperatorPage,
@@ -49,6 +56,10 @@ function OperatorPage() {
   const PESERTA_PAGE_SIZE = 10;
   const [pesertaPage, setPesertaPage] = useState(1);
   const [sesiTampil, setSesiTampil] = useState<number | null>(null);
+  const [varMap, setVarMap] = useState<Record<string, string>>({});
+  const [vmixVarBadge, setVmixVarBadge] = useState<boolean>(true);
+  const [confirmNext, setConfirmNext] = useState(false);
+
 
   
 
@@ -110,8 +121,10 @@ function OperatorPage() {
     const row = rows[0] as Sesi | undefined;
     setSesi(row ?? null);
     if (row) {
-      setSelectedPeserta(row.peserta_id);
-      if (row.mazmur_id) setSelectedMazmur(row.mazmur_id);
+      // Jangan paksa pilihan operator: hanya isi bila belum memilih peserta berikutnya
+      setSelectedPeserta(prev => prev || row.peserta_id);
+      if (row.mazmur_id) setSelectedMazmur(prev => prev || (row.mazmur_id as string));
+
       const { data: subs } = await supabase
         .from("penilaian_submission" as any)
         .select("juri_id")
@@ -134,6 +147,27 @@ function OperatorPage() {
     setSubmissionCounts(counts);
   }
 
+  async function loadVarStatus() {
+    const { data } = await supabase.rpc("operator_var_status" as any);
+    setVarMap(((data as any) ?? {}) as Record<string, string>);
+  }
+
+  async function loadVmixVarBadge() {
+    const { data } = await supabase
+      .from("system_config" as any)
+      .select("value")
+      .eq("key", "vmix_var_badge")
+      .maybeSingle();
+    const v = (data as any)?.value;
+    setVmixVarBadge(v === null || v === undefined ? true : v === true || v === "true");
+  }
+
+  async function toggleVmixVarBadge(on: boolean) {
+    setVmixVarBadge(on);
+    const { error } = await supabase.rpc("set_vmix_var_badge" as any, { _on: on });
+    if (error) { setVmixVarBadge(!on); return toast.error(error.message); }
+    toast.success(on ? "Status VAR akan tampil di vMix" : "Status VAR disembunyikan dari vMix");
+  }
 
   useEffect(() => {
     if (!allowed) return;
@@ -142,9 +176,12 @@ function OperatorPage() {
     loadJuriCount();
     loadSesiTampil();
     loadSesi();
+    loadVarStatus();
+    loadVmixVarBadge();
   }, [allowed]);
 
-  usePolling(() => { void loadSesi(); void loadSesiTampil(); }, 15000, allowed === true);
+  usePolling(() => { void loadSesi(); void loadSesiTampil(); void loadVarStatus(); }, 15000, allowed === true);
+
 
 
 
@@ -192,9 +229,10 @@ function OperatorPage() {
     loadPeserta();
   }
 
-  async function mulaiSesi() {
+  async function mulaiSesi(lanjut = false) {
     if (!selectedPeserta) return toast.error("Pilih peserta terlebih dahulu");
     if (!selectedMazmur) return toast.error("Pilih Bacaan Mazmur terlebih dahulu");
+    const sebelumnya = sesi ? peserta.find(p => p.id === sesi.peserta_id) ?? null : null;
     setBusy(true);
     const { data, error } = await supabase.rpc("mulai_sesi" as any, {
       _peserta: selectedPeserta,
@@ -203,11 +241,25 @@ function OperatorPage() {
     setBusy(false);
     if (error) return toast.error(error.message);
     const newId = (data as any) as string;
-    toast.success("Sesi penilaian dimulai");
-    logAudit("pilih_peserta", { peserta_id: selectedPeserta, session_id: newId });
+    toast.success(lanjut ? "Peserta berikutnya ditampilkan" : "Sesi penilaian dimulai");
+    logAudit(lanjut ? "lanjut_peserta" : "pilih_peserta", {
+      peserta_id: selectedPeserta,
+      session_id: newId,
+      metadata: lanjut && sebelumnya
+        ? {
+            peserta_sebelumnya: sebelumnya.nama,
+            peserta_sebelumnya_id: sebelumnya.id,
+            juri_terkirim: submissionCounts[sebelumnya.id] ?? 0,
+            juri_pool: poolJuri(sebelumnya.kategori),
+            var_status: varMap[sebelumnya.id] ?? null,
+          }
+        : undefined,
+    });
     logAudit("pilih_mazmur", { mazmur_id: selectedMazmur, session_id: newId });
     loadSesi();
+    loadVarStatus();
   }
+
 
   // Sesi tidak lagi diakhiri dari halaman Operator — dipindah ke halaman Inspektur.
 
@@ -258,16 +310,50 @@ function OperatorPage() {
 
   // Kosongkan pilihan mazmur bila tak sesuai kategori peserta terpilih
   useEffect(() => {
-    if (sesi) return;
+    if (sesi && selectedPeserta === sesi.peserta_id) return;
     if (!selectedMazmur) return;
     if (!mazmurFiltered.some(m => m.id === selectedMazmur)) setSelectedMazmur("");
-  }, [mazmurFiltered, selectedMazmur, sesi]);
+  }, [mazmurFiltered, selectedMazmur, sesi, selectedPeserta]);
   // Pool juri sesuai kategori peserta: peserta UJICOBA dinilai juri dummy, lainnya juri asli
   const isUji = (kat: string | null | undefined) => (kat ?? "").trim().toUpperCase() === "UJICOBA";
   const poolJuri = (kat: string | null | undefined) => (isUji(kat) ? juriDummy : juriReal);
   const juriTotal = poolJuri(pesertaAktif?.kategori);
   const statusPenilaian: "Belum Dimulai" | "Sedang Berlangsung" | "Selesai" =
     !sesi ? "Belum Dimulai" : juriDone >= juriTotal && juriTotal > 0 ? "Selesai" : "Sedang Berlangsung";
+
+  type StatusInfo = {
+    key: "tampil" | "menunggu" | "var" | "final" | "terlambat" | "belum";
+    label: string;
+    variant?: "default" | "secondary" | "outline" | "destructive";
+    cls?: string;
+  };
+  function statusPeserta(p: Peserta & { terlambat?: boolean }): StatusInfo {
+    if ((p as any).terlambat) return { key: "terlambat", label: "Terlambat", variant: "outline" };
+    const done = submissionCounts[p.id] ?? 0;
+    const pool = poolJuri(p.kategori);
+    const varAktif = isVarAktif(varMap[p.id]);
+    if (sesi?.peserta_id === p.id) return { key: "tampil", label: "Sedang tampil", cls: "bg-primary" };
+    if (varAktif) return { key: "var", label: "Proses VAR — IP 2", variant: "destructive" };
+    if (pool > 0 && done >= pool) return { key: "final", label: "Final", cls: "bg-accent text-accent-foreground" };
+    if (done > 0) return { key: "menunggu", label: `Menunggu juri (${done}/${pool})`, variant: "outline" };
+    return { key: "belum", label: "Belum tampil", variant: "secondary" };
+  }
+
+  // Peserta yang sudah turun panggung tetapi belum final
+  const menungguPenyelesaian = useMemo(() => {
+    return peserta
+      .filter(p => {
+        if (sesi?.peserta_id === p.id) return false;
+        if ((p as any).terlambat) return false;
+        const done = submissionCounts[p.id] ?? 0;
+        const pool = poolJuri(p.kategori);
+        const varAktif = isVarAktif(varMap[p.id]);
+        if (varAktif) return true;
+        return done > 0 && !(pool > 0 && done >= pool);
+      })
+      .sort((a, b) => a.nomor_urut - b.nomor_urut);
+  }, [peserta, submissionCounts, varMap, sesi, juriReal, juriDummy]);
+
 
   if (allowed === null) return <div className="p-8 text-center text-muted-foreground">Memuat…</div>;
   if (!allowed) return null;
@@ -349,6 +435,71 @@ function OperatorPage() {
           </Card>
         </div>
 
+        <Card className="mb-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2"><SkipForward className="size-5 text-primary" />Antrian Panggung</CardTitle>
+            <CardDescription>Peserta dapat dilanjutkan tanpa menunggu penilaian sebelumnya selesai.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid gap-3 md:grid-cols-3">
+              <div className="rounded-lg border p-3">
+                <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Sedang tampil</div>
+                <div className="font-medium mt-1">{pesertaAktif ? `${pesertaAktif.nomor_urut}. ${pesertaAktif.nama}` : "—"}</div>
+                <div className="text-xs text-muted-foreground">{juriDone}/{juriTotal} juri mengirim</div>
+              </div>
+              <div className="rounded-lg border p-3">
+                <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Berikutnya (dipilih)</div>
+                <div className="font-medium mt-1">
+                  {pesertaTerpilih && pesertaTerpilih.id !== sesi?.peserta_id
+                    ? `${pesertaTerpilih.nomor_urut}. ${pesertaTerpilih.nama}`
+                    : "Belum dipilih"}
+                </div>
+                <div className="text-xs text-muted-foreground">{selectedMazmur ? "Bacaan siap" : "Bacaan belum dipilih"}</div>
+              </div>
+              <div className="rounded-lg border p-3">
+                <div className="text-[11px] uppercase tracking-widest text-muted-foreground">Menunggu penyelesaian</div>
+                <div className="font-medium mt-1">{menungguPenyelesaian.length} peserta</div>
+                <div className="text-xs text-muted-foreground">Juri / Inspektur VAR</div>
+              </div>
+            </div>
+
+            {menungguPenyelesaian.length > 0 && (
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-1">
+                {menungguPenyelesaian.slice(0, 6).map(p => {
+                  const st = statusPeserta(p);
+                  return (
+                    <div key={p.id} className="flex items-center justify-between text-sm">
+                      <span>{p.nomor_urut}. {p.nama}</span>
+                      <span className="flex items-center gap-2">
+                        <Badge variant={st.variant} className={st.cls}>{st.label}</Badge>
+                        {varStatusDetail(varMap[p.id]) && (
+                          <span className="text-xs text-muted-foreground hidden md:inline">{varStatusDetail(varMap[p.id])}</span>
+                        )}
+                      </span>
+                    </div>
+                  );
+                })}
+                {menungguPenyelesaian.length > 6 && (
+                  <div className="text-xs text-muted-foreground">+{menungguPenyelesaian.length - 6} peserta lainnya…</div>
+                )}
+              </div>
+            )}
+
+            <div className="flex items-center justify-between rounded-lg border p-3">
+              <div className="flex items-center gap-2 text-sm">
+                <Tv className="size-4 text-primary" />
+                <div>
+                  <div className="font-medium">Tampilkan status VAR di vMix</div>
+                  <div className="text-xs text-muted-foreground">Badge "POTENSI VAR" muncul otomatis pada overlay peserta.</div>
+                </div>
+              </div>
+              <Switch checked={vmixVarBadge} onCheckedChange={toggleVmixVarBadge} />
+            </div>
+          </CardContent>
+        </Card>
+
+
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Play className="size-5 text-primary" />Kontrol Sesi</CardTitle>
@@ -363,7 +514,7 @@ function OperatorPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <div className="text-sm font-medium mb-1">Peserta</div>
-                <Select value={selectedPeserta} onValueChange={(v) => { setSelectedPeserta(v); logAudit("pilih_peserta", { peserta_id: v }); }} disabled={!!sesi}>
+                <Select value={selectedPeserta} onValueChange={(v) => { setSelectedPeserta(v); setSelectedMazmur(""); logAudit("pilih_peserta", { peserta_id: v }); }}>
                   <SelectTrigger><SelectValue placeholder="Pilih peserta" /></SelectTrigger>
                   <SelectContent>
                     {pesertaSesiTampil.map(p => {
@@ -404,21 +555,33 @@ function OperatorPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               {!sesi && (
-                <Button onClick={mulaiSesi} disabled={busy} className="gap-2">
+                <Button onClick={() => mulaiSesi()} disabled={busy} className="gap-2">
                   <Play className="size-4" /> Mulai Penilaian
                 </Button>
               )}
               {sesi && (
                 <>
+                  <Button
+                    onClick={() => {
+                      if (!selectedPeserta || !selectedMazmur) return toast.error("Pilih peserta & bacaan mazmur terlebih dahulu");
+                      if (selectedPeserta === sesi.peserta_id) return toast.error("Pilih peserta berikutnya terlebih dahulu");
+                      setConfirmNext(true);
+                    }}
+                    disabled={busy}
+                    className="gap-2"
+                  >
+                    <SkipForward className="size-4" /> Tampilkan Peserta Berikutnya
+                  </Button>
                   <Button onClick={ubahMazmur} variant="outline" disabled={busy} className="gap-2">
                     <RefreshCw className="size-4" /> Ubah Bacaan Mazmur
                   </Button>
                   <div className="text-xs text-muted-foreground self-center">
-                    Sesi aktif — tombol <b>Mulai Penilaian</b> dinonaktifkan hingga Inspektur mengakhiri sesi ini.
+                    Penilaian peserta sebelumnya tetap berjalan — juri & Inspektur VAR menyelesaikannya di belakang layar.
                   </div>
                 </>
               )}
             </div>
+
           </CardContent>
         </Card>
 
@@ -448,20 +611,23 @@ function OperatorPage() {
                     const done = submissionCounts[p.id] ?? 0;
                     const pool = poolJuri(p.kategori);
                     const sudahDinilai = pool > 0 && done >= pool;
+                    const st = statusPeserta(p);
+                    const varLabel = varStatusLabel(varMap[p.id]);
                     return (
-                      <TableRow key={p.id} className={sudahDinilai ? "opacity-70" : ""}>
+                      <TableRow key={p.id} className={st.key === "final" ? "opacity-70" : ""}>
                         <TableCell className="font-medium">{p.nomor_urut}</TableCell>
                         <TableCell>{p.nama}</TableCell>
                         <TableCell className="text-muted-foreground">{p.asal || "—"}</TableCell>
                         <TableCell className="text-muted-foreground">{p.kategori || "—"}</TableCell>
                         <TableCell>
-                          {sudahDinilai ? (
-                            <Badge className="bg-accent text-accent-foreground">Sudah dinilai</Badge>
-                          ) : done > 0 ? (
-                            <Badge variant="outline">{done}/{pool} juri</Badge>
-                          ) : (
-                            <span className="text-xs text-muted-foreground">Belum dinilai</span>
-                          )}
+                          <div className="flex flex-wrap items-center gap-1">
+                            <Badge className={st.cls} variant={st.variant}>{st.label}</Badge>
+                            {varLabel && (
+                              <Badge variant="destructive" className="gap-1">
+                                <AlertTriangle className="size-3" /> {varLabel}
+                              </Badge>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-right space-x-1">
                           <Button size="icon" variant="ghost" disabled={busy} onClick={() => pindahkanUrutan(p.id, "atas")}>
@@ -473,11 +639,11 @@ function OperatorPage() {
                           <Button
                             size="sm"
                             variant="outline"
-                            disabled={!!sesi || sudahDinilai}
+                            disabled={sudahDinilai || sesi?.peserta_id === p.id}
                             title={sudahDinilai ? "Peserta ini sudah dinilai semua juri" : undefined}
-                            onClick={() => { setSelectedPeserta(p.id); logAudit("pilih_peserta", { peserta_id: p.id }); toast.success(`Peserta dipilih: ${p.nama}`); }}
+                            onClick={() => { setSelectedPeserta(p.id); setSelectedMazmur(""); logAudit("pilih_peserta", { peserta_id: p.id }); toast.success(`Peserta dipilih: ${p.nama}`); }}
                           >
-                            {sudahDinilai ? "Selesai" : "Pilih"}
+                            {sudahDinilai ? "Selesai" : sesi?.peserta_id === p.id ? "Tampil" : "Pilih"}
                           </Button>
                         </TableCell>
                       </TableRow>
@@ -507,6 +673,35 @@ function OperatorPage() {
         </Card>
       </main>
 
+      <AlertDialog open={confirmNext} onOpenChange={setConfirmNext}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tampilkan peserta berikutnya?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <div>
+                  Peserta sebelumnya: <b>{pesertaAktif?.nama ?? "—"}</b> — {juriDone} dari {juriTotal} juri sudah mengirim
+                  {varStatusLabel(varMap[pesertaAktif?.id ?? ""]) ? `; ${varStatusLabel(varMap[pesertaAktif?.id ?? ""])}` : ""}.
+                </div>
+                <div>
+                  Nilai & catatan juri peserta sebelumnya <b>tidak dihapus</b>. Juri yang belum mengirim tetap dapat
+                  menyelesaikan, dan kasus VAR tetap ditangani Inspektur VAR (IP 2).
+                </div>
+                <div>
+                  Akan ditampilkan: <b>{pesertaTerpilih?.nomor_urut}. {pesertaTerpilih?.nama}</b>
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { setConfirmNext(false); void mulaiSesi(true); }}>
+              Ya, tampilkan
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+
   );
 }

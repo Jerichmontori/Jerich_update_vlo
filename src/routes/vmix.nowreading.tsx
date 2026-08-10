@@ -1,5 +1,7 @@
 import { createFileRoute, useSearch } from "@tanstack/react-router";
 import { useLiveState } from "@/lib/liveState";
+import { varStatusLabel } from "@/lib/varStatus";
+
 
 type Search = { bg?: string };
 
@@ -15,11 +17,13 @@ function VmixNowReading() {
   const { bg } = useSearch({ from: "/vmix/nowreading" });
   const { state } = useLiveState(3000);
   const a = (state?.active ?? [])[0];
+  const varLabel = varStatusLabel(a?.var_status);
   const bgStyle = bg === "transparent" ? "transparent" : `#${bg?.replace(/^#/, "")}`;
 
   return (
     <>
-      <style>{`html,body,#root{background:${bgStyle} !important;margin:0;padding:0;}`}</style>
+      <style>{`html,body,#root{background:${bgStyle} !important;margin:0;padding:0;}
+@keyframes varpulse{0%,100%{opacity:1}50%{opacity:.55}}`}</style>
       <div className="w-full min-h-screen flex items-end p-8 text-white" style={{ background: bgStyle, textShadow: "0 2px 10px rgba(0,0,0,.7)" }}>
         {!a ? null : (
           <div className="max-w-[720px] rounded-2xl px-6 py-5" style={{ background: "linear-gradient(135deg, rgba(123,45,38,.9), rgba(60,20,18,.85))", boxShadow: "0 20px 40px rgba(0,0,0,.4)", borderLeft: "4px solid #C9A227" }}>
@@ -31,11 +35,22 @@ function VmixNowReading() {
               <div className="text-xl font-medium">{a.bacaan ?? "-"}</div>
               {a.jumlah_ayat ? <div className="text-xs text-white/70">({a.jumlah_ayat} ayat)</div> : null}
             </div>
-            {a.kategori && (
-              <div className="mt-3 inline-block text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ background: "#C9A227", color: "#3a1e12" }}>
-                {a.kategori}
-              </div>
-            )}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              {a.kategori && (
+                <div className="inline-block text-[10px] uppercase tracking-widest px-2 py-0.5 rounded-full" style={{ background: "#C9A227", color: "#3a1e12" }}>
+                  {a.kategori}
+                </div>
+              )}
+              {varLabel && (
+                <div
+                  className="inline-block text-[10px] font-bold uppercase tracking-widest px-2.5 py-0.5 rounded-full"
+                  style={{ background: "#B00020", color: "#fff", textShadow: "none", animation: "varpulse 1.6s ease-in-out infinite" }}
+                >
+                  {varLabel}
+                </div>
+              )}
+            </div>
+
           </div>
         )}
       </div>
