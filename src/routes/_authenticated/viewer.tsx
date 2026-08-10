@@ -46,6 +46,7 @@ type Row = {
 
 function ViewerPage() {
   const [rows, setRows] = useState<Row[] | null>(null);
+  const { varMap } = useVarStatus();
   const [q, setQ] = useState("");
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 10;
