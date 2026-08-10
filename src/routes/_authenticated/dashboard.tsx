@@ -20,6 +20,7 @@ import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpe
 import JuriLiveRankingApproval from "@/components/JuriLiveRankingApproval";
 import SesiLiveRanking from "@/components/SesiLiveRanking";
 import BackupExcelButton from "@/components/BackupExcelButton";
+import LaporanPertanggungjawabanButton from "@/components/LaporanPertanggungjawabanButton";
 import JuriHasilFinalTab from "@/components/JuriHasilFinalTab";
 import GantiPasswordButton from "@/components/GantiPasswordButton";
 import jsPDF from "jspdf";
