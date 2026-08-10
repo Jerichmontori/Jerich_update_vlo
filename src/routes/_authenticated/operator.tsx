@@ -145,6 +145,27 @@ function OperatorPage() {
     setSubmissionCounts(counts);
   }
 
+  async function loadVarStatus() {
+    const { data } = await supabase.rpc("operator_var_status" as any);
+    setVarMap(((data as any) ?? {}) as Record<string, string>);
+  }
+
+  async function loadVmixVarBadge() {
+    const { data } = await supabase
+      .from("system_config" as any)
+      .select("value")
+      .eq("key", "vmix_var_badge")
+      .maybeSingle();
+    const v = (data as any)?.value;
+    setVmixVarBadge(v === null || v === undefined ? true : v === true || v === "true");
+  }
+
+  async function toggleVmixVarBadge(on: boolean) {
+    setVmixVarBadge(on);
+    const { error } = await supabase.rpc("set_vmix_var_badge" as any, { _on: on });
+    if (error) { setVmixVarBadge(!on); return toast.error(error.message); }
+    toast.success(on ? "Status VAR akan tampil di vMix" : "Status VAR disembunyikan dari vMix");
+  }
 
   useEffect(() => {
     if (!allowed) return;
@@ -153,9 +174,12 @@ function OperatorPage() {
     loadJuriCount();
     loadSesiTampil();
     loadSesi();
+    loadVarStatus();
+    loadVmixVarBadge();
   }, [allowed]);
 
-  usePolling(() => { void loadSesi(); void loadSesiTampil(); }, 15000, allowed === true);
+  usePolling(() => { void loadSesi(); void loadSesiTampil(); void loadVarStatus(); }, 15000, allowed === true);
+
 
 
 
