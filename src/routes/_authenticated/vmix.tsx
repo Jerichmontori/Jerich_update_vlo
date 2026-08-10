@@ -393,6 +393,7 @@ function PengumumanTab() {
   const [nilaiAkhir, setNilaiAkhir] = useState<number | null>(null);
   const [running, setRunning] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { varMap } = useVarStatus();
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc("inspektur_monitor" as any);
