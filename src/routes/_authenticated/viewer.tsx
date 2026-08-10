@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Toaster, toast } from "sonner";
-import { RefreshCw, Mic, FileText, Search, Clock, Trash2, ChevronLeft, ChevronRight, ArrowLeftRight } from "lucide-react";
+import { RefreshCw, Mic, FileText, Search, Clock, Trash2, ChevronLeft, ChevronRight, ArrowLeftRight, Play, ListOrdered, ArrowUp, ArrowDown } from "lucide-react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import { catatanToRows } from "@/components/JuriHasilFinalTab";
@@ -58,8 +58,12 @@ function ViewerPage() {
   const [tukarA, setTukarA] = useState("");
   const [tukarB, setTukarB] = useState("");
   const [tukarBusy, setTukarBusy] = useState(false);
-  const [sesiEditId, setSesiEditId] = useState<string | null>(null);
-  const [sesiVal, setSesiVal] = useState("");
+  const [sesiTampil, setSesiTampil] = useState<number | null>(null);
+  const [sesiTampilVal, setSesiTampilVal] = useState("");
+  const [sesiTampilBusy, setSesiTampilBusy] = useState(false);
+  const [sesiKelola, setSesiKelola] = useState("");
+  const [urutBusy, setUrutBusy] = useState(false);
+
 
 
 
@@ -82,7 +86,32 @@ function ViewerPage() {
     })();
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.rpc("get_sesi_tampil" as any);
+      const n = data == null ? null : Number(data);
+      setSesiTampil(Number.isFinite(n as number) ? (n as number) : null);
+      if (n != null) setSesiTampilVal(String(n));
+    })();
+  }, []);
+
+  const sesiOptions = useMemo(() => {
+    const s = new Set<number>();
+    (rows ?? []).forEach((r) => s.add(Number(r.sesi_no)));
+    return Array.from(s).filter((n) => Number.isFinite(n)).sort((a, b) => a - b);
+  }, [rows]);
+
+  useEffect(() => {
+    if (!sesiKelola && sesiOptions.length > 0) setSesiKelola(String(sesiTampil ?? sesiOptions[0]));
+  }, [sesiOptions, sesiTampil, sesiKelola]);
+
+  const pesertaSesi = useMemo(
+    () => (rows ?? []).filter((r) => String(r.sesi_no) === sesiKelola).sort((a, b) => a.nomor_urut - b.nomor_urut),
+    [rows, sesiKelola]
+  );
+
   const tampil = useMemo(() => (rows ?? []).filter((r) => r.sedang_tampil), [rows]);
+
   const list = useMemo(() => {
     const s = q.trim().toLowerCase();
     return (rows ?? []).filter((r) => !s || r.nama.toLowerCase().includes(s) || String(r.nomor_urut) === s);
@@ -224,17 +253,35 @@ function ViewerPage() {
     load();
   }
 
-  async function simpanSesi(r: Row) {
-    const n = Number(sesiVal);
-    if (!sesiVal || !Number.isFinite(n) || n < 1) { toast.error("Nomor sesi tidak valid"); return; }
+  async function pindahSesi(r: Row, n: number) {
+    if (!Number.isFinite(n) || n < 1) { toast.error("Nomor sesi tidak valid"); return; }
     setBusy(r.peserta_id);
     const { error } = await supabase.rpc("sekretariat_set_sesi" as any, { _peserta: r.peserta_id, _sesi: n });
     setBusy(null);
     if (error) { toast.error(error.message); return; }
     toast.success(`${r.nama} dipindahkan ke Sesi ${n}`);
-    setSesiEditId(null); setSesiVal("");
     load();
   }
+
+  async function geserUrutan(a: Row, b: Row) {
+    setUrutBusy(true);
+    const { error } = await supabase.rpc("sekretariat_tukar_peserta" as any, { _a: a.peserta_id, _b: b.peserta_id });
+    setUrutBusy(false);
+    if (error) { toast.error(error.message); return; }
+    load();
+  }
+
+  async function simpanSesiTampil() {
+    const n = Number(sesiTampilVal);
+    if (!sesiTampilVal || !Number.isFinite(n) || n < 1) { toast.error("Pilih sesi yang akan tampil"); return; }
+    setSesiTampilBusy(true);
+    const { error } = await supabase.rpc("set_sesi_tampil" as any, { _sesi: n });
+    setSesiTampilBusy(false);
+    if (error) { toast.error(error.message); return; }
+    setSesiTampil(n);
+    toast.success(`Sesi ${n} ditetapkan sebagai sesi yang sedang tampil`);
+  }
+
 
   async function signOut() {
     await supabase.auth.signOut();
@@ -347,6 +394,87 @@ function ViewerPage() {
           </CardContent>
         </Card>
 
+        <Card className="border-primary/40">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base"><Play className="size-4 text-primary" /> Kontrol Sesi Tampil</CardTitle>
+            <CardDescription>
+              Tentukan sesi yang sedang berlangsung. Operator Lomba hanya dapat memilih peserta dari sesi ini.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-wrap items-center gap-3">
+              <Badge variant="secondary">Sesi aktif saat ini: {sesiTampil ?? "—"}</Badge>
+              <select
+                className="h-10 rounded-md border bg-background px-3 text-sm"
+                value={sesiTampilVal}
+                onChange={(e) => setSesiTampilVal(e.target.value)}
+              >
+                <option value="">Pilih sesi…</option>
+                {sesiOptions.map((n) => (
+                  <option key={n} value={String(n)}>Sesi {n}</option>
+                ))}
+              </select>
+              <Button onClick={simpanSesiTampil} disabled={sesiTampilBusy || !sesiTampilVal}>
+                Tetapkan Sesi Tampil
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base"><ListOrdered className="size-4 text-accent" /> Urutan Tampil per Sesi</CardTitle>
+            <CardDescription>Pilih sesi, lalu atur urutan tampil peserta atau pindahkan peserta ke sesi lain.</CardDescription>
+            <div className="pt-2">
+              <select
+                className="h-10 rounded-md border bg-background px-3 text-sm"
+                value={sesiKelola}
+                onChange={(e) => setSesiKelola(e.target.value)}
+              >
+                {sesiOptions.map((n) => (
+                  <option key={n} value={String(n)}>Sesi {n}</option>
+                ))}
+              </select>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {pesertaSesi.length === 0 ? (
+              <div className="text-sm text-muted-foreground">Belum ada peserta pada sesi ini.</div>
+            ) : (
+              <div className="space-y-2">
+                {pesertaSesi.map((r, i) => (
+                  <div key={r.peserta_id} className="flex flex-wrap items-center gap-2 rounded-lg border p-2">
+                    <span className="w-8 text-center text-sm font-semibold">{i + 1}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="font-medium truncate">{r.nomor_urut}. {r.nama}</div>
+                      <div className="text-xs text-muted-foreground truncate">{r.asal ?? ""}{r.kategori ? ` · ${r.kategori}` : ""}</div>
+                    </div>
+                    <Button size="icon" variant="ghost" disabled={urutBusy || i === 0} onClick={() => geserUrutan(r, pesertaSesi[i - 1])}>
+                      <ArrowUp className="size-4" />
+                    </Button>
+                    <Button size="icon" variant="ghost" disabled={urutBusy || i === pesertaSesi.length - 1} onClick={() => geserUrutan(r, pesertaSesi[i + 1])}>
+                      <ArrowDown className="size-4" />
+                    </Button>
+                    <select
+                      className="h-9 rounded-md border bg-background px-2 text-sm"
+                      value={String(r.sesi_no)}
+                      disabled={busy === r.peserta_id}
+                      onChange={(e) => pindahSesi(r, Number(e.target.value))}
+                    >
+                      {Array.from(new Set([...sesiOptions, Number(r.sesi_no), (sesiOptions[sesiOptions.length - 1] ?? 0) + 1]))
+                        .sort((a, b) => a - b)
+                        .map((n) => (
+                          <option key={n} value={String(n)}>Sesi {n}</option>
+                        ))}
+                    </select>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">Urutan Peserta</CardTitle>
@@ -368,7 +496,7 @@ function ViewerPage() {
                   <TableRow>
                     <TableHead>No</TableHead>
                     <TableHead>Peserta</TableHead>
-                    <TableHead>Sesi</TableHead>
+                    
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Aksi</TableHead>
                   </TableRow>
@@ -383,28 +511,7 @@ function ViewerPage() {
                         </button>
                         <div className="text-xs text-muted-foreground">{r.asal ?? ""}{r.kategori ? ` · ${r.kategori}` : ""}</div>
                       </TableCell>
-                      <TableCell>
-                        {sesiEditId === r.peserta_id ? (
-                          <div className="flex items-center gap-1">
-                            <Input
-                              type="number"
-                              className="h-8 w-20"
-                              value={sesiVal}
-                              onChange={(e) => setSesiVal(e.target.value)}
-                            />
-                            <Button size="sm" disabled={busy === r.peserta_id} onClick={() => simpanSesi(r)}>Simpan</Button>
-                            <Button size="sm" variant="ghost" onClick={() => { setSesiEditId(null); setSesiVal(""); }}>Batal</Button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => { setSesiEditId(r.peserta_id); setSesiVal(String(r.sesi_no)); }}
-                            title="Klik untuk mengubah sesi"
-                          >
-                            <Badge variant="secondary">Sesi {r.sesi_no}</Badge>
-                          </button>
-                        )}
-                      </TableCell>
+
                       <TableCell>
                         {r.terlambat ? (
                           <Badge variant="destructive">Terlambat</Badge>

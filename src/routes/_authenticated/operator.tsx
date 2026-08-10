@@ -15,7 +15,13 @@ export const Route = createFileRoute("/_authenticated/operator")({
   component: OperatorPage,
 });
 
-type Peserta = { id: string; nomor_urut: number; nama: string; asal: string | null; kategori: string | null };
+type Peserta = { id: string; nomor_urut: number; nama: string; asal: string | null; kategori: string | null; sesi?: string | null };
+
+function sesiNoOf(p: Peserta): number {
+  const m = String(p.sesi ?? "").match(/\d+/);
+  if (m) return Number(m[0]);
+  return Math.ceil(p.nomor_urut / 10);
+}
 type Mazmur = { id: string; bacaan: string; jumlah_ayat: number; kategori: string | null };
 type Sesi = {
   id: string;
@@ -42,6 +48,7 @@ function OperatorPage() {
   const [currentUser, setCurrentUser] = useState<{ nama: string; email: string; role: string } | null>(null);
   const PESERTA_PAGE_SIZE = 10;
   const [pesertaPage, setPesertaPage] = useState(1);
+  const [sesiTampil, setSesiTampil] = useState<number | null>(null);
 
   
 
@@ -71,6 +78,11 @@ function OperatorPage() {
   async function loadPeserta() {
     const { data } = await supabase.from("peserta").select("*").order("nomor_urut");
     setPeserta((data ?? []) as Peserta[]);
+  }
+  async function loadSesiTampil() {
+    const { data } = await supabase.rpc("get_sesi_tampil" as any);
+    const n = data == null ? null : Number(data);
+    setSesiTampil(Number.isFinite(n as number) ? (n as number) : null);
   }
   async function loadMazmur() {
     const { data } = await supabase.from("mazmur").select("*").order("bacaan");
@@ -128,10 +140,13 @@ function OperatorPage() {
     loadPeserta();
     loadMazmur();
     loadJuriCount();
+    loadSesiTampil();
     loadSesi();
   }, [allowed]);
 
-  usePolling(() => { void loadSesi(); }, 15000, allowed === true);
+  usePolling(() => { void loadSesi(); void loadSesiTampil(); }, 15000, allowed === true);
+
+
 
 
   async function logAudit(action: string, extra: Partial<{ session_id: string; peserta_id: string; mazmur_id: string; metadata: any }> = {}) {
@@ -218,6 +233,10 @@ function OperatorPage() {
   const mazmurAktif = useMemo(
     () => (sesi && sesi.mazmur_id ? mazmur.find(m => m.id === sesi.mazmur_id) : null),
     [sesi, mazmur]
+  );
+  const pesertaSesiTampil = useMemo(
+    () => (sesiTampil == null ? peserta : peserta.filter(p => sesiNoOf(p) === sesiTampil)),
+    [peserta, sesiTampil]
   );
   const pesertaTerpilih = useMemo(
     () => peserta.find(p => p.id === selectedPeserta) ?? null,
@@ -333,7 +352,12 @@ function OperatorPage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2"><Play className="size-5 text-primary" />Kontrol Sesi</CardTitle>
-            <CardDescription>Pilih peserta yang akan tampil dan tentukan Bacaan Mazmur.</CardDescription>
+            <CardDescription>
+              Pilih peserta yang akan tampil dan tentukan Bacaan Mazmur.
+              {sesiTampil == null
+                ? " Sesi tampil belum ditetapkan Sekretariat — semua peserta ditampilkan."
+                : ` Hanya menampilkan peserta pada Sesi ${sesiTampil} (diatur Sekretariat).`}
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
@@ -342,7 +366,7 @@ function OperatorPage() {
                 <Select value={selectedPeserta} onValueChange={(v) => { setSelectedPeserta(v); logAudit("pilih_peserta", { peserta_id: v }); }} disabled={!!sesi}>
                   <SelectTrigger><SelectValue placeholder="Pilih peserta" /></SelectTrigger>
                   <SelectContent>
-                    {peserta.map(p => {
+                    {pesertaSesiTampil.map(p => {
                       const done = submissionCounts[p.id] ?? 0;
                       const pool = poolJuri(p.kategori);
                       const sudah = pool > 0 && done >= pool;
