@@ -1491,7 +1491,7 @@ function PenilaianTab() {
 
   // Masukan Juri per ayat — bukan bagian penilaian, hanya lampiran rincian nilai
   const [openMasukan, setOpenMasukan] = useState(false);
-  const [masukanValues, setMasukanValues] = useState<string[]>([]);
+  
   const [masukanUmum, setMasukanUmum] = useState("");
   const [savingMasukan, setSavingMasukan] = useState(false);
 
