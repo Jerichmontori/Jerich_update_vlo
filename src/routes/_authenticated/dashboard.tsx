@@ -1491,7 +1491,7 @@ function PenilaianTab() {
 
   // Masukan Juri per ayat — bukan bagian penilaian, hanya lampiran rincian nilai
   const [openMasukan, setOpenMasukan] = useState(false);
-  const [masukanValues, setMasukanValues] = useState<string[]>([]);
+  
   const [masukanUmum, setMasukanUmum] = useState("");
   const [savingMasukan, setSavingMasukan] = useState(false);
 
@@ -2190,8 +2190,6 @@ function PenilaianTab() {
     if (!juriId) return toast.error("Pilih juri terlebih dahulu");
     if (!pesertaId) return toast.error("Pilih peserta terlebih dahulu");
     if (!selectedMazmur) return toast.error("Pilih bacaan mazmur terlebih dahulu");
-    const jumlah = selectedMazmur.jumlah_ayat || 0;
-    const empty = Array(jumlah).fill("");
     const { data } = await supabase
       .from("masukan_juri" as any)
       .select("catatan")
@@ -2199,13 +2197,6 @@ function PenilaianTab() {
       .eq("juri_id", juriId)
       .maybeSingle();
     const existing = ((data as any)?.catatan ?? []) as { ayat: number; teks: string }[];
-    const values = [...empty];
-    existing.forEach((e) => {
-      if (e && typeof e.ayat === "number" && e.ayat >= 1 && e.ayat <= jumlah) {
-        values[e.ayat - 1] = String(e.teks ?? "");
-      }
-    });
-    setMasukanValues(values);
     setMasukanUmum(String(existing.find((e) => e && e.ayat === 0)?.teks ?? ""));
     setOpenMasukan(true);
   }
@@ -2214,12 +2205,7 @@ function PenilaianTab() {
     if (!juriId || !pesertaId || !selectedMazmur) { setOpenMasukan(false); return; }
     setSavingMasukan(true);
     const umum = (masukanUmum || "").trim();
-    const catatan = [
-      ...(umum ? [{ ayat: 0, teks: umum }] : []),
-      ...masukanValues
-        .map((teks, i) => ({ ayat: i + 1, teks: (teks || "").trim() }))
-        .filter((x) => x.teks.length > 0),
-    ];
+    const catatan = umum ? [{ ayat: 0, teks: umum }] : [];
     const { error } = await supabase
       .from("masukan_juri" as any)
       .upsert(
@@ -2234,10 +2220,11 @@ function PenilaianTab() {
     setSavingMasukan(false);
     if (error) { toast.error(error.message); return; }
     toast.success("✦ Masukan juri tersimpan", {
-      description: `${catatan.filter((c) => c.ayat > 0).length} ayat terisi${umum ? " + catatan umum" : ""}.`,
+      description: umum ? "Catatan umum tersimpan." : "Catatan dikosongkan.",
     });
     setOpenMasukan(false);
   }
+
 
 
 
@@ -2496,16 +2483,17 @@ function PenilaianTab() {
           })()}
 
 
-          {/* Masukan Juri (per ayat) — di luar penilaian, hanya lampiran rincian */}
+          {/* Masukan Juri — di luar penilaian, hanya lampiran rincian */}
           {juriId && pesertaId && selectedMazmur && (
             <div className="mb-6 rounded-xl border-2 border-dashed border-accent/40 bg-accent/5 p-4 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <div className="font-serif text-base font-semibold">Masukan Juri (per ayat)</div>
+                <div className="font-serif text-base font-semibold">Masukan Juri</div>
                 <div className="text-xs text-muted-foreground max-w-xl">
-                  Catatan atau masukan bebas per ayat. Tidak masuk perhitungan nilai — hanya
+                  Satu catatan umum untuk peserta. Tidak masuk perhitungan nilai — hanya
                   menjadi lampiran pada rincian nilai peserta.
                 </div>
               </div>
+
               <Button
                 type="button"
                 variant="outline"
@@ -2735,7 +2723,7 @@ function PenilaianTab() {
         </div>
       )}
 
-      {/* Dialog Masukan Juri per ayat */}
+      {/* Dialog Masukan Juri */}
       <Dialog
         open={openMasukan}
         onOpenChange={(v) => {
@@ -2749,12 +2737,13 @@ function PenilaianTab() {
           onInteractOutside={(e) => e.preventDefault()}
         >
           <DialogHeader>
-            <DialogTitle className="font-serif text-2xl">Masukan Juri per Ayat</DialogTitle>
+            <DialogTitle className="font-serif text-2xl">Masukan Juri</DialogTitle>
             <DialogDescription>
-              Tulis masukan/komentar bebas untuk tiap ayat. Kosongkan bila tidak ada catatan.
+              Tulis satu catatan umum untuk peserta ini. Kosongkan bila tidak ada catatan.
               Perubahan disimpan otomatis saat dialog ditutup.
             </DialogDescription>
           </DialogHeader>
+
           <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
             {/* Hasil penilaian semua juri untuk peserta ini (tidak memengaruhi masukan) */}
             {(() => {
@@ -2805,32 +2794,15 @@ function PenilaianTab() {
               <Label className="text-sm font-semibold mb-2 block">Catatan Umum</Label>
               <Textarea
                 value={masukanUmum}
-                rows={3}
+                rows={6}
                 placeholder="Tulis catatan umum untuk peserta ini (opsional)…"
                 onChange={(e) => setMasukanUmum(e.target.value)}
               />
               <p className="text-[11px] text-muted-foreground mt-1">
-                Berlaku untuk keseluruhan bacaan, di luar catatan per ayat.
+                Berlaku untuk keseluruhan bacaan peserta ini.
               </p>
             </div>
-            {masukanValues.map((v, i) => (
-              <div key={i} className="rounded-lg border bg-card p-3">
-                <Label className="text-sm font-medium mb-2 block">Ayat {i + 1}</Label>
-                <Textarea
-                  value={v}
-                  rows={2}
-                  placeholder="Tulis masukan untuk ayat ini…"
-                  onChange={(e) =>
-                    setMasukanValues((prev) => prev.map((x, idx) => idx === i ? e.target.value : x))
-                  }
-                />
-              </div>
-            ))}
-            {masukanValues.length === 0 && (
-              <div className="text-sm text-muted-foreground italic text-center py-6">
-                Jumlah ayat belum tersedia untuk mazmur yang dipilih.
-              </div>
-            )}
+
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenMasukan(false)} disabled={savingMasukan}>
