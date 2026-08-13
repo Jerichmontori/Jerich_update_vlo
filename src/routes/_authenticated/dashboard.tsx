@@ -2805,32 +2805,15 @@ function PenilaianTab() {
               <Label className="text-sm font-semibold mb-2 block">Catatan Umum</Label>
               <Textarea
                 value={masukanUmum}
-                rows={3}
+                rows={6}
                 placeholder="Tulis catatan umum untuk peserta ini (opsional)…"
                 onChange={(e) => setMasukanUmum(e.target.value)}
               />
               <p className="text-[11px] text-muted-foreground mt-1">
-                Berlaku untuk keseluruhan bacaan, di luar catatan per ayat.
+                Berlaku untuk keseluruhan bacaan peserta ini.
               </p>
             </div>
-            {masukanValues.map((v, i) => (
-              <div key={i} className="rounded-lg border bg-card p-3">
-                <Label className="text-sm font-medium mb-2 block">Ayat {i + 1}</Label>
-                <Textarea
-                  value={v}
-                  rows={2}
-                  placeholder="Tulis masukan untuk ayat ini…"
-                  onChange={(e) =>
-                    setMasukanValues((prev) => prev.map((x, idx) => idx === i ? e.target.value : x))
-                  }
-                />
-              </div>
-            ))}
-            {masukanValues.length === 0 && (
-              <div className="text-sm text-muted-foreground italic text-center py-6">
-                Jumlah ayat belum tersedia untuk mazmur yang dipilih.
-              </div>
-            )}
+
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpenMasukan(false)} disabled={savingMasukan}>
