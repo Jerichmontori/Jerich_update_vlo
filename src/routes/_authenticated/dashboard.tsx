@@ -2190,8 +2190,6 @@ function PenilaianTab() {
     if (!juriId) return toast.error("Pilih juri terlebih dahulu");
     if (!pesertaId) return toast.error("Pilih peserta terlebih dahulu");
     if (!selectedMazmur) return toast.error("Pilih bacaan mazmur terlebih dahulu");
-    const jumlah = selectedMazmur.jumlah_ayat || 0;
-    const empty = Array(jumlah).fill("");
     const { data } = await supabase
       .from("masukan_juri" as any)
       .select("catatan")
@@ -2199,13 +2197,6 @@ function PenilaianTab() {
       .eq("juri_id", juriId)
       .maybeSingle();
     const existing = ((data as any)?.catatan ?? []) as { ayat: number; teks: string }[];
-    const values = [...empty];
-    existing.forEach((e) => {
-      if (e && typeof e.ayat === "number" && e.ayat >= 1 && e.ayat <= jumlah) {
-        values[e.ayat - 1] = String(e.teks ?? "");
-      }
-    });
-    setMasukanValues(values);
     setMasukanUmum(String(existing.find((e) => e && e.ayat === 0)?.teks ?? ""));
     setOpenMasukan(true);
   }
@@ -2214,12 +2205,7 @@ function PenilaianTab() {
     if (!juriId || !pesertaId || !selectedMazmur) { setOpenMasukan(false); return; }
     setSavingMasukan(true);
     const umum = (masukanUmum || "").trim();
-    const catatan = [
-      ...(umum ? [{ ayat: 0, teks: umum }] : []),
-      ...masukanValues
-        .map((teks, i) => ({ ayat: i + 1, teks: (teks || "").trim() }))
-        .filter((x) => x.teks.length > 0),
-    ];
+    const catatan = umum ? [{ ayat: 0, teks: umum }] : [];
     const { error } = await supabase
       .from("masukan_juri" as any)
       .upsert(
@@ -2234,10 +2220,11 @@ function PenilaianTab() {
     setSavingMasukan(false);
     if (error) { toast.error(error.message); return; }
     toast.success("✦ Masukan juri tersimpan", {
-      description: `${catatan.filter((c) => c.ayat > 0).length} ayat terisi${umum ? " + catatan umum" : ""}.`,
+      description: umum ? "Catatan umum tersimpan." : "Catatan dikosongkan.",
     });
     setOpenMasukan(false);
   }
+
 
 
 
