@@ -2735,7 +2735,7 @@ function PenilaianTab() {
         </div>
       )}
 
-      {/* Dialog Masukan Juri per ayat */}
+      {/* Dialog Masukan Juri */}
       <Dialog
         open={openMasukan}
         onOpenChange={(v) => {
@@ -2749,12 +2749,13 @@ function PenilaianTab() {
           onInteractOutside={(e) => e.preventDefault()}
         >
           <DialogHeader>
-            <DialogTitle className="font-serif text-2xl">Masukan Juri per Ayat</DialogTitle>
+            <DialogTitle className="font-serif text-2xl">Masukan Juri</DialogTitle>
             <DialogDescription>
-              Tulis masukan/komentar bebas untuk tiap ayat. Kosongkan bila tidak ada catatan.
+              Tulis satu catatan umum untuk peserta ini. Kosongkan bila tidak ada catatan.
               Perubahan disimpan otomatis saat dialog ditutup.
             </DialogDescription>
           </DialogHeader>
+
           <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
             {/* Hasil penilaian semua juri untuk peserta ini (tidak memengaruhi masukan) */}
             {(() => {
