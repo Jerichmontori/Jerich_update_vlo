@@ -2483,16 +2483,17 @@ function PenilaianTab() {
           })()}
 
 
-          {/* Masukan Juri (per ayat) — di luar penilaian, hanya lampiran rincian */}
+          {/* Masukan Juri — di luar penilaian, hanya lampiran rincian */}
           {juriId && pesertaId && selectedMazmur && (
             <div className="mb-6 rounded-xl border-2 border-dashed border-accent/40 bg-accent/5 p-4 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <div className="font-serif text-base font-semibold">Masukan Juri (per ayat)</div>
+                <div className="font-serif text-base font-semibold">Masukan Juri</div>
                 <div className="text-xs text-muted-foreground max-w-xl">
-                  Catatan atau masukan bebas per ayat. Tidak masuk perhitungan nilai — hanya
+                  Satu catatan umum untuk peserta. Tidak masuk perhitungan nilai — hanya
                   menjadi lampiran pada rincian nilai peserta.
                 </div>
               </div>
+
               <Button
                 type="button"
                 variant="outline"
