@@ -3054,15 +3054,21 @@ function PenilaianTab() {
               return Number.isFinite(g) && g > 0 ? g : null;
             };
             const bobotCat = Number(openKriteria?.bobot ?? 10) || 10;
+            const bobotIndukOf = (key: string): number => {
+              const k = kriteria.find(x => kriteriaKey(x.nama) === key);
+              return Number(k?.bobot ?? 0) || 0;
+            };
+            const bobotAspekOf = (key: string) => bobotAspekCatatan(key, bobotIndukOf(key), bobotCat);
             const terisi = catatanValues.filter(v => v != null).length;
-            const bobotAspek = terisi > 0 ? bobotCat / terisi : 0;
             let totalBonus = 0;
             catatanValues.forEach((v, i) => {
               if (v == null) return;
               const gi = gradeIndukOf(CATATAN_INDUK[i]);
               const rInduk = gi == null ? 1 : lookupNilaiClient(gi);
-              totalBonus += lookupNilaiClient(v) * rInduk * bobotAspek;
+              totalBonus += lookupNilaiClient(v) * rInduk * bobotAspekOf(CATATAN_INDUK[i]);
             });
+            const bobotMaks = CATATAN_ASPEK.reduce((s, _a, i) => s + bobotAspekOf(CATATAN_INDUK[i]), 0);
+
             return (
             <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
               <div className="flex items-center justify-end">
