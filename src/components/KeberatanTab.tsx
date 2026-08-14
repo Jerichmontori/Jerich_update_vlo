@@ -54,7 +54,7 @@ export default function KeberatanTab({ canDecide = true, canConfig = false }: { 
   useEffect(() => { load(); }, [load]);
   usePolling(load, 30000, true);
 
-  async function putuskan(id: string, keputusan: "diterima" | "ditolak" | "ditinjau") {
+  async function putuskan(id: string, keputusan: "diterima" | "ditolak" | "ditinjau", tindakLanjut?: "var") {
     const note = (catatan[id] ?? "").trim();
     if (keputusan !== "ditinjau" && note.length < 5) {
       toast.error("Catatan keputusan wajib diisi (minimal 5 karakter)");
@@ -62,13 +62,18 @@ export default function KeberatanTab({ canDecide = true, canConfig = false }: { 
     }
     setBusy(id);
     const { error } = await supabase.rpc("ip_putuskan_keberatan" as never, {
-      _id: id, _keputusan: keputusan, _catatan: note || null,
+      _id: id, _keputusan: keputusan, _catatan: note || null, _tindak_lanjut: tindakLanjut ?? null,
     } as never);
     setBusy(null);
     if (error) { toast.error(error.message); return; }
-    toast.success("Keputusan tersimpan");
+    toast.success(
+      tindakLanjut === "var"
+        ? "Keberatan diterima — peserta masuk antrean VAR & Admin diberi pemberitahuan"
+        : "Keputusan tersimpan",
+    );
     load();
   }
+
 
   return (
     <div className="space-y-4">
