@@ -3098,12 +3098,13 @@ function PenilaianTab() {
                     </span>
                   </div>
                   <div className="mb-2 text-[11px] text-muted-foreground">
-                    ×{rInduk.toFixed(2)} ({INDUK_LABEL[indukKey]}
-                    {gi == null ? " belum dinilai" : ` grade ${gi.toFixed(gi % 1 ? 1 : 0)}`})
+                    ×{rInduk.toFixed(2)} ({INDUK_LABEL[indukKey]} bobot {bobotIndukOf(indukKey)}
+                    {gi == null ? ", belum dinilai" : `, grade ${gi.toFixed(gi % 1 ? 1 : 0)}`}) · bobot aspek <b>{bobotAspekOf(indukKey).toFixed(3)}</b>
                     {rAspek != null && (
-                      <> · rasio efektif = {rAspek.toFixed(3)} × {rInduk.toFixed(2)} = <b>{(rAspek * rInduk).toFixed(4)}</b></>
+                      <> · kontribusi = {rAspek.toFixed(3)} × {rInduk.toFixed(2)} × {bobotAspekOf(indukKey).toFixed(3)} = <b>{(rAspek * rInduk * bobotAspekOf(indukKey)).toFixed(4)}</b></>
                     )}
                   </div>
+
 
                   <div className="grid grid-cols-5 gap-2">
                     {[1, 2, 3, 4, 5].map(v => (
