@@ -1383,6 +1383,28 @@ const CATATAN_ASPEK = [
   "Penguasaan Panggung",
 ];
 
+// Kriteria induk untuk setiap aspek Catatan Juri (urutan sama dengan CATATAN_ASPEK).
+// Kontribusi aspek = lookup(grade aspek) x lookup(grade kriteria induk) x bobot aspek.
+const CATATAN_INDUK: ("vokal" | "penghayatan" | "intonasi" | "penampilan")[] = [
+  "vokal",        // Kesan dari teks bacaan
+  "vokal",        // Penguasaan teks
+  "penghayatan",  // Emosi
+  "penghayatan",  // Ekspresi
+  "penghayatan",  // Intonasi dan Irama
+  "penghayatan",  // Kesesuaian Vokal
+  "intonasi",     // Penggunaan kata dan kalimat sesuai teks bacaan
+  "intonasi",     // Sesuai Tanda Baca
+  "penampilan",   // Keserasian Penampilan
+  "penampilan",   // Penguasaan Panggung
+];
+const INDUK_LABEL: Record<string, string> = {
+  vokal: "Vokal / Interpretasi",
+  penghayatan: "Penghayatan",
+  intonasi: "Intonasi / Artikulasi",
+  penampilan: "Penampilan",
+};
+
+
 const PERHATIAN_ASPEK = [
   "Clear Text",
   "Salah kata",
