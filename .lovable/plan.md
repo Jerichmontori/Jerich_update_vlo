@@ -13,22 +13,24 @@ Nilai tiap aspek Catatan Juri tidak boleh melebihi grade yang diberikan juri pad
 
 ## Aturan perhitungan
 
-Untuk setiap aspek catatan yang diisi:
+Setiap aspek catatan punya porsi bobot sendiri, yaitu bobot Catatan Juri dibagi rata ke aspek yang diisi:
 
 ```text
-nilai_efektif_aspek = MIN(grade_aspek, grade_kriteria_induk)
+bobot_aspek = bobot Catatan Juri (default 10) / jumlah aspek yang diisi
 ```
 
-Lalu bonus catatan dihitung seperti sekarang, tetapi memakai nilai efektif:
+Rasio tiap aspek dipotong ke rasio grade kriteria induknya:
 
 ```text
-bonus_ratio = rata-rata( lookup_nilai(nilai_efektif_aspek) )   // hanya aspek yang diisi
-bonus       = bonus_ratio x bobot Catatan Juri (default 10)
+rasio_efektif = MIN( lookup_nilai(grade_aspek), lookup_nilai(grade_induk) )
+kontribusi    = rasio_efektif x bobot_aspek
+bonus catatan = jumlah seluruh kontribusi aspek
 ```
 
-Contoh: Interpretasi diberi grade 4. Juri memberi 5 pada "Kesan dari teks bacaan" → aspek itu dihitung sebagai grade 4 (persentase grade 4), bukan 5. Aspek dengan nilai 3 tetap dihitung 3.
+Contoh: Interpretasi diberi grade 4 → rasio grade 4 = 0,81. Juri memberi 5 pada "Kesan dari teks bacaan" (rasio 1,00), tetapi karena dipotong ke rasio induk, penambahan maksimal untuk aspek itu adalah 0,81 x bobot "Kesan dari teks bacaan". Bila juri memberi 3 (rasio di bawah 0,81), dipakai rasio 3 apa adanya.
 
-Jika kriteria induk belum dinilai, aspek catatan dihitung apa adanya (tanpa pemotongan). Aturan lain (Clear Text, penalti Perhatian, normalisasi, pemetaan skala kategori) tidak berubah.
+Jika kriteria induk belum dinilai, aspek catatan dihitung apa adanya (tanpa pemotongan). Aturan lain (Clear Text, penalti Perhatian, normalisasi, pemetaan skala kategori) tidak berubah. Hasilnya tetap setara rumus lama (rata-rata rasio x bobot catatan) bila tidak ada aspek yang melewati batas induk.
+
 
 ## Tampilan di form juri
 
