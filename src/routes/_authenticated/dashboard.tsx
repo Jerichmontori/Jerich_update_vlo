@@ -159,12 +159,23 @@ function App() {
                 </div>
               )}
             </div>
-            {section === "dashboard" && <DashboardTab />}
+            {section === "dashboard" && (
+              <div className="space-y-4">
+                <PerbaikanNotifikasi />
+                <DashboardTab />
+              </div>
+            )}
             {section === "hasil" && <HasilNilaiTab />}
             {section === "live" && <SesiLiveRanking />}
             {section === "penilaian" && <PenilaianTab />}
-            {section === "var" && <AdminVarTab />}
+            {section === "var" && (
+              <div className="space-y-4">
+                <PerbaikanNotifikasi />
+                <AdminVarTab />
+              </div>
+            )}
             {section === "keberatan" && <KeberatanTab canDecide={roles.isAdm} canConfig={roles.isAdm} />}
+
             {section === "peninjauan" && <PeninjauanTab canDecide={roles.isAdm} />}
             {section === "peserta" && <PesertaTab />}
             {section === "juri" && <JuriTab />}
