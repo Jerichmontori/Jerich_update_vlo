@@ -67,6 +67,11 @@ export default function IpVarKoreksi({ canDecide = true }: { canDecide?: boolean
                   <Gavel className="size-4" />Koreksi &amp; Putuskan
                 </Button>
               )}
+              {canDecide && (
+                <Button size="sm" variant="secondary" onClick={() => setPerJuri(r)} className="gap-2">
+                  <Users className="size-4" />Koreksi per Juri
+                </Button>
+              )}
               <BeritaAcaraButton pesertaId={r.peserta_id} />
             </div>
           </div>
@@ -80,9 +85,19 @@ export default function IpVarKoreksi({ canDecide = true }: { canDecide?: boolean
           onDone={() => { setOpen(null); load(); }}
         />
       )}
+
+      {perJuri && (
+        <IpVarKoreksiPerJuri
+          pesertaId={perJuri.peserta_id}
+          judul={`${perJuri.nomor_urut}. ${perJuri.nama}`}
+          onClose={() => setPerJuri(null)}
+          onDone={() => { setPerJuri(null); load(); }}
+        />
+      )}
     </Card>
   );
 }
+
 
 function KoreksiDialog({ row, onClose, onDone }: { row: VarRow; onClose: () => void; onDone: () => void }) {
   const [detail, setDetail] = useState<JuriDetail[]>([]);
