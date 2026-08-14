@@ -34,13 +34,13 @@ Jika kriteria induk belum dinilai, aspek catatan dihitung apa adanya (pengali in
 
 ## Tampilan di form juri
 
-- Pada dialog Catatan Juri, setiap aspek menampilkan label batas, mis. "Maks. rasio 0,81 (Penghayatan grade 4)".
-- Grade di atas batas tetap bisa dipilih, tetapi ditandai (warna redup + keterangan "dihitung sebagai rasio 0,81").
-- Ringkasan kecil di bawah daftar aspek menampilkan bobot per aspek dan total bonus catatan setelah pemotongan.
+- Pada dialog Catatan Juri, setiap aspek menampilkan pengali induk, mis. "x0,81 (Penghayatan grade 4)".
+- Semua grade tetap bisa dipilih; di bawah pilihan ditampilkan rasio efektif hasil perkalian.
+- Ringkasan kecil di bawah daftar aspek menampilkan bobot per aspek dan total bonus catatan setelah penskalaan.
 
 ## Catatan teknis
 
-- Migrasi memperbarui `public.hitung_nilai_juri`: saat menjumlahkan bonus, ambil grade kriteria induk dari baris `penilaian` juri yang sama, cocokkan aspek ke induk lewat pemetaan konstan di dalam fungsi, lalu pakai `LEAST(lookup_nilai(grade_aspek), lookup_nilai(grade_induk))` sebagai rasio efektif sebelum dikali bobot aspek.
+- Migrasi memperbarui `public.hitung_nilai_juri`: saat menjumlahkan bonus, ambil grade kriteria induk dari baris `penilaian` juri yang sama, cocokkan aspek ke induk lewat pemetaan konstan di dalam fungsi, lalu pakai `lookup_nilai(grade_aspek) * COALESCE(lookup_nilai(grade_induk), 1)` sebagai rasio efektif sebelum dikali bobot aspek.
 
 - Pencocokan kriteria induk memakai logika nama yang sama dengan `kriteriaKey` di frontend (mengandung "interpretasi/vokal", "hayat", "artikulasi/intonasi", "penampilan").
 - Nilai tersimpan di `penilaian.detail` tidak diubah — pemotongan hanya di perhitungan, sehingga pilihan asli juri tetap terekam untuk audit.
