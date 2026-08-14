@@ -3047,6 +3047,18 @@ function PenilaianTab() {
             });
             return (
             <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
+              <div className="flex items-center justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs"
+                  disabled={catatanValues.every(v => v == null)}
+                  onClick={() => setCatatanValues(CATATAN_ASPEK.map(() => null))}
+                >
+                  <RotateCcw className="size-3.5" /> Reset Pilihan
+                </Button>
+              </div>
               {CATATAN_ASPEK.map((aspek, i) => {
                 const indukKey = CATATAN_INDUK[i];
                 const gi = gradeIndukOf(indukKey);
