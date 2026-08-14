@@ -8,8 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import VarPersepsiDetail from "@/components/VarPersepsiDetail";
+import IpVarKoreksiPerJuri from "@/components/IpVarKoreksiPerJuri";
 import { toast } from "sonner";
-import { RefreshCw, Gavel, FileText, Undo2 } from "lucide-react";
+import { RefreshCw, Gavel, FileText, Undo2, Users } from "lucide-react";
+
 
 type VarRow = {
   peserta_id: string;
