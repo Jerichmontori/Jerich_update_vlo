@@ -3098,7 +3098,8 @@ function PenilaianTab() {
               </p>
 
             </div>
-          )}
+            );
+          })()}
 
           {activeKey === "perhatian" && (() => {
             const perbaikanAktifDlg = !!(pesertaId && perbaikanAktifIds.has(pesertaId));
