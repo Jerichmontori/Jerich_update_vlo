@@ -19,7 +19,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import VarPersepsiDetail from "@/components/VarPersepsiDetail";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Toaster, toast } from "sonner";
-import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight, ChevronDown, LayoutDashboard, CheckCircle2, XCircle, FileText, KeyRound, AlertTriangle, Eye, EyeOff } from "lucide-react";
+import { Trash2, Plus, Trophy, Users, Gavel, ListChecks, ClipboardCheck, BookOpenText, Upload, Download, Check, Tags, ChevronLeft, ChevronRight, ChevronDown, LayoutDashboard, CheckCircle2, XCircle, FileText, KeyRound, AlertTriangle, Eye, EyeOff, RotateCcw } from "lucide-react";
 import SesiLiveRanking from "@/components/SesiLiveRanking";
 import AdminVarTab from "@/components/AdminVarTab";
 import BackupExcelButton from "@/components/BackupExcelButton";
@@ -3047,6 +3047,18 @@ function PenilaianTab() {
             });
             return (
             <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
+              <div className="flex items-center justify-end">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 text-xs"
+                  disabled={catatanValues.every(v => v == null)}
+                  onClick={() => setCatatanValues(CATATAN_ASPEK.map(() => null))}
+                >
+                  <RotateCcw className="size-3.5" /> Reset Pilihan
+                </Button>
+              </div>
               {CATATAN_ASPEK.map((aspek, i) => {
                 const indukKey = CATATAN_INDUK[i];
                 const gi = gradeIndukOf(indukKey);
