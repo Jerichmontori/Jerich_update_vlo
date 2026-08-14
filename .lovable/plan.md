@@ -19,17 +19,17 @@ Setiap aspek catatan punya porsi bobot sendiri, yaitu bobot Catatan Juri dibagi 
 bobot_aspek = bobot Catatan Juri (default 10) / jumlah aspek yang diisi
 ```
 
-Rasio tiap aspek dipotong ke rasio grade kriteria induknya:
+Rasio tiap aspek dikalikan rasio grade kriteria induknya:
 
 ```text
-rasio_efektif = MIN( lookup_nilai(grade_aspek), lookup_nilai(grade_induk) )
+rasio_efektif = lookup_nilai(grade_aspek) x lookup_nilai(grade_induk)
 kontribusi    = rasio_efektif x bobot_aspek
 bonus catatan = jumlah seluruh kontribusi aspek
 ```
 
-Contoh: Interpretasi diberi grade 4 → rasio grade 4 = 0,81. Juri memberi 5 pada "Kesan dari teks bacaan" (rasio 1,00), tetapi karena dipotong ke rasio induk, penambahan maksimal untuk aspek itu adalah 0,81 x bobot "Kesan dari teks bacaan". Bila juri memberi 3 (rasio di bawah 0,81), dipakai rasio 3 apa adanya.
+Contoh: Interpretasi diberi grade 4 → rasio induk 0,81. Juri memberi 5 pada "Kesan dari teks bacaan" (rasio 1,00) → rasio efektif 1,00 x 0,81 = 0,81, kontribusi = 0,81 x bobot aspek. Bila juri memberi 3 (rasio 0,52) → rasio efektif 0,52 x 0,81 = 0,4212.
 
-Jika kriteria induk belum dinilai, aspek catatan dihitung apa adanya (tanpa pemotongan). Aturan lain (Clear Text, penalti Perhatian, normalisasi, pemetaan skala kategori) tidak berubah. Hasilnya tetap setara rumus lama (rata-rata rasio x bobot catatan) bila tidak ada aspek yang melewati batas induk.
+Jika kriteria induk belum dinilai, aspek catatan dihitung apa adanya (pengali induk = 1). Aturan lain (Clear Text, penalti Perhatian, normalisasi, pemetaan skala kategori) tidak berubah. Konsekuensi: bonus catatan kini selalu lebih kecil dari rumus lama kecuali induk bergrade 5, dan nilai lama akan bergeser turun setelah penyegaran cache.
 
 
 ## Tampilan di form juri
