@@ -1,6 +1,6 @@
-# Batas Kontribusi Catatan Juri Mengikuti Grade Kriteria Induk
+# Kontribusi Catatan Juri Diskala oleh Grade Kriteria Induk
 
-Nilai tiap aspek Catatan Juri tidak boleh melebihi grade yang diberikan juri pada kriteria induknya. Jika juri memberi grade lebih tinggi pada aspek catatan, nilainya dipotong ke batas grade induk (clamp) saat perhitungan.
+Kontribusi tiap aspek Catatan Juri dihitung sebagai rasio grade aspek dikali rasio grade kriteria induknya dikali bobot aspek, sehingga catatan selalu proporsional terhadap penilaian utama juri.
 
 ## Pemetaan aspek ke kriteria induk
 
