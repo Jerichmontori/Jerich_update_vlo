@@ -1404,6 +1404,24 @@ const INDUK_LABEL: Record<string, string> = {
   penampilan: "Penampilan",
 };
 
+// Jumlah aspek Catatan Juri di bawah setiap kriteria induk.
+const CATATAN_INDUK_COUNT: Record<string, number> = {
+  vokal: 2,
+  penghayatan: 4,
+  intonasi: 2,
+  penampilan: 2,
+};
+
+// Bobot tetap tiap aspek catatan = (bobot induk / bobot catatan juri) / jumlah aspek dalam induk.
+function bobotAspekCatatan(indukKey: string | null, bobotInduk: number, bobotCat: number): number {
+  if (!indukKey) return 1;
+  const n = CATATAN_INDUK_COUNT[indukKey] ?? 0;
+  if (!n || !bobotCat) return 1;
+  return (bobotInduk / bobotCat) / n;
+}
+
+
+
 
 const PERHATIAN_ASPEK = [
   "Clear Text",
@@ -3036,15 +3054,21 @@ function PenilaianTab() {
               return Number.isFinite(g) && g > 0 ? g : null;
             };
             const bobotCat = Number(openKriteria?.bobot ?? 10) || 10;
+            const bobotIndukOf = (key: string): number => {
+              const k = kriteria.find(x => kriteriaKey(x.nama) === key);
+              return Number(k?.bobot ?? 0) || 0;
+            };
+            const bobotAspekOf = (key: string) => bobotAspekCatatan(key, bobotIndukOf(key), bobotCat);
             const terisi = catatanValues.filter(v => v != null).length;
-            const bobotAspek = terisi > 0 ? bobotCat / terisi : 0;
             let totalBonus = 0;
             catatanValues.forEach((v, i) => {
               if (v == null) return;
               const gi = gradeIndukOf(CATATAN_INDUK[i]);
               const rInduk = gi == null ? 1 : lookupNilaiClient(gi);
-              totalBonus += lookupNilaiClient(v) * rInduk * bobotAspek;
+              totalBonus += lookupNilaiClient(v) * rInduk * bobotAspekOf(CATATAN_INDUK[i]);
             });
+            const bobotMaks = CATATAN_ASPEK.reduce((s, _a, i) => s + bobotAspekOf(CATATAN_INDUK[i]), 0);
+
             return (
             <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
               <div className="flex items-center justify-end">
@@ -3074,12 +3098,13 @@ function PenilaianTab() {
                     </span>
                   </div>
                   <div className="mb-2 text-[11px] text-muted-foreground">
-                    ×{rInduk.toFixed(2)} ({INDUK_LABEL[indukKey]}
-                    {gi == null ? " belum dinilai" : ` grade ${gi.toFixed(gi % 1 ? 1 : 0)}`})
+                    ×{rInduk.toFixed(2)} ({INDUK_LABEL[indukKey]} bobot {bobotIndukOf(indukKey)}
+                    {gi == null ? ", belum dinilai" : `, grade ${gi.toFixed(gi % 1 ? 1 : 0)}`}) · bobot aspek <b>{bobotAspekOf(indukKey).toFixed(3)}</b>
                     {rAspek != null && (
-                      <> · rasio efektif = {rAspek.toFixed(3)} × {rInduk.toFixed(2)} = <b>{(rAspek * rInduk).toFixed(4)}</b></>
+                      <> · kontribusi = {rAspek.toFixed(3)} × {rInduk.toFixed(2)} × {bobotAspekOf(indukKey).toFixed(3)} = <b>{(rAspek * rInduk * bobotAspekOf(indukKey)).toFixed(4)}</b></>
                     )}
                   </div>
+
 
                   <div className="grid grid-cols-5 gap-2">
                     {[1, 2, 3, 4, 5].map(v => (
@@ -3102,9 +3127,10 @@ function PenilaianTab() {
                 );
               })}
               <div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
-                Bobot Catatan Juri <b>{bobotCat}</b> dibagi rata ke <b>{terisi}</b> aspek terisi → bobot/aspek <b>{bobotAspek.toFixed(3)}</b>.
-                Total bonus catatan setelah penskalaan induk: <b>{totalBonus.toFixed(3)}</b>.
+                Bobot tiap aspek mengikuti kriteria induk: (bobot induk ÷ {bobotCat}) ÷ jumlah aspek dalam induk itu.
+                Terisi <b>{terisi}</b> aspek · total bonus <b>{totalBonus.toFixed(3)}</b> dari maksimum <b>{bobotMaks.toFixed(3)}</b>.
               </div>
+
               <p className="text-xs text-muted-foreground pt-2">
                 Perubahan disimpan otomatis saat dialog ditutup.
               </p>
@@ -3938,7 +3964,7 @@ function LihatPenilaianTab() {
       head: [["Langkah", "Rumus / Nilai"]],
       body: [
         ["1. Lookup non-linear (grade → bobot)", "1.0=0.050  1.5=0.120  2.0=0.220  2.5=0.360  3.0=0.520  3.5=0.680  4.0=0.810  4.5=0.910  5.0=1.000"],
-        ["2. Skor mentah (raw)", "Σ lookup(grade)×bobot untuk V/Pn/It/Pl  +  rata²(lookup aspek Catatan × lookup grade kriteria induk)×bobotCat  +  min(1, marks/15)×bobotPer"],
+        ["2. Skor mentah (raw)", "Σ lookup(grade)×bobot untuk V/Pn/It/Pl  +  Σ [lookup(aspek Catatan) × lookup(grade kriteria induk) × bobot aspek]  +  min(1, marks/15)×bobotPer\nbobot aspek = (bobot induk ÷ bobot Catatan) ÷ jumlah aspek dalam induk"],
         ["3. Bobot dipakai", `Interpretasi ${bV} · Penghayatan ${bPn} · Artikulasi ${bIt} · Penampilan ${bPl} · Catatan ${bCat} · Perhatian ${bPer}`],
         ["4. Normalisasi n∈[0,1]", `n = (raw − ${rawMin}) / (${rawMax} − ${rawMin})`],
         ["5. Pemetaan kurva 2-segmen", `n≤0.5 → out = BB + (TG−BB)·(2n)^1.15\nn>0.5 → out = TG + (BA−TG)·(1 − (2(1−n))^1.15)`],
@@ -3979,19 +4005,26 @@ function LihatPenilaianTab() {
             const g = gradeOf(kk.id);
             return g == null ? 1 : lookupNilaiClient(g);
           };
+          const bobotCatK = Number(k.bobot || 0) || 10;
+          const bobotIndukKey = (key: string): number => {
+            const kk = kriteria.find((x) => kriteriaKey(x.nama) === key);
+            return Number(kk?.bobot ?? 0) || 0;
+          };
           let sum = 0;
           let keptN = 0;
           asp.forEach((a: any, i: number) => {
             if (a?.skipped || a?.nilai == null) return;
             const idx = CATATAN_ASPEK.findIndex((nmA) => nmA.toLowerCase() === String(a?.nama ?? "").toLowerCase());
             const indukKey = CATATAN_INDUK[idx >= 0 ? idx : i] ?? null;
-            sum += lookupNilaiClient(Number(a.nilai)) * (indukKey ? rasioInduk(indukKey) : 1);
+            const bAspek = bobotAspekCatatan(indukKey, indukKey ? bobotIndukKey(indukKey) : 0, bobotCatK);
+            sum += lookupNilaiClient(Number(a.nilai)) * (indukKey ? rasioInduk(indukKey) : 1) * bAspek;
             keptN += 1;
           });
-          const ratio = keptN ? sum / keptN : 0;
-          const kontrib = ratio * Number(k.bobot || 0);
+          const kontrib = sum;
+          const ratio = bobotCatK ? sum / bobotCatK : 0;
           rawSum += kontrib;
-          rows.push([k.nama, `${keptN}/${asp.length} aspek (×induk)`, ratio.toFixed(6), String(k.bobot), kontrib.toFixed(6)]);
+          rows.push([k.nama, `${keptN}/${asp.length} aspek (bobot induk)`, ratio.toFixed(6), String(k.bobot), kontrib.toFixed(6)]);
+
         } else if (nm.includes("perhatian")) {
           const d = detailByKrit[k.id] as any;
           let marks = 0;
