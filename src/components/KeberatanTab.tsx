@@ -121,12 +121,16 @@ export default function KeberatanTab({ canDecide = true, canConfig = false }: { 
                   <Button size="sm" variant="outline" disabled={busy === r.id} onClick={() => putuskan(r.id, "ditinjau")}>
                     Tandai Ditinjau
                   </Button>
-                  <Button size="sm" disabled={busy === r.id} onClick={() => putuskan(r.id, "diterima")}>
-                    Terima
+                  <Button size="sm" disabled={busy === r.id} onClick={() => putuskan(r.id, "diterima", "var")}>
+                    Terima &amp; Lanjut VAR
+                  </Button>
+                  <Button size="sm" variant="secondary" disabled={busy === r.id} onClick={() => putuskan(r.id, "diterima")}>
+                    Terima (tanpa VAR)
                   </Button>
                   <Button size="sm" variant="destructive" disabled={busy === r.id} onClick={() => putuskan(r.id, "ditolak")}>
                     Tolak
                   </Button>
+
                 </div>
               </div>
             )}
