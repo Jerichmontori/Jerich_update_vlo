@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import IpVarKoreksi from "@/components/IpVarKoreksi";
 import KeberatanTab from "@/components/KeberatanTab";
+import PerbaikanNotifikasi from "@/components/PerbaikanNotifikasi";
+
 import PeninjauanTab from "@/components/PeninjauanTab";
 import BrandLogo from "@/components/BrandLogo";
 import { LogOut, Gavel, FileWarning, Undo2 } from "lucide-react";
