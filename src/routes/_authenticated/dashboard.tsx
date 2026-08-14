@@ -3127,9 +3127,10 @@ function PenilaianTab() {
                 );
               })}
               <div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
-                Bobot Catatan Juri <b>{bobotCat}</b> dibagi rata ke <b>{terisi}</b> aspek terisi → bobot/aspek <b>{bobotAspek.toFixed(3)}</b>.
-                Total bonus catatan setelah penskalaan induk: <b>{totalBonus.toFixed(3)}</b>.
+                Bobot tiap aspek mengikuti kriteria induk: (bobot induk ÷ {bobotCat}) ÷ jumlah aspek dalam induk itu.
+                Terisi <b>{terisi}</b> aspek · total bonus <b>{totalBonus.toFixed(3)}</b> dari maksimum <b>{bobotMaks.toFixed(3)}</b>.
               </div>
+
               <p className="text-xs text-muted-foreground pt-2">
                 Perubahan disimpan otomatis saat dialog ditutup.
               </p>
