@@ -18,6 +18,11 @@ export function varStatusLabel(status: VarStatus): string | null {
       return "VAR — Peninjauan Inspektur";
     case "perbaikan_perhatian":
       return "VAR — Perbaikan Perhatian";
+    case "keberatan_var":
+      return "VAR — Tindak Lanjut Keberatan";
+    case "perbaikan_var":
+      return "VAR — Perbaikan Dibuka";
+
     default:
       return "VAR — Dalam Proses";
   }
