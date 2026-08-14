@@ -4005,19 +4005,26 @@ function LihatPenilaianTab() {
             const g = gradeOf(kk.id);
             return g == null ? 1 : lookupNilaiClient(g);
           };
+          const bobotCatK = Number(k.bobot || 0) || 10;
+          const bobotIndukKey = (key: string): number => {
+            const kk = kriteria.find((x) => kriteriaKey(x.nama) === key);
+            return Number(kk?.bobot ?? 0) || 0;
+          };
           let sum = 0;
           let keptN = 0;
           asp.forEach((a: any, i: number) => {
             if (a?.skipped || a?.nilai == null) return;
             const idx = CATATAN_ASPEK.findIndex((nmA) => nmA.toLowerCase() === String(a?.nama ?? "").toLowerCase());
             const indukKey = CATATAN_INDUK[idx >= 0 ? idx : i] ?? null;
-            sum += lookupNilaiClient(Number(a.nilai)) * (indukKey ? rasioInduk(indukKey) : 1);
+            const bAspek = bobotAspekCatatan(indukKey, indukKey ? bobotIndukKey(indukKey) : 0, bobotCatK);
+            sum += lookupNilaiClient(Number(a.nilai)) * (indukKey ? rasioInduk(indukKey) : 1) * bAspek;
             keptN += 1;
           });
-          const ratio = keptN ? sum / keptN : 0;
-          const kontrib = ratio * Number(k.bobot || 0);
+          const kontrib = sum;
+          const ratio = bobotCatK ? sum / bobotCatK : 0;
           rawSum += kontrib;
-          rows.push([k.nama, `${keptN}/${asp.length} aspek (×induk)`, ratio.toFixed(6), String(k.bobot), kontrib.toFixed(6)]);
+          rows.push([k.nama, `${keptN}/${asp.length} aspek (bobot induk)`, ratio.toFixed(6), String(k.bobot), kontrib.toFixed(6)]);
+
         } else if (nm.includes("perhatian")) {
           const d = detailByKrit[k.id] as any;
           let marks = 0;
