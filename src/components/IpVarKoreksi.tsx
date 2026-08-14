@@ -32,6 +32,7 @@ const LABEL_UI = ["Salah kata", "Menambah kata", "Mengurangi kata"];
 export default function IpVarKoreksi({ canDecide = true }: { canDecide?: boolean }) {
   const [rows, setRows] = useState<VarRow[]>([]);
   const [open, setOpen] = useState<VarRow | null>(null);
+  const [perJuri, setPerJuri] = useState<VarRow | null>(null);
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc("inspektur_list_var" as never);
@@ -41,6 +42,7 @@ export default function IpVarKoreksi({ canDecide = true }: { canDecide?: boolean
 
   useEffect(() => { load(); }, [load]);
   usePolling(load, 20000, true);
+
 
   return (
     <Card>
