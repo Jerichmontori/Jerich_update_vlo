@@ -1404,6 +1404,24 @@ const INDUK_LABEL: Record<string, string> = {
   penampilan: "Penampilan",
 };
 
+// Jumlah aspek Catatan Juri di bawah setiap kriteria induk.
+const CATATAN_INDUK_COUNT: Record<string, number> = {
+  vokal: 2,
+  penghayatan: 4,
+  intonasi: 2,
+  penampilan: 2,
+};
+
+// Bobot tetap tiap aspek catatan = (bobot induk / bobot catatan juri) / jumlah aspek dalam induk.
+function bobotAspekCatatan(indukKey: string | null, bobotInduk: number, bobotCat: number): number {
+  if (!indukKey) return 1;
+  const n = CATATAN_INDUK_COUNT[indukKey] ?? 0;
+  if (!n || !bobotCat) return 1;
+  return (bobotInduk / bobotCat) / n;
+}
+
+
+
 
 const PERHATIAN_ASPEK = [
   "Clear Text",
