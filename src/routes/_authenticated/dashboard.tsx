@@ -3025,17 +3025,49 @@ function PenilaianTab() {
             </div>
           )}
 
-          {activeKey === "catatan" && (
+          {activeKey === "catatan" && (() => {
+            const gradeIndukOf = (key: string): number | null => {
+              const k = kriteria.find(x => kriteriaKey(x.nama) === key);
+              if (!k || !juriId || !pesertaId) return null;
+              const row = penilaian.find(x => x.juri_id === juriId && x.peserta_id === pesertaId && x.kriteria_id === k.id);
+              if (!row) return null;
+              const d: any = row.detail;
+              const g = d && d.type === "grade" ? Number(d.grade) : Number(row.nilai) / 20;
+              return Number.isFinite(g) && g > 0 ? g : null;
+            };
+            const bobotCat = Number(openKriteria?.bobot ?? 10) || 10;
+            const terisi = catatanValues.filter(v => v != null).length;
+            const bobotAspek = terisi > 0 ? bobotCat / terisi : 0;
+            let totalBonus = 0;
+            catatanValues.forEach((v, i) => {
+              if (v == null) return;
+              const gi = gradeIndukOf(CATATAN_INDUK[i]);
+              const rInduk = gi == null ? 1 : lookupNilaiClient(gi);
+              totalBonus += lookupNilaiClient(v) * rInduk * bobotAspek;
+            });
+            return (
             <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
-              {CATATAN_ASPEK.map((aspek, i) => (
+              {CATATAN_ASPEK.map((aspek, i) => {
+                const indukKey = CATATAN_INDUK[i];
+                const gi = gradeIndukOf(indukKey);
+                const rInduk = gi == null ? 1 : lookupNilaiClient(gi);
+                const val = catatanValues[i];
+                const rAspek = val == null ? null : lookupNilaiClient(val);
+                return (
                 <div key={aspek} className={["rounded-lg border bg-card p-3", catatanWajib && catatanValues[i] == null ? "border-destructive/60" : ""].join(" ")}>
-                  <div className="mb-2 flex items-center justify-between gap-2">
+                  <div className="mb-1 flex items-center justify-between gap-2">
                     <span className="text-sm font-medium">{i + 1}. {aspek}</span>
                     <span className="text-[10px] font-semibold rounded-full px-2 py-0.5 bg-muted text-muted-foreground">
                       {catatanWajib ? "Wajib" : "Opsional"}
                     </span>
                   </div>
-
+                  <div className="mb-2 text-[11px] text-muted-foreground">
+                    ×{rInduk.toFixed(2)} ({INDUK_LABEL[indukKey]}
+                    {gi == null ? " belum dinilai" : ` grade ${gi.toFixed(gi % 1 ? 1 : 0)}`})
+                    {rAspek != null && (
+                      <> · rasio efektif = {rAspek.toFixed(3)} × {rInduk.toFixed(2)} = <b>{(rAspek * rInduk).toFixed(4)}</b></>
+                    )}
+                  </div>
 
                   <div className="grid grid-cols-5 gap-2">
                     {[1, 2, 3, 4, 5].map(v => (
@@ -3055,7 +3087,12 @@ function PenilaianTab() {
                     ))}
                   </div>
                 </div>
-              ))}
+                );
+              })}
+              <div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
+                Bobot Catatan Juri <b>{bobotCat}</b> dibagi rata ke <b>{terisi}</b> aspek terisi → bobot/aspek <b>{bobotAspek.toFixed(3)}</b>.
+                Total bonus catatan setelah penskalaan induk: <b>{totalBonus.toFixed(3)}</b>.
+              </div>
               <p className="text-xs text-muted-foreground pt-2">
                 Perubahan disimpan otomatis saat dialog ditutup.
               </p>
