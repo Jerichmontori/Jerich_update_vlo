@@ -3926,7 +3926,7 @@ function LihatPenilaianTab() {
       head: [["Langkah", "Rumus / Nilai"]],
       body: [
         ["1. Lookup non-linear (grade → bobot)", "1.0=0.050  1.5=0.120  2.0=0.220  2.5=0.360  3.0=0.520  3.5=0.680  4.0=0.810  4.5=0.910  5.0=1.000"],
-        ["2. Skor mentah (raw)", "Σ lookup(grade)×bobot untuk V/Pn/It/Pl  +  rata²(lookup aspek Catatan)×bobotCat  +  min(1, marks/15)×bobotPer"],
+        ["2. Skor mentah (raw)", "Σ lookup(grade)×bobot untuk V/Pn/It/Pl  +  rata²(lookup aspek Catatan × lookup grade kriteria induk)×bobotCat  +  min(1, marks/15)×bobotPer"],
         ["3. Bobot dipakai", `Interpretasi ${bV} · Penghayatan ${bPn} · Artikulasi ${bIt} · Penampilan ${bPl} · Catatan ${bCat} · Perhatian ${bPer}`],
         ["4. Normalisasi n∈[0,1]", `n = (raw − ${rawMin}) / (${rawMax} − ${rawMin})`],
         ["5. Pemetaan kurva 2-segmen", `n≤0.5 → out = BB + (TG−BB)·(2n)^1.15\nn>0.5 → out = TG + (BA−TG)·(1 − (2(1−n))^1.15)`],
