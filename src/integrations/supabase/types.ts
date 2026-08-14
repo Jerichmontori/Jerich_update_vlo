@@ -115,8 +115,11 @@ export type Database = {
           kontak: string | null
           nama_pengaju: string
           nomor_tiket: string
+          perbaikan_dibuka_at: string | null
+          perbaikan_selesai_at: string | null
           peserta_id: string
           status: string
+          tindak_lanjut: string | null
           updated_at: string
           uraian: string
         }
@@ -133,8 +136,11 @@ export type Database = {
           kontak?: string | null
           nama_pengaju: string
           nomor_tiket: string
+          perbaikan_dibuka_at?: string | null
+          perbaikan_selesai_at?: string | null
           peserta_id: string
           status?: string
+          tindak_lanjut?: string | null
           updated_at?: string
           uraian: string
         }
@@ -151,8 +157,11 @@ export type Database = {
           kontak?: string | null
           nama_pengaju?: string
           nomor_tiket?: string
+          perbaikan_dibuka_at?: string | null
+          perbaikan_selesai_at?: string | null
           peserta_id?: string
           status?: string
+          tindak_lanjut?: string | null
           updated_at?: string
           uraian?: string
         }
@@ -1081,6 +1090,7 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      admin_notifikasi_perbaikan: { Args: never; Returns: Json }
       admin_putuskan_peninjauan: {
         Args: { _catatan: string; _id: string; _setuju: boolean }
         Returns: undefined
@@ -1231,11 +1241,24 @@ export type Database = {
       }
       inspektur_var_detail: { Args: { _peserta: string }; Returns: Json }
       ip_putuskan_keberatan: {
-        Args: { _catatan: string; _id: string; _keputusan: string }
+        Args: {
+          _catatan: string
+          _id: string
+          _keputusan: string
+          _tindak_lanjut?: string
+        }
         Returns: undefined
       }
       ip2_ajukan_peninjauan: {
         Args: { _alasan: string; _peserta: string }
+        Returns: string
+      }
+      ip2_buka_perbaikan: {
+        Args: { _catatan?: string; _peserta: string }
+        Returns: string
+      }
+      ip2_koreksi_per_juri: {
+        Args: { _catatan: string; _perjuri: Json; _peserta: string }
         Returns: string
       }
       ip2_putuskan_var: {

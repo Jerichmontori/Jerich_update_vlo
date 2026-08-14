@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Toaster } from "@/components/ui/sonner";
 import IpVarKoreksi from "@/components/IpVarKoreksi";
 import KeberatanTab from "@/components/KeberatanTab";
+import PerbaikanNotifikasi from "@/components/PerbaikanNotifikasi";
+
 import PeninjauanTab from "@/components/PeninjauanTab";
 import BrandLogo from "@/components/BrandLogo";
 import { LogOut, Gavel, FileWarning, Undo2 } from "lucide-react";
@@ -71,7 +73,11 @@ function InspekturVarPage() {
             <TabsTrigger value="keberatan" className="gap-2"><FileWarning className="size-4" />Keberatan</TabsTrigger>
             <TabsTrigger value="pk" className="gap-2"><Undo2 className="size-4" />Peninjauan</TabsTrigger>
           </TabsList>
-          <TabsContent value="var" className="mt-4"><IpVarKoreksi /></TabsContent>
+          <TabsContent value="var" className="mt-4 space-y-4">
+            <PerbaikanNotifikasi canOpen />
+            <IpVarKoreksi />
+          </TabsContent>
+
           <TabsContent value="keberatan" className="mt-4"><KeberatanTab /></TabsContent>
           <TabsContent value="pk" className="mt-4"><PeninjauanTab /></TabsContent>
         </Tabs>

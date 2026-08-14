@@ -18,6 +18,11 @@ export function varStatusLabel(status: VarStatus): string | null {
       return "VAR — Peninjauan Inspektur";
     case "perbaikan_perhatian":
       return "VAR — Perbaikan Perhatian";
+    case "keberatan_var":
+      return "VAR — Tindak Lanjut Keberatan";
+    case "perbaikan_var":
+      return "VAR — Perbaikan Dibuka";
+
     default:
       return "VAR — Dalam Proses";
   }
@@ -40,6 +45,11 @@ export function varStatusDetail(status: VarStatus): string | null {
       return "Menunggu keputusan Inspektur VAR (IP 2).";
     case "perbaikan_perhatian":
       return "Perbaikan Perhatian & Catatan Juri sedang dibuka.";
+    case "keberatan_var":
+      return "Keberatan diterima — menunggu Inspektur VAR membuka perbaikan.";
+    case "perbaikan_var":
+      return "Perbaikan dibuka — Inspektur VAR sedang mengoreksi penilaian juri.";
+
     default:
       return "Kasus VAR sedang diproses.";
   }

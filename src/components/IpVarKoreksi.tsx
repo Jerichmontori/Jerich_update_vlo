@@ -8,8 +8,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import VarPersepsiDetail from "@/components/VarPersepsiDetail";
+import IpVarKoreksiPerJuri from "@/components/IpVarKoreksiPerJuri";
 import { toast } from "sonner";
-import { RefreshCw, Gavel, FileText, Undo2 } from "lucide-react";
+import { RefreshCw, Gavel, FileText, Undo2, Users } from "lucide-react";
+
 
 type VarRow = {
   peserta_id: string;
@@ -32,6 +34,7 @@ const LABEL_UI = ["Salah kata", "Menambah kata", "Mengurangi kata"];
 export default function IpVarKoreksi({ canDecide = true }: { canDecide?: boolean }) {
   const [rows, setRows] = useState<VarRow[]>([]);
   const [open, setOpen] = useState<VarRow | null>(null);
+  const [perJuri, setPerJuri] = useState<VarRow | null>(null);
 
   const load = useCallback(async () => {
     const { data, error } = await supabase.rpc("inspektur_list_var" as never);
@@ -41,6 +44,7 @@ export default function IpVarKoreksi({ canDecide = true }: { canDecide?: boolean
 
   useEffect(() => { load(); }, [load]);
   usePolling(load, 20000, true);
+
 
   return (
     <Card>
@@ -65,6 +69,11 @@ export default function IpVarKoreksi({ canDecide = true }: { canDecide?: boolean
                   <Gavel className="size-4" />Koreksi &amp; Putuskan
                 </Button>
               )}
+              {canDecide && (
+                <Button size="sm" variant="secondary" onClick={() => setPerJuri(r)} className="gap-2">
+                  <Users className="size-4" />Koreksi per Juri
+                </Button>
+              )}
               <BeritaAcaraButton pesertaId={r.peserta_id} />
             </div>
           </div>
@@ -78,9 +87,19 @@ export default function IpVarKoreksi({ canDecide = true }: { canDecide?: boolean
           onDone={() => { setOpen(null); load(); }}
         />
       )}
+
+      {perJuri && (
+        <IpVarKoreksiPerJuri
+          pesertaId={perJuri.peserta_id}
+          judul={`${perJuri.nomor_urut}. ${perJuri.nama}`}
+          onClose={() => setPerJuri(null)}
+          onDone={() => { setPerJuri(null); load(); }}
+        />
+      )}
     </Card>
   );
 }
+
 
 function KoreksiDialog({ row, onClose, onDone }: { row: VarRow; onClose: () => void; onDone: () => void }) {
   const [detail, setDetail] = useState<JuriDetail[]>([]);
