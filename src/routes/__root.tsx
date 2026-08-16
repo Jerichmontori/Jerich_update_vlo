@@ -120,12 +120,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  // `translate="no"` + meta notranslate: terjemahan otomatis browser (Chrome /
+  // Samsung Internet) mengganti node teks di luar kendali React, yang memicu
+  // "Failed to execute 'removeChild' on 'Node'" dan menjatuhkan halaman.
   return (
-    <html lang="en">
+    <html lang="id" translate="no">
       <head>
+        <meta name="google" content="notranslate" />
         <HeadContent />
       </head>
-      <body>
+      <body className="notranslate">
         {children}
         <Scripts />
       </body>
