@@ -138,12 +138,14 @@ function App() {
         <Header />
         <main className="mx-auto max-w-6xl px-4 pb-16">
           <Tabs defaultValue="penilaian" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 h-auto bg-secondary/60 p-1">
+            <TabsList className="grid w-full grid-cols-3 h-auto bg-secondary/60 p-1">
               <TabsTrigger value="penilaian" className="gap-2"><ClipboardCheck className="size-4" />Penilaian</TabsTrigger>
               <TabsTrigger value="hasil" className="gap-2"><FileText className="size-4" />Hasil Saya</TabsTrigger>
+              <TabsTrigger value="perbaikan" className="gap-2"><RotateCcw className="size-4" />Perbaikan</TabsTrigger>
             </TabsList>
             <TabsContent value="penilaian"><PenilaianTab /></TabsContent>
             <TabsContent value="hasil"><JuriHasilFinalTab /></TabsContent>
+            <TabsContent value="perbaikan"><JuriAjukanPerbaikan /></TabsContent>
           </Tabs>
         </main>
       </div>
@@ -170,6 +172,8 @@ function App() {
             {section === "dashboard" && (
               <div className="space-y-4">
                 <PerbaikanNotifikasi />
+                {roles.isAdm && <PermintaanPerbaikanJuri />}
+                {roles.isAdm && <PerbaikanAktifPanel mode="admin" />}
                 <DashboardTab />
               </div>
             )}
