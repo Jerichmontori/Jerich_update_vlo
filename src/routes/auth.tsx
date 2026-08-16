@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,9 @@ import { requestPasswordReset } from "@/lib/password-reset.functions";
 
 
 export const Route = createFileRoute("/auth")({
+  // Auth state lives in browser storage and is shared by every tab. Rendering
+  // this route only in the browser avoids an SSR/client auth-state mismatch.
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Masuk — Sistem Penjurian Baca Mazmur" },
@@ -35,12 +38,6 @@ function AuthPage() {
   const [forgotOpen, setForgotOpen] = useState(false);
   const [forgotIdentifier, setForgotIdentifier] = useState("");
   const [forgotLoading, setForgotLoading] = useState(false);
-
-  useEffect(() => {
-    // Selalu bersihkan sesi lama saat membuka halaman /auth agar tidak
-    // ada "login instan" akibat sesi tertinggal dari percobaan sebelumnya.
-    supabase.auth.signOut().catch(() => {});
-  }, []);
 
   async function onForgotSubmit(e: React.FormEvent) {
     e.preventDefault();
