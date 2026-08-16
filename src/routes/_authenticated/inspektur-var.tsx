@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import IpVarKoreksi from "@/components/IpVarKoreksi";
 import KeberatanTab from "@/components/KeberatanTab";
 import PerbaikanNotifikasi from "@/components/PerbaikanNotifikasi";
+import PerbaikanAktifPanel from "@/components/PerbaikanAktifPanel";
 
 import PeninjauanTab from "@/components/PeninjauanTab";
 import BrandLogo from "@/components/BrandLogo";
@@ -75,6 +76,7 @@ function InspekturVarPage() {
           </TabsList>
           <TabsContent value="var" className="mt-4 space-y-4">
             <PerbaikanNotifikasi canOpen />
+            <PerbaikanAktifPanel mode="inspektur" />
             <IpVarKoreksi />
           </TabsContent>
 
