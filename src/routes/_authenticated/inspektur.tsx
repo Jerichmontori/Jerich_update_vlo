@@ -115,6 +115,7 @@ function InspekturPage() {
   const [progresJuri, setProgresJuri] = useState<any[] | null>(null);
   // Progres juri per peserta (dashboard) — { [pesertaId]: rows[] }
   const [progresMap, setProgresMap] = useState<Record<string, any[]>>({});
+  const [modeInsp, setModeInsp] = useState<number>(2);
 
 
   useEffect(() => {
@@ -122,13 +123,15 @@ function InspekturPage() {
       const { data: u } = await supabase.auth.getUser();
       const uid = u.user?.id;
       if (!uid) { setAllowed(false); window.location.href = "/auth"; return; }
-      const [{ data: isInsp }, { data: isAdm }] = await Promise.all([
+      const [{ data: isInsp }, { data: isAdm }, { data: modeData }] = await Promise.all([
         supabase.rpc("has_role", { _user_id: uid, _role: "inspektur" as any }),
         supabase.rpc("has_role", { _user_id: uid, _role: "admin" as any }),
+        supabase.rpc("get_mode_inspektur" as any),
       ]);
       const ok = !!isInsp || !!isAdm;
       setAllowed(ok);
       if (!ok) { toast.error("Akses ditolak"); window.location.href = "/dashboard"; return; }
+      setModeInsp(Number(modeData) || 2);
       const { data: prof } = await supabase.from("profiles").select("nama").eq("id", uid).maybeSingle();
       setCurrentUser({
         nama: prof?.nama ?? (u.user?.email?.split("@")[0] ?? "Pengguna"),
