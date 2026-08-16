@@ -34,6 +34,9 @@ import { useBranding } from "@/hooks/useBranding";
 import BrandingSettingsButton from "@/components/BrandingSettingsButton";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import AdminSidebar, { ADMIN_SECTION_LABEL, type AdminSection } from "@/components/AdminSidebar";
+import PitaNilaiTab from "@/components/PitaNilaiTab";
+import PitaNilaiPanduan from "@/components/PitaNilaiPanduan";
+
 import KeberatanTab from "@/components/KeberatanTab";
 import PerbaikanNotifikasi from "@/components/PerbaikanNotifikasi";
 
@@ -215,15 +218,18 @@ function HasilNilaiTab() {
 function PengaturanNilaiTab() {
   return (
     <Tabs defaultValue="kriteria" className="w-full">
-      <TabsList className="grid w-full grid-cols-2 h-auto bg-secondary/60 p-1">
+      <TabsList className="grid w-full grid-cols-3 h-auto bg-secondary/60 p-1">
         <TabsTrigger value="kriteria" className="gap-2"><ListChecks className="size-4" />Kriteria</TabsTrigger>
         <TabsTrigger value="kategori" className="gap-2"><Tags className="size-4" />Kategori</TabsTrigger>
+        <TabsTrigger value="pita" className="gap-2"><Tags className="size-4" />Pita Nilai</TabsTrigger>
       </TabsList>
       <TabsContent value="kriteria"><KriteriaTab /></TabsContent>
       <TabsContent value="kategori"><KategoriTab /></TabsContent>
+      <TabsContent value="pita"><PitaNilaiTab /></TabsContent>
     </Tabs>
   );
 }
+
 
 function Header() {
   const branding = useBranding();
@@ -2469,6 +2475,12 @@ function PenilaianTab() {
               <Input readOnly value={selectedMazmur ? String(selectedMazmur.jumlah_ayat) : ""} placeholder="—" className="bg-muted/50" />
             </div>
           </div>
+
+          <div className="mb-6">
+            <PitaNilaiPanduan kategori={peserta.find(p => p.id === pesertaId)?.kategori ?? null} />
+          </div>
+
+
 
           {/* Nilai Akhir juri ini (muncul saat seluruh kriteria terisi) */}
           {nilaiJuriPreview !== null && (
