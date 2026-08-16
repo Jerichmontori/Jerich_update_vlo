@@ -1683,6 +1683,7 @@ function PenilaianTab() {
     salah_kata: "Salah kata",
     menambah_kata: "Menambah kata",
     mengurangi_kata: "Mengurangi kata",
+    mengulang_kata: "Mengulang kata",
   };
 
   // VAR manual — pending approval untuk juri
