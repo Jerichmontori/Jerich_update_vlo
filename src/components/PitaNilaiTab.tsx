@@ -41,6 +41,8 @@ export default function PitaNilaiTab() {
   const [rows, setRows] = useState<PitaRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [gunakan, setGunakan] = useState(true);
+  const [toggleLoading, setToggleLoading] = useState(false);
 
   const batasKategori = useMemo(
     () => kategoriList.find((k) => k.kategori.toLowerCase() === kategori.trim().toLowerCase()),
@@ -72,7 +74,9 @@ export default function PitaNilaiTab() {
     const { data, error } = await supabase.rpc("get_pita_nilai", { _kategori: kat });
     setLoading(false);
     if (error) return toast.error(error.message);
-    const arr = (data as any[]) ?? [];
+    const obj = (data as any) ?? {};
+    setGunakan(obj.gunakan !== false);
+    const arr: any[] = Array.isArray(obj) ? obj : obj.pita ?? [];
     setRows(
       arr.map((p) => ({
         clear_text: !!p.clear_text,
@@ -84,6 +88,24 @@ export default function PitaNilaiTab() {
         aktif: p.aktif !== false,
       })),
     );
+  }
+
+  async function toggleGunakan(on: boolean) {
+    if (!kategori) return;
+    setToggleLoading(true);
+    const { error } = await supabase.rpc("admin_set_gunakan_pita", {
+      _kategori: kategori,
+      _on: on,
+    });
+    setToggleLoading(false);
+    if (error) {
+      const msg = /hanya admin/i.test(error.message)
+        ? "Hanya admin yang dapat mengubah pengaturan pita"
+        : error.message;
+      return toast.error(msg);
+    }
+    setGunakan(on);
+    toast.success(on ? "Pita nilai diaktifkan untuk kategori ini" : "Pita nilai dimatikan; nilai kini memakai rumus lama");
   }
 
   useEffect(() => {
@@ -283,6 +305,27 @@ export default function PitaNilaiTab() {
               : "Pilih kategori untuk melihat rentangnya."}
           </div>
         </div>
+
+        <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
+          <div className="space-y-0.5">
+            <div className="font-medium">Gunakan pita nilai untuk kategori ini</div>
+            <div className="text-sm text-muted-foreground">
+              {gunakan
+                ? "Nilai juri dipetakan ke pita di bawah."
+                : "Dimatikan — nilai dihitung dengan rumus lama. Pita tersimpan tetap bisa diedit."}
+            </div>
+          </div>
+          <Switch
+            checked={gunakan}
+            disabled={toggleLoading || !kategori}
+            onCheckedChange={(v) => toggleGunakan(v)}
+          />
+        </div>
+        {!gunakan && (
+          <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+            Pita tidak sedang dipakai untuk kategori ini. Tekan "Hitung Ulang Nilai" setelah mengaktifkan agar nilai lama menyesuaikan.
+          </div>
+        )}
 
         {renderGroup(false)}
         {renderGroup(true)}
