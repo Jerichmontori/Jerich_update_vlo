@@ -11,10 +11,15 @@ import { Users, Save } from "lucide-react";
 type Aspek = { nama?: string; ayat?: boolean[]; ditandai?: (number | string)[] };
 type JuriDetail = { juri_id: string; label: string; clear_text: boolean | null; aspek: Aspek[] };
 
-const LABELS = ["salah_kata", "menambah_kata", "mengurangi_kata"] as const;
-const LABEL_UI = ["Salah kata", "Menambah kata", "Mengurangi kata"];
+const LABELS = ["salah_kata", "menambah_kata", "mengurangi_kata", "mengulang_kata"] as const;
+const LABEL_UI = ["Salah kata", "Menambah kata", "Mengurangi kata", "Mengulang kata"];
 
-type Draft = { clear: boolean | null; marks: [Set<number>, Set<number>, Set<number>] };
+type MarkSets = [Set<number>, Set<number>, Set<number>, Set<number>];
+type Draft = { clear: boolean | null; marks: MarkSets };
+
+function emptyMarks(): MarkSets {
+  return [new Set(), new Set(), new Set(), new Set()];
+}
 
 /**
  * Koreksi VAR per juri oleh Inspektur VAR: mengubah 4 parameter penyebab VAR
@@ -44,8 +49,8 @@ export default function IpVarKoreksiPerJuri({
       setDetail(juri);
       const next: Record<string, Draft> = {};
       for (const j of juri) {
-        const marks: [Set<number>, Set<number>, Set<number>] = [new Set(), new Set(), new Set()];
-        for (let i = 0; i < 3; i++) {
+        const marks: MarkSets = emptyMarks();
+        for (let i = 0; i < 4; i++) {
           for (const n of (j.aspek?.[i]?.ditandai ?? []).map(Number).filter(Number.isFinite)) marks[i]!.add(n);
         }
         next[j.juri_id] = { clear: j.clear_text, marks };
@@ -61,13 +66,13 @@ export default function IpVarKoreksiPerJuri({
   }, [detail]);
 
   function setClear(juriId: string, v: boolean) {
-    setDrafts((s) => ({ ...s, [juriId]: { ...(s[juriId] ?? { clear: null, marks: [new Set(), new Set(), new Set()] }), clear: v } }));
+    setDrafts((s) => ({ ...s, [juriId]: { ...(s[juriId] ?? { clear: null, marks: emptyMarks() }), clear: v } }));
   }
 
   function toggle(juriId: string, i: number, n: number) {
     setDrafts((s) => {
-      const cur = s[juriId] ?? { clear: null, marks: [new Set(), new Set(), new Set()] as Draft["marks"] };
-      const marks = [new Set(cur.marks[0]), new Set(cur.marks[1]), new Set(cur.marks[2])] as Draft["marks"];
+      const cur = s[juriId] ?? { clear: null, marks: emptyMarks() };
+      const marks = cur.marks.map((m) => new Set(m)) as MarkSets;
       if (marks[i]!.has(n)) marks[i]!.delete(n); else marks[i]!.add(n);
       return { ...s, [juriId]: { ...cur, marks } };
     });
@@ -97,7 +102,7 @@ export default function IpVarKoreksiPerJuri({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2"><Users className="size-5" />Koreksi per Juri — {judul}</DialogTitle>
           <DialogDescription>
-            Ubah 4 parameter penyebab VAR (Clear Text, salah kata, menambah kata, mengurangi kata) untuk tiap juri.
+            Ubah status Clear Text (satu-satunya pemicu VAR) serta penandaan ayat (salah, menambah, mengurangi, mengulang kata) untuk tiap juri.
             Nilai sebelum &amp; sesudah disimpan sebagai bukti pertanggungjawaban.
           </DialogDescription>
         </DialogHeader>
@@ -119,7 +124,7 @@ export default function IpVarKoreksiPerJuri({
                   <Button size="sm" variant={d?.clear === false ? "default" : "outline"} onClick={() => setClear(j.juri_id, false)}>Tidak clear</Button>
                 </div>
 
-                {[0, 1, 2].map((i) => (
+                {[0, 1, 2, 3].map((i) => (
                   <div key={i} className="space-y-1">
                     <Label className="text-xs">{LABEL_UI[i]}</Label>
                     <div className="flex flex-wrap gap-1">

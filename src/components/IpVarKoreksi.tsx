@@ -27,10 +27,10 @@ type VarRow = {
 type Aspek = { nama?: string; ayat?: boolean[]; ditandai?: (number | string)[] };
 type JuriDetail = { juri_id: string; label: string; clear_text: boolean | null; aspek: Aspek[] };
 
-const LABELS = ["salah_kata", "menambah_kata", "mengurangi_kata"] as const;
-const LABEL_UI = ["Salah kata", "Menambah kata", "Mengurangi kata"];
+const LABELS = ["salah_kata", "menambah_kata", "mengurangi_kata", "mengulang_kata"] as const;
+const LABEL_UI = ["Salah kata", "Menambah kata", "Mengurangi kata", "Mengulang kata"];
 
-/** Antrean VAR untuk Inspektur VAR (IP 2): koreksi Clear Text + 3 komponen penandaan ayat. */
+/** Antrean VAR untuk Inspektur VAR (IP 2): koreksi Clear Text + 4 komponen penandaan ayat. */
 export default function IpVarKoreksi({ canDecide = true }: { canDecide?: boolean }) {
   const [rows, setRows] = useState<VarRow[]>([]);
   const [open, setOpen] = useState<VarRow | null>(null);
@@ -120,8 +120,8 @@ function KoreksiDialog({ row, onClose, onDone }: { row: VarRow; onClose: () => v
       const half = juri.length / 2;
       const ya = juri.filter((j) => j.clear_text === true).length;
       setClear(juri.length ? ya > half : null);
-      const next: Record<number, Set<number>> = { 0: new Set(), 1: new Set(), 2: new Set() };
-      for (let i = 0; i < 3; i++) {
+      const next: Record<number, Set<number>> = { 0: new Set(), 1: new Set(), 2: new Set(), 3: new Set() };
+      for (let i = 0; i < 4; i++) {
         const tally = new Map<number, number>();
         for (const j of juri) {
           for (const n of (j.aspek?.[i]?.ditandai ?? []).map(Number).filter(Number.isFinite)) {
@@ -194,7 +194,7 @@ function KoreksiDialog({ row, onClose, onDone }: { row: VarRow; onClose: () => v
             </div>
           </div>
 
-          {[0, 1, 2].map((i) => (
+          {[0, 1, 2, 3].map((i) => (
             <div key={i} className="space-y-2">
               <Label>{LABEL_UI[i]}</Label>
               <div className="flex flex-wrap gap-1">

@@ -14,7 +14,7 @@ type JuriDetail = {
   aspek: Aspek[];
 };
 
-const ASPEK_NAMA = ["Salah kata", "Menambah kata", "Mengurangi kata"];
+const ASPEK_NAMA = ["Salah kata", "Menambah kata", "Mengurangi kata", "Mengulang kata"];
 
 function marks(a?: Aspek): number[] {
   const d = a?.ditandai ?? [];

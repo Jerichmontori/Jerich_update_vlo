@@ -1447,7 +1447,13 @@ const PERHATIAN_ASPEK = [
   "Salah kata",
   "Menambah kata",
   "Mengurangi kata",
+  "Mengulang kata",
 ];
+
+/** True bila ada minimal satu ayat ditandai pada pertanyaan selain Clear Text. */
+function adaPenandaanAyat(checks: boolean[][]): boolean {
+  return checks.slice(1).some((row) => row.some(Boolean));
+}
 
 
 function kriteriaKey(nama: string): keyof typeof GRADE_DESCRIPTIONS | "catatan" | "perhatian" | null {
@@ -1517,7 +1523,7 @@ function PenilaianTab() {
   // Snapshot nilai Perhatian saat dialog dibuka (dipakai saat mode Perbaikan Perhatian
   // untuk mengunci baris non-pemicu agar tidak berubah, apapun yang terjadi di UI).
   const perhatianBaselineRef = useRef<boolean[][] | null>(null);
-  const PERHATIAN_VAR_TRIGGER_IDX = new Set([0, 1, 2, 3]);
+  const PERHATIAN_VAR_TRIGGER_IDX = new Set([0, 1, 2, 3, 4]);
   const [saving, setSaving] = useState(false);
   // Aturan #3 — nama juri otomatis dari user yang login (juri tidak bisa memilih juri lain)
   const [myJuriId, setMyJuriId] = useState<string>("");
@@ -1677,6 +1683,7 @@ function PenilaianTab() {
     salah_kata: "Salah kata",
     menambah_kata: "Menambah kata",
     mengurangi_kata: "Mengurangi kata",
+    mengulang_kata: "Mengulang kata",
   };
 
   // VAR manual — pending approval untuk juri
@@ -2348,31 +2355,26 @@ function PenilaianTab() {
     await saveNilai(nilai, detail);
   }
 
-  // Aspek 0 = Clear Text (Ya/Tidak) tidak dihitung sebagai penanda; hanya aspek pemicu VAR (baris 1..) yang menghitung.
-  const perhatianTotal = perhatianChecks.slice(1).reduce((s, row) => s + row.length, 0);
-  const perhatianChecked = perhatianChecks.slice(1).reduce((s, row) => s + row.filter(Boolean).length, 0);
-  const perhatianNilai = perhatianTotal === 0
-    ? 0
-    : Math.round(((perhatianTotal - perhatianChecked) / perhatianTotal) * 100 * 100) / 100;
+  // Penandaan ayat kini hanya informasi lokasi kesalahan — tidak mempengaruhi nilai.
+  const perhatianAdaTanda = adaPenandaanAyat(perhatianChecks);
 
   async function savePerhatian() {
-    // Wajibkan jawaban "Clear Text" (Ya/Tidak) sebelum menyimpan.
-    if (perhatianChecks[0]?.[0] === undefined) {
-      return toast.warning("Pilih jawaban untuk 'Clear Text' terlebih dahulu.");
-    }
     // Guard: bila mode Perbaikan Perhatian aktif, paksa baris non-pemicu kembali ke baseline saat dialog dibuka.
     const perbaikanAktifNow = !!(pesertaId && perbaikanAktifIds.has(pesertaId));
     const baseline = perhatianBaselineRef.current;
     const effective = (perbaikanAktifNow && baseline)
       ? perhatianChecks.map((row, i) => PERHATIAN_VAR_TRIGGER_IDX.has(i) ? row : (baseline[i] ? [...baseline[i]] : row))
       : perhatianChecks;
-    // Skor hanya berdasarkan 3 pertanyaan pemicu VAR (bukan Clear Text).
-    const totalAll = effective.slice(1).reduce((s, row) => s + row.length, 0);
-    const checkedAll = effective.slice(1).reduce((s, row) => s + row.filter(Boolean).length, 0);
-    const nilaiAll = totalAll === 0 ? 0 : Math.round(((totalAll - checkedAll) / totalAll) * 100 * 100) / 100;
+    // Ada penandaan ayat → status otomatis "tidak clear".
+    const adaTanda = adaPenandaanAyat(effective);
+    const clearText = adaTanda ? false : ((effective[0]?.[0] as unknown as boolean) ?? null);
+    // Wajibkan jawaban "Clear Text" (Ya/Tidak) bila tidak ada penandaan.
+    if (clearText === null) {
+      return toast.warning("Pilih jawaban untuk 'Clear Text' terlebih dahulu.");
+    }
     const detail: PenilaianDetail = {
       type: "perhatian",
-      clearText: (effective[0]?.[0] as unknown as boolean) ?? null,
+      clearText,
       aspek: PERHATIAN_ASPEK.slice(1).map((nama, idx) => {
         const row = effective[idx + 1] ?? [];
         const ditandai: number[] = [];
@@ -2380,7 +2382,8 @@ function PenilaianTab() {
         return { nama, ayat: row, ditandai };
       }),
     };
-    await saveNilai(nilaiAll, detail);
+    // Nilai kriteria Perhatian hanya informatif (tanpa penalti).
+    await saveNilai(0, detail);
   }
 
 
@@ -3129,7 +3132,8 @@ function PenilaianTab() {
 
           {activeKey === "perhatian" && (() => {
             const perbaikanAktifDlg = !!(pesertaId && perbaikanAktifIds.has(pesertaId));
-            const VAR_TRIGGER_IDX = new Set([0, 1, 2, 3]);
+            const VAR_TRIGGER_IDX = PERHATIAN_VAR_TRIGGER_IDX;
+            const adaTandaDlg = perhatianAdaTanda;
             return (
             <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
               {perbaikanAktifDlg && (
@@ -3138,10 +3142,13 @@ function PenilaianTab() {
                     <AlertTriangle className="size-4" /> Mode Perbaikan Perhatian
                   </div>
                   <div className="text-amber-800 dark:text-amber-200/90 mt-1">
-                    Hanya <b>Clear Text</b>, <b>Salah kata</b>, <b>Menambah kata</b>, dan <b>Mengurangi kata</b> yang dapat diubah. Pilihan lain dikunci dan menampilkan jawaban Anda sebelumnya.
+                    Anda dapat memperbaiki jawaban <b>Clear Text</b> beserta penandaan ayat pada empat pertanyaan di bawah.
                   </div>
                 </div>
               )}
+              <div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
+                Penandaan ayat hanya <b>informasi lokasi kesalahan</b> dan <b>tidak mengurangi nilai</b>. Bila ada minimal satu ayat ditandai, status <b>Clear Text otomatis menjadi &quot;Tidak&quot;</b>. Potensi VAR hanya muncul bila jawaban Clear Text antar juri berbeda.
+              </div>
               {PERHATIAN_ASPEK.map((aspek, i) => {
                 const row = perhatianChecks[i] ?? [];
                 const locked = perbaikanAktifDlg && !VAR_TRIGGER_IDX.has(i);
@@ -3157,9 +3164,13 @@ function PenilaianTab() {
                   >
                     <div className="text-sm font-medium mb-2 flex items-center justify-between gap-2">
                       <span>{i + 1}. {aspek}</span>
-                      {isTrigger && (
+                      {i === 0 ? (
                         <span className="text-[10px] font-semibold rounded-full bg-destructive text-destructive-foreground px-2 py-0.5">
-                          ⚠ Pemicu VAR — dapat diubah
+                          ⚠ Pemicu VAR
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-semibold rounded-full bg-muted text-muted-foreground px-2 py-0.5">
+                          Informasi saja
                         </span>
                       )}
                       {locked && (
@@ -3169,35 +3180,44 @@ function PenilaianTab() {
                       )}
                     </div>
                     {i === 0 ? (
-                      <div className="grid grid-cols-2 gap-2">
-                        {[
-                          { label: "Ya", val: true },
-                          { label: "Tidak", val: false },
-                        ].map(opt => {
-                          const active = row[0] === opt.val;
-                          return (
-                            <button
-                              key={opt.label}
-                              type="button"
-                              disabled={locked}
-                              onClick={() =>
-                                setPerhatianChecks(prev => prev.map((r, idx) => idx === 0 ? [opt.val] : r))
-                              }
-                              className={[
-                                "rounded-md border-2 py-2 text-sm font-semibold transition",
-                                active
-                                  ? (opt.val
-                                      ? "border-accent bg-accent text-accent-foreground"
-                                      : "border-destructive bg-destructive text-destructive-foreground")
-                                  : "border-primary/20 bg-background hover:border-accent/60",
-                                locked ? "cursor-not-allowed opacity-70 hover:border-primary/20" : "",
-                              ].join(" ")}
-                            >
-                              {opt.label}
-                            </button>
-                          );
-                        })}
-                      </div>
+                      <>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { label: "Ya", val: true },
+                            { label: "Tidak", val: false },
+                          ].map(opt => {
+                            const active = adaTandaDlg ? opt.val === false : row[0] === opt.val;
+                            const optDisabled = locked || (adaTandaDlg && opt.val === true);
+                            return (
+                              <button
+                                key={opt.label}
+                                type="button"
+                                disabled={optDisabled}
+                                onClick={() => {
+                                  if (optDisabled) return;
+                                  setPerhatianChecks(prev => prev.map((r, idx) => idx === 0 ? [opt.val] : r));
+                                }}
+                                className={[
+                                  "rounded-md border-2 py-2 text-sm font-semibold transition",
+                                  active
+                                    ? (opt.val
+                                        ? "border-accent bg-accent text-accent-foreground"
+                                        : "border-destructive bg-destructive text-destructive-foreground")
+                                    : "border-primary/20 bg-background hover:border-accent/60",
+                                  optDisabled ? "cursor-not-allowed opacity-70 hover:border-primary/20" : "",
+                                ].join(" ")}
+                              >
+                                {opt.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {adaTandaDlg && (
+                          <p className="text-xs text-destructive mt-2">
+                            Otomatis <b>Tidak clear</b> karena ada penandaan kesalahan pada ayat. Hapus semua penandaan untuk memilih kembali.
+                          </p>
+                        )}
+                      </>
                     ) : (
                       <div className={["grid grid-cols-5 sm:grid-cols-8 gap-2", locked ? "pointer-events-none" : ""].join(" ")}>
                         {row.map((checked, ayatIdx) => (
