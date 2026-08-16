@@ -3131,7 +3131,8 @@ function PenilaianTab() {
 
           {activeKey === "perhatian" && (() => {
             const perbaikanAktifDlg = !!(pesertaId && perbaikanAktifIds.has(pesertaId));
-            const VAR_TRIGGER_IDX = new Set([0, 1, 2, 3]);
+            const VAR_TRIGGER_IDX = PERHATIAN_VAR_TRIGGER_IDX;
+            const adaTandaDlg = perhatianAdaTanda;
             return (
             <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
               {perbaikanAktifDlg && (
@@ -3140,10 +3141,13 @@ function PenilaianTab() {
                     <AlertTriangle className="size-4" /> Mode Perbaikan Perhatian
                   </div>
                   <div className="text-amber-800 dark:text-amber-200/90 mt-1">
-                    Hanya <b>Clear Text</b>, <b>Salah kata</b>, <b>Menambah kata</b>, dan <b>Mengurangi kata</b> yang dapat diubah. Pilihan lain dikunci dan menampilkan jawaban Anda sebelumnya.
+                    Anda dapat memperbaiki jawaban <b>Clear Text</b> beserta penandaan ayat pada empat pertanyaan di bawah.
                   </div>
                 </div>
               )}
+              <div className="rounded-lg border bg-muted/30 p-3 text-xs text-muted-foreground">
+                Penandaan ayat hanya <b>informasi lokasi kesalahan</b> dan <b>tidak mengurangi nilai</b>. Bila ada minimal satu ayat ditandai, status <b>Clear Text otomatis menjadi &quot;Tidak&quot;</b>. Potensi VAR hanya muncul bila jawaban Clear Text antar juri berbeda.
+              </div>
               {PERHATIAN_ASPEK.map((aspek, i) => {
                 const row = perhatianChecks[i] ?? [];
                 const locked = perbaikanAktifDlg && !VAR_TRIGGER_IDX.has(i);
