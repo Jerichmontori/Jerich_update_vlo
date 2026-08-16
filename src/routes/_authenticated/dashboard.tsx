@@ -477,10 +477,16 @@ function PesertaTab() {
   }
 
   async function bukaPenilaianUlang(p: Peserta) {
-    if (!confirm(`Aktifkan kembali penilaian untuk ${p.nomor_urut}. ${p.nama}? Juri dapat memperbaiki dan mengirim ulang nilai.`)) return;
-    const { error } = await supabase.rpc("admin_buka_penilaian_ulang" as any, { _peserta: p.id, _catatan: null });
+    const alasan = window.prompt(
+      `Buka kembali penilaian untuk ${p.nomor_urut}. ${p.nama}?\n` +
+      `Seluruh kiriman juri untuk peserta ini akan dibuka kembali (nilai lama dicadangkan otomatis).\n\n` +
+      `Tulis alasan (wajib):`
+    );
+    if (alasan === null) return;
+    if (!alasan.trim()) return toast.error("Alasan buka perbaikan wajib diisi");
+    const { error } = await supabase.rpc("admin_buka_penilaian_ulang" as any, { _peserta: p.id, _catatan: alasan.trim() });
     if (error) return toast.error(error.message);
-    toast.success("Penilaian dibuka kembali untuk perbaikan juri");
+    toast.success("Penilaian dibuka kembali — dapat dibatalkan selama belum ada nilai baru");
     load();
   }
 
