@@ -1,28 +1,43 @@
-# Keterangan Pita Nilai: tambah acuan grade
+# Pratinjau Pita Nilai untuk Juri + Kunci Pita
 
-Tujuan: juri bisa langsung tahu "kalau saya memberi grade sekian, nilai akhir peserta jatuh di pita mana".
+Tujuan: setelah juri mengisi 4 kriteria induk, juri langsung diberi tahu peserta akan jatuh di pita mana; lalu pengisian catatan juri hanya menggeser nilai **di dalam** pita itu, tidak pernah melompat ke pita lain.
 
-## Masalah saat ini
+## Keadaan sekarang (sudah diperiksa)
 
-Keterangan tiap pita hanya berisi deskripsi kualitatif (mis. "Clear text, interpretasi baik, artikulasi biasa"). Tidak ada petunjuk angka grade, padahal pemilihan pita dihitung dari skor normalisasi `n` yang dipotong menjadi 6 irisan sama lebar (`floor(n × 6)`), sedangkan rasio grade tidak linier (1 = 0,050; 2 = 0,220; 3 = 0,360; 4 = 0,680; 4,5 = 0,910; 5 = 1,000). Akibatnya grade 2 terlihat "rendah" tapi mendarat di pita ke-2, dan pita ke-3 hampir tidak pernah tercapai — juri tidak punya acuan.
+Di `hitung_nilai_juri`, pemilihan pita memakai skor normalisasi `n` yang **sudah termasuk bonus catatan juri**:
 
-## Yang akan dikerjakan
+```text
+raw     = skor_4_kriteria + bonus_catatan
+n       = raw / (bobot_4_kriteria + bobot_catatan)
+band_idx = floor(n × jumlah_pita)     -- pita terpilih
+band_frac = n × jumlah_pita − band_idx -- posisi di dalam pita
+```
 
-1. **Perbaiki teks keterangan tiap pita** (data `pita_nilai` kategori P/KB) sehingga tiap deskripsi diawali acuan grade rata-rata yang menghasilkan pita tersebut, lalu deskripsi kualitatif yang sudah ada. Contoh format:
-   - Pita 1 — "Grade rata-rata ±1 (n 0,000–0,167). Clear text tapi interpretasi, artikulasi, intonasi masih biasa."
-   - Pita 2 — "Grade rata-rata ±2–3 (n 0,167–0,333). ..."
-   - dan seterusnya sampai pita 6 ("Grade rata-rata ±5").
-   - Pita "Tidak clear text" — jelaskan bahwa semua grade jatuh di satu pita 81,099–81,999, posisi di dalamnya bergerak naik sesuai grade dan catatan juri.
+Karena bonus catatan ikut menaikkan `n`, tambahan catatan bisa mendorong hasil melewati batas pita — persis yang ingin dihindari.
 
-2. **Panduan Pita Nilai (dilihat juri)** — tiap baris pita menampilkan chip tambahan "Grade ±X" di samping rentang nilai, plus satu kalimat pengantar cara membacanya.
+## Perubahan yang diusulkan
 
-3. **Skema Pita Nilai (tab admin)** — tabel simulasi diberi kolom "pita yang dicapai" per grade 1–5 supaya konsistensi antara keterangan dan hasil hitung bisa dicek sekali lihat.
+1. **Pita ditentukan hanya oleh 4 kriteria induk.**
+   - `n_inti = skor_4_kriteria / bobot_4_kriteria` → dipakai untuk `band_idx`.
+   - Selama grade 4 kriteria tidak diubah, pita tidak akan berpindah.
 
-Tidak ada perubahan rumus perhitungan — hanya keterangan dan tampilan.
+2. **Catatan juri hanya menentukan posisi di dalam pita.**
+   - Posisi dalam pita = campuran sisa `n_inti` di irisannya dan rasio catatan juri, keduanya sudah pasti berada pada rentang 0–1, lalu dipotong ke `batas_bawah`–`batas_atas` pita.
+   - Efeknya tetap seperti sekarang: catatan memecah nilai kembar, tapi tidak bisa keluar pita.
+
+3. **Hanya berlaku saat pita dinyalakan** (`kategori.gunakan_pita`). Kategori yang memakai rumus lama (interpolasi kontinu) tidak berubah sama sekali.
+
+4. **Pratinjau pita di form juri.**
+   - Fungsi baru `preview_pita_juri(_peserta, _juri)` yang mengembalikan label pita, rentang nilai, deskripsi, dan status clear text berdasarkan 4 kriteria yang sudah diisi (tanpa menyimpan apa pun).
+   - Panel kecil di form penilaian juri: "Perkiraan pita: Clear text – interpretasi baik, artikulasi biasa (82,601–82,700)" dengan catatan "catatan juri hanya menggeser nilai di dalam pita ini".
+   - Panel ikut memperbarui saat status clear text berubah (karena clear/non-clear memakai daftar pita berbeda).
+
+## Yang tidak berubah
+
+- Bobot kriteria, tabel rasio grade, tabel `pita_nilai`, aturan clear text otomatis, penalti (tetap nol), dan seluruh alur VAR/perbaikan.
 
 ## Detail teknis
 
-- Migration `UPDATE public.pita_nilai SET deskripsi = ... WHERE kategori = 'P/KB' AND urutan = ...` untuk 7 baris (1 non-clear + 6 clear).
-- Ambang tiap pita dihitung dari `n_min = urutan_index / 6`, `n_max = (urutan_index + 1) / 6`; grade acuan diperoleh dengan membandingkan `lookup_nilai(grade) × 100 / 110` terhadap rentang tersebut.
-- `src/components/PitaNilaiPanduan.tsx`: tambahkan badge grade acuan (dihitung di klien dari tabel rasio yang sama) dan kalimat pengantar.
-- `src/components/SkemaPitaNilai.tsx`: tambahkan kolom pita hasil per grade pada tabel simulasi clear text dan non-clear text.
+- Migration: `CREATE OR REPLACE FUNCTION public.hitung_nilai_juri` — pisahkan `n_inti` (skor/used_weight) untuk `band_idx`, dan `band_frac` dari kombinasi sisa irisan + `bonus_ratio`; hasil tetap di-clamp ke `band_lo`/`band_hi`. Cabang non-pita (baris 218 ke bawah) dibiarkan apa adanya.
+- Migration: fungsi baru `public.preview_pita_juri(uuid, uuid)` `SECURITY DEFINER`, `SET search_path = public`, memakai logika `n_inti` yang sama, `GRANT EXECUTE` ke `authenticated` saja.
+- Frontend: panel pratinjau di form penilaian juri (`src/routes/_authenticated/dashboard.tsx`), memanggil RPC setelah 4 kriteria terisi; komponen baru `src/components/PratinjauPita.tsx`. `PitaNilaiPanduan.tsx` tetap dipakai sebagai referensi lengkap.
