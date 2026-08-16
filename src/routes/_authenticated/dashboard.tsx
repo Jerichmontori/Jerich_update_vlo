@@ -2175,7 +2175,7 @@ function PenilaianTab() {
     const v = d.clearText ?? d.membacaPerikop;
     return v === true || v === false ? Boolean(v) : null;
   })();
-  const catatanWajib = false;
+
 
 
 
