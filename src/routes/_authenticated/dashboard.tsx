@@ -2380,28 +2380,54 @@ function PenilaianTab() {
 
   async function saveNilai(nilai: number, detail: PenilaianDetail = null) {
     if (!openKriteria) return;
+    const namaKriteria = openKriteria.nama;
     setSaving(true);
-    const { error } = await supabase.from("penilaian").upsert(
-      {
-        juri_id: juriId,
-        peserta_id: pesertaId,
-        kriteria_id: openKriteria.id,
-        nilai,
-        mazmur_id: mazmurId || null,
-        detail: detail as any,
-      } as any,
-      { onConflict: "peserta_id,juri_id,kriteria_id" }
-    );
-    setSaving(false);
-    if (error) return toast.error(error.message);
-    toast.success(`Nilai ${openKriteria.nama} disimpan`);
-    setOpenKriteria(null);
-    setCatatanValues(CATATAN_ASPEK.map(() => null));
-    setCatatanClearText(null);
-    setPerhatianChecks([]);
-    
-    loadAll();
+    try {
+      const { error } = await supabase.from("penilaian").upsert(
+        {
+          juri_id: juriId,
+          peserta_id: pesertaId,
+          kriteria_id: openKriteria.id,
+          nilai,
+          mazmur_id: mazmurId || null,
+          detail: detail as any,
+        } as any,
+        { onConflict: "peserta_id,juri_id,kriteria_id" }
+      );
+      if (error) {
+        toast.error(`Gagal menyimpan: ${error.message}. Coba lagi.`);
+        return;
+      }
+      toast.success(`Nilai ${namaKriteria} disimpan`);
+      setOpenKriteria(null);
+      setCatatanValues(CATATAN_ASPEK.map(() => null));
+      setCatatanClearText(null);
+      // Bentuk state harus sama dengan nilai awal (satu baris per pertanyaan),
+      // agar render berikutnya tidak bertemu bentuk data tak terduga.
+      setPerhatianChecks(PERHATIAN_ASPEK.map(() => []));
+    } catch (err) {
+      // Kegagalan jaringan / penyimpanan browser tidak boleh menjatuhkan halaman.
+      console.error(err);
+      toast.error(
+        err instanceof Error
+          ? `Gagal menyimpan: ${err.message}. Coba lagi.`
+          : "Gagal menyimpan. Periksa koneksi lalu coba lagi."
+      );
+      return;
+    } finally {
+      setSaving(false);
+    }
+
+    // Muat ulang terpisah & tahan-error: kegagalan di sini tidak membatalkan
+    // penyimpanan yang sudah berhasil.
+    try {
+      await loadAll();
+    } catch (err) {
+      console.error(err);
+      toast.error("Nilai tersimpan, tetapi gagal memuat ulang data. Tarik untuk menyegarkan.");
+    }
   }
+
 
   async function saveCatatan() {
     // Catatan Juri selalu opsional — juri boleh mengisi sebagian aspek saja.
