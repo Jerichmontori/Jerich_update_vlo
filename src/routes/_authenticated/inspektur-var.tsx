@@ -29,22 +29,26 @@ export const Route = createFileRoute("/_authenticated/inspektur-var")({
 
 function InspekturVarPage() {
   const [allowed, setAllowed] = useState<boolean | null>(null);
+  const [modeInsp, setModeInsp] = useState<number>(2);
 
   useEffect(() => {
     (async () => {
       const { data: u } = await supabase.auth.getUser();
       const uid = u.user?.id;
       if (!uid) { setAllowed(false); return; }
-      const [{ data: isIp2 }, { data: isAdm }] = await Promise.all([
-        supabase.rpc("has_role", { _user_id: uid, _role: "inspektur_var" as never }),
-        supabase.rpc("has_role", { _user_id: uid, _role: "admin" as never }),
+      const [{ data: isVar }, { data: modeData }] = await Promise.all([
+        supabase.rpc("is_inspektur_var", { _uid: uid } as never),
+        supabase.rpc("get_mode_inspektur" as never),
       ]);
-      setAllowed(!!isIp2 || !!isAdm);
+      setAllowed(!!isVar);
+      setModeInsp(Number(modeData) || 2);
     })();
   }, []);
 
   if (allowed === null) return <div className="p-8 text-center text-muted-foreground">Memuat…</div>;
   if (!allowed) return <div className="p-8 text-center text-muted-foreground">Anda tidak memiliki akses ke halaman ini.</div>;
+
+  const keberatanLocked = modeInsp === 1;
 
   return (
     <div className="min-h-screen">
@@ -69,9 +73,11 @@ function InspekturVarPage() {
 
       <main className="mx-auto max-w-5xl px-4 py-6">
         <Tabs defaultValue="var">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className={keberatanLocked ? "grid w-full grid-cols-2" : "grid w-full grid-cols-3"}>
             <TabsTrigger value="var" className="gap-2"><Gavel className="size-4" />VAR</TabsTrigger>
-            <TabsTrigger value="keberatan" className="gap-2"><FileWarning className="size-4" />Keberatan</TabsTrigger>
+            {!keberatanLocked && (
+              <TabsTrigger value="keberatan" className="gap-2"><FileWarning className="size-4" />Keberatan</TabsTrigger>
+            )}
             <TabsTrigger value="pk" className="gap-2"><Undo2 className="size-4" />Peninjauan</TabsTrigger>
           </TabsList>
           <TabsContent value="var" className="mt-4 space-y-4">
@@ -80,7 +86,14 @@ function InspekturVarPage() {
             <IpVarKoreksi />
           </TabsContent>
 
-          <TabsContent value="keberatan" className="mt-4"><KeberatanTab /></TabsContent>
+          {!keberatanLocked && (
+            <TabsContent value="keberatan" className="mt-4"><KeberatanTab /></TabsContent>
+          )}
+          {keberatanLocked && (
+            <div className="mt-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-4 text-sm text-amber-800">
+              <b>Mode 1 aktif.</b> Pengajuan keberatan peserta dinonaktifkan. Inspektur Pertandingan menangani langsung.
+            </div>
+          )}
           <TabsContent value="pk" className="mt-4"><PeninjauanTab /></TabsContent>
         </Tabs>
       </main>

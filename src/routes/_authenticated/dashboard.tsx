@@ -35,6 +35,7 @@ import BrandingSettingsButton from "@/components/BrandingSettingsButton";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import AdminSidebar, { ADMIN_SECTION_LABEL, type AdminSection } from "@/components/AdminSidebar";
 import PitaNilaiTab from "@/components/PitaNilaiTab";
+import ModeInspekturSetting from "@/components/ModeInspekturSetting";
 
 import PratinjauPita from "@/components/PratinjauPita";
 
@@ -226,16 +227,19 @@ function HasilNilaiTab() {
 /** Gabungan tab Kriteria + Kategori. */
 function PengaturanNilaiTab() {
   return (
-    <Tabs defaultValue="kriteria" className="w-full">
-      <TabsList className="grid w-full grid-cols-3 h-auto bg-secondary/60 p-1">
-        <TabsTrigger value="kriteria" className="gap-2"><ListChecks className="size-4" />Kriteria</TabsTrigger>
-        <TabsTrigger value="kategori" className="gap-2"><Tags className="size-4" />Kategori</TabsTrigger>
-        <TabsTrigger value="pita" className="gap-2"><Tags className="size-4" />Pita Nilai</TabsTrigger>
-      </TabsList>
-      <TabsContent value="kriteria"><KriteriaTab /></TabsContent>
-      <TabsContent value="kategori"><KategoriTab /></TabsContent>
-      <TabsContent value="pita"><PitaNilaiTab /></TabsContent>
-    </Tabs>
+    <div className="space-y-4">
+      <ModeInspekturSetting />
+      <Tabs defaultValue="kriteria" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 h-auto bg-secondary/60 p-1">
+          <TabsTrigger value="kriteria" className="gap-2"><ListChecks className="size-4" />Kriteria</TabsTrigger>
+          <TabsTrigger value="kategori" className="gap-2"><Tags className="size-4" />Kategori</TabsTrigger>
+          <TabsTrigger value="pita" className="gap-2"><Tags className="size-4" />Pita Nilai</TabsTrigger>
+        </TabsList>
+        <TabsContent value="kriteria"><KriteriaTab /></TabsContent>
+        <TabsContent value="kategori"><KategoriTab /></TabsContent>
+        <TabsContent value="pita"><PitaNilaiTab /></TabsContent>
+      </Tabs>
+    </div>
   );
 }
 

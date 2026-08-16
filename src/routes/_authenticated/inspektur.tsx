@@ -12,7 +12,10 @@ import { Toaster, toast } from "sonner";
 import GantiPasswordButton from "@/components/GantiPasswordButton";
 import VarBadge from "@/components/VarBadge";
 import { useVarStatus } from "@/hooks/useVarStatus";
-import { Shield, RefreshCw, BookOpenText, AlertTriangle, Eye, Square, Siren, CheckCircle2, XCircle } from "lucide-react";
+import IpVarKoreksi from "@/components/IpVarKoreksi";
+import PerbaikanNotifikasi from "@/components/PerbaikanNotifikasi";
+import PerbaikanAktifPanel from "@/components/PerbaikanAktifPanel";
+import { Shield, RefreshCw, BookOpenText, AlertTriangle, Eye, Square, Siren, CheckCircle2, XCircle, Gavel } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/inspektur")({
   component: InspekturPage,
@@ -112,6 +115,7 @@ function InspekturPage() {
   const [progresJuri, setProgresJuri] = useState<any[] | null>(null);
   // Progres juri per peserta (dashboard) — { [pesertaId]: rows[] }
   const [progresMap, setProgresMap] = useState<Record<string, any[]>>({});
+  const [modeInsp, setModeInsp] = useState<number>(2);
 
 
   useEffect(() => {
@@ -119,13 +123,15 @@ function InspekturPage() {
       const { data: u } = await supabase.auth.getUser();
       const uid = u.user?.id;
       if (!uid) { setAllowed(false); window.location.href = "/auth"; return; }
-      const [{ data: isInsp }, { data: isAdm }] = await Promise.all([
+      const [{ data: isInsp }, { data: isAdm }, { data: modeData }] = await Promise.all([
         supabase.rpc("has_role", { _user_id: uid, _role: "inspektur" as any }),
         supabase.rpc("has_role", { _user_id: uid, _role: "admin" as any }),
+        supabase.rpc("get_mode_inspektur" as any),
       ]);
       const ok = !!isInsp || !!isAdm;
       setAllowed(ok);
       if (!ok) { toast.error("Akses ditolak"); window.location.href = "/dashboard"; return; }
+      setModeInsp(Number(modeData) || 2);
       const { data: prof } = await supabase.from("profiles").select("nama").eq("id", uid).maybeSingle();
       setCurrentUser({
         nama: prof?.nama ?? (u.user?.email?.split("@")[0] ?? "Pengguna"),
@@ -506,6 +512,23 @@ function InspekturPage() {
             })()}
           </CardContent>
         </Card>
+
+        {/* Tool VAR — hanya tampil saat Mode 1 (IP menangani VAR) */}
+        {modeInsp === 1 && (
+          <Card className="border-rose-500/40">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Gavel className="size-5 text-rose-600" /> Tool VAR (Mode 1)</CardTitle>
+              <CardDescription>
+                Mode 1 aktif — Anda menangani keputusan VAR, koreksi per juri, dan pemulihan nilai langsung dari halaman ini.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <PerbaikanNotifikasi canOpen />
+              <PerbaikanAktifPanel mode="inspektur" />
+              <IpVarKoreksi />
+            </CardContent>
+          </Card>
+        )}
 
       </main>
 
