@@ -54,12 +54,15 @@ export const Route = createFileRoute("/api/public/live.json")({
             headers: { "content-type": "application/json", "access-control-allow-origin": "*" },
           });
         }
-        return new Response(JSON.stringify(data ?? {}), {
+        const body = JSON.stringify(data ?? {});
+        cached = { at: Date.now(), body };
+        return new Response(body, {
           status: 200,
           headers: {
             "content-type": "application/json; charset=utf-8",
             "cache-control": "no-store, no-cache, must-revalidate",
             "access-control-allow-origin": "*",
+            "x-live-cache": "miss",
           },
         });
       },
