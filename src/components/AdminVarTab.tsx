@@ -14,6 +14,7 @@ const KOMP_LABEL: Record<string, string> = {
   salah_kata: "Salah kata",
   menambah_kata: "Menambah kata",
   mengurangi_kata: "Mengurangi kata",
+  mengulang_kata: "Mengulang kata",
 };
 
 type Row = {
