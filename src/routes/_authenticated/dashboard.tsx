@@ -1,6 +1,6 @@
 import { usePolling } from "@/hooks/usePolling";
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState, useMemo, useRef } from "react";
+import { useEffect, useState, useMemo, useRef, useCallback } from "react";
 import * as XLSX from "xlsx";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { PanelErrorBoundary } from "@/components/PanelErrorBoundary";
 
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -146,7 +147,7 @@ function App() {
               <TabsTrigger value="hasil" className="gap-2"><FileText className="size-4" />Hasil Saya</TabsTrigger>
               <TabsTrigger value="perbaikan" className="gap-2"><RotateCcw className="size-4" />Perbaikan</TabsTrigger>
             </TabsList>
-            <TabsContent value="penilaian"><PenilaianTab /></TabsContent>
+            <TabsContent value="penilaian"><PanelErrorBoundary label="penilaian_juri"><PenilaianTab /></PanelErrorBoundary></TabsContent>
             <TabsContent value="hasil"><JuriHasilFinalTab /></TabsContent>
             <TabsContent value="perbaikan"><JuriAjukanPerbaikan /></TabsContent>
           </Tabs>
@@ -182,7 +183,7 @@ function App() {
             )}
             {section === "hasil" && <HasilNilaiTab />}
             {section === "live" && <SesiLiveRanking />}
-            {section === "penilaian" && <PenilaianTab />}
+            {section === "penilaian" && <PanelErrorBoundary label="penilaian_admin"><PenilaianTab /></PanelErrorBoundary>}
             {section === "var" && (
               <div className="space-y-4">
                 <PerbaikanNotifikasi />
@@ -1545,6 +1546,19 @@ function PenilaianTab() {
   const perhatianBaselineRef = useRef<boolean[][] | null>(null);
   const PERHATIAN_VAR_TRIGGER_IDX = new Set([0, 1, 2, 3, 4]);
   const [saving, setSaving] = useState(false);
+  // Auto-scroll ke grade terpilih: dijalankan sekali per elemen, dibungkus try/catch
+  // karena sebagian browser tablet (Samsung Internet lawas) tidak stabil dengan
+  // scrollIntoView beropsi saat elemen baru dipasang.
+  const sudahScrollRef = useRef<Element | null>(null);
+  const scrollKePilihan = useCallback((el: HTMLButtonElement | null) => {
+    if (!el || sudahScrollRef.current === el) return;
+    sudahScrollRef.current = el;
+    try {
+      requestAnimationFrame(() => {
+        try { el.scrollIntoView({ block: "center" }); } catch { /* abaikan */ }
+      });
+    } catch { /* abaikan */ }
+  }, []);
   // Aturan #3 — nama juri otomatis dari user yang login (juri tidak bisa memilih juri lain)
   const [myJuriId, setMyJuriId] = useState<string>("");
   const [myJuriNama, setMyJuriNama] = useState<string>("");
@@ -3134,7 +3148,7 @@ function PenilaianTab() {
                     key={grade}
                     type="button"
                     disabled={saving}
-                    ref={dipilih ? (el) => { el?.scrollIntoView({ block: "center" }); } : undefined}
+                    ref={dipilih ? scrollKePilihan : undefined}
                     onClick={() => saveNilai(grade * 20, { type: "grade", grade, label, desc })}
                     className={[
                       "flex items-start gap-4 text-left rounded-xl border-2 p-4 transition disabled:opacity-60",
