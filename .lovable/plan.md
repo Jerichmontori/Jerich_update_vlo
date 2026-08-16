@@ -7,6 +7,7 @@
 3. Menambah pertanyaan baru **Mengulang kata** pada kriteria Perhatian.
 4. Semua jawaban Perhatian selain Clear Text hanya bersifat **informasi** (menunjukkan letak kesalahan pada ayat), tanpa pengaruh ke nilai dan tanpa memicu VAR.
 5. Bila semua juri menjawab sama — sama-sama "Tidak clear" maupun sama-sama "Clear" — **tidak ada potensi VAR**, walaupun penandaan ayat antar juri berbeda.
+6. **Clear Text otomatis menjadi "Tidak clear"** begitu juri mencentang minimal satu ayat pada 4 pertanyaan (Salah kata, Menambah kata, Mengurangi kata, Mengulang kata).
 
 ## Perubahan Perilaku
 
@@ -16,6 +17,14 @@
 | Penandaan ayat | Mengurangi nilai (penalti sampai bobot -10) | Tanpa pengaruh nilai, hanya catatan lokasi kesalahan |
 | Pertanyaan Perhatian | Clear Text, Salah kata, Menambah kata, Mengurangi kata | + **Mengulang kata** |
 | Nilai Perhatian | Ikut hitungan akhir | Disimpan sebagai informasi saja |
+| Clear Text = Ya + ada centang ayat | Bisa terjadi (tidak konsisten) | Otomatis dipaksa ke "Tidak clear" |
+
+## Aturan Otomatis Clear Text
+
+- Ada ≥1 centang ayat pada salah satu dari 4 pertanyaan → Clear Text dikunci ke **Tidak** dengan keterangan "otomatis karena ada penandaan kesalahan".
+- Semua centang dihapus (mis. lewat reset) → kunci dilepas, juri kembali bebas memilih Ya/Tidak.
+- Aturan yang sama diberlakukan ulang di sisi server saat penyimpanan nilai, agar data lama/manipulasi klien tetap konsisten.
+
 
 ## Perubahan Database (satu migrasi)
 
