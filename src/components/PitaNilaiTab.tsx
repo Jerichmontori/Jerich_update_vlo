@@ -306,6 +306,27 @@ export default function PitaNilaiTab() {
           </div>
         </div>
 
+        <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-4 py-3">
+          <div className="space-y-0.5">
+            <div className="font-medium">Gunakan pita nilai untuk kategori ini</div>
+            <div className="text-sm text-muted-foreground">
+              {gunakan
+                ? "Nilai juri dipetakan ke pita di bawah."
+                : "Dimatikan — nilai dihitung dengan rumus lama. Pita tersimpan tetap bisa diedit."}
+            </div>
+          </div>
+          <Switch
+            checked={gunakan}
+            disabled={toggleLoading || !kategori}
+            onCheckedChange={(v) => toggleGunakan(v)}
+          />
+        </div>
+        {!gunakan && (
+          <div className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-700 dark:text-amber-400">
+            Pita tidak sedang dipakai untuk kategori ini. Tekan "Hitung Ulang Nilai" setelah mengaktifkan agar nilai lama menyesuaikan.
+          </div>
+        )}
+
         {renderGroup(false)}
         {renderGroup(true)}
 
