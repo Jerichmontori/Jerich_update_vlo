@@ -146,7 +146,7 @@ function App() {
               <TabsTrigger value="hasil" className="gap-2"><FileText className="size-4" />Hasil Saya</TabsTrigger>
               <TabsTrigger value="perbaikan" className="gap-2"><RotateCcw className="size-4" />Perbaikan</TabsTrigger>
             </TabsList>
-            <TabsContent value="penilaian"><PenilaianTab /></TabsContent>
+            <TabsContent value="penilaian"><PanelErrorBoundary label="penilaian_juri"><PenilaianTab /></PanelErrorBoundary></TabsContent>
             <TabsContent value="hasil"><JuriHasilFinalTab /></TabsContent>
             <TabsContent value="perbaikan"><JuriAjukanPerbaikan /></TabsContent>
           </Tabs>
@@ -182,7 +182,7 @@ function App() {
             )}
             {section === "hasil" && <HasilNilaiTab />}
             {section === "live" && <SesiLiveRanking />}
-            {section === "penilaian" && <PenilaianTab />}
+            {section === "penilaian" && <PanelErrorBoundary label="penilaian_admin"><PenilaianTab /></PanelErrorBoundary>}
             {section === "var" && (
               <div className="space-y-4">
                 <PerbaikanNotifikasi />
@@ -3134,7 +3134,7 @@ function PenilaianTab() {
                     key={grade}
                     type="button"
                     disabled={saving}
-                    ref={dipilih ? (el) => { el?.scrollIntoView({ block: "center" }); } : undefined}
+                    ref={dipilih ? scrollKePilihan : undefined}
                     onClick={() => saveNilai(grade * 20, { type: "grade", grade, label, desc })}
                     className={[
                       "flex items-start gap-4 text-left rounded-xl border-2 p-4 transition disabled:opacity-60",
