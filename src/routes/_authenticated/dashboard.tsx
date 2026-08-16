@@ -1480,11 +1480,13 @@ function CriteriaPillButton({
   active,
   disabled,
   onClick,
+  subLabel,
 }: {
   label: string;
   active: boolean;
   disabled?: boolean;
   onClick: () => void;
+  subLabel?: string | null;
 }) {
   return (
     <button
@@ -1503,10 +1505,22 @@ function CriteriaPillButton({
       ].join(" ")}
     >
       <span className="pointer-events-none absolute inset-x-6 top-2 h-[3px] rounded-full bg-white/50 blur-[1px]" />
-      <div className="relative flex items-center justify-center">
+      <div className="relative flex flex-col items-center justify-center gap-2">
         <span className="text-xl sm:text-2xl font-semibold tracking-wide">
           {label}
         </span>
+        {subLabel ? (
+          <span
+            className={[
+              "rounded-full px-3 py-1 text-xs font-sans font-semibold tracking-wide",
+              active ? "bg-accent-foreground/15 text-accent-foreground" : "bg-muted text-muted-foreground",
+            ].join(" ")}
+          >
+            {subLabel}
+          </span>
+        ) : (
+          <span className="text-xs font-sans text-muted-foreground">Belum dinilai</span>
+        )}
       </div>
     </button>
   );
