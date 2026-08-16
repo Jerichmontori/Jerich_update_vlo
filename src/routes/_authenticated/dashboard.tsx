@@ -1447,7 +1447,13 @@ const PERHATIAN_ASPEK = [
   "Salah kata",
   "Menambah kata",
   "Mengurangi kata",
+  "Mengulang kata",
 ];
+
+/** True bila ada minimal satu ayat ditandai pada pertanyaan selain Clear Text. */
+function adaPenandaanAyat(checks: boolean[][]): boolean {
+  return checks.slice(1).some((row) => row.some(Boolean));
+}
 
 
 function kriteriaKey(nama: string): keyof typeof GRADE_DESCRIPTIONS | "catatan" | "perhatian" | null {
