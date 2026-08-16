@@ -3163,9 +3163,13 @@ function PenilaianTab() {
                   >
                     <div className="text-sm font-medium mb-2 flex items-center justify-between gap-2">
                       <span>{i + 1}. {aspek}</span>
-                      {isTrigger && (
+                      {i === 0 ? (
                         <span className="text-[10px] font-semibold rounded-full bg-destructive text-destructive-foreground px-2 py-0.5">
-                          ⚠ Pemicu VAR — dapat diubah
+                          ⚠ Pemicu VAR
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-semibold rounded-full bg-muted text-muted-foreground px-2 py-0.5">
+                          Informasi saja
                         </span>
                       )}
                       {locked && (
