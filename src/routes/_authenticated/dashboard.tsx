@@ -34,6 +34,9 @@ import { useBranding } from "@/hooks/useBranding";
 import BrandingSettingsButton from "@/components/BrandingSettingsButton";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import AdminSidebar, { ADMIN_SECTION_LABEL, type AdminSection } from "@/components/AdminSidebar";
+import PitaNilaiTab from "@/components/PitaNilaiTab";
+import PitaNilaiPanduan from "@/components/PitaNilaiPanduan";
+
 import KeberatanTab from "@/components/KeberatanTab";
 import PerbaikanNotifikasi from "@/components/PerbaikanNotifikasi";
 
