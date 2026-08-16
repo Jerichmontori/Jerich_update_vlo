@@ -658,6 +658,48 @@ export type Database = {
         }
         Relationships: []
       }
+      pita_nilai: {
+        Row: {
+          aktif: boolean
+          batas_atas: number
+          batas_bawah: number
+          clear_text: boolean
+          created_at: string
+          deskripsi: string | null
+          id: string
+          kategori: string
+          label: string
+          updated_at: string
+          urutan: number
+        }
+        Insert: {
+          aktif?: boolean
+          batas_atas: number
+          batas_bawah: number
+          clear_text: boolean
+          created_at?: string
+          deskripsi?: string | null
+          id?: string
+          kategori: string
+          label: string
+          updated_at?: string
+          urutan?: number
+        }
+        Update: {
+          aktif?: boolean
+          batas_atas?: number
+          batas_bawah?: number
+          clear_text?: boolean
+          created_at?: string
+          deskripsi?: string | null
+          id?: string
+          kategori?: string
+          label?: string
+          updated_at?: string
+          urutan?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           active_session_id: string | null
@@ -1100,6 +1142,10 @@ export type Database = {
         Args: { _aktif: boolean; _juri: string }
         Returns: undefined
       }
+      admin_set_pita_nilai: {
+        Args: { _kategori: string; _pita: Json }
+        Returns: Json
+      }
       akhiri_sesi: { Args: { _id: string }; Returns: undefined }
       all_juri_submitted: { Args: { _peserta: string }; Returns: boolean }
       detect_potensi_var: { Args: { _peserta: string }; Returns: string }
@@ -1108,6 +1154,7 @@ export type Database = {
       get_klarifikasi_status: { Args: { _peserta: string }; Returns: Json }
       get_live_ranking_kategori: { Args: never; Returns: Json }
       get_live_ranking_top10: { Args: never; Returns: boolean }
+      get_pita_nilai: { Args: { _kategori?: string }; Returns: Json }
       get_ranking: {
         Args: never
         Returns: {
