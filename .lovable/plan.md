@@ -1,31 +1,37 @@
-# Pedoman Pita Nilai 81,000–83,000 (dicatat sebagai acuan)
+# Pedoman Pita Nilai 81,000–83,000 — catatan acuan (tanpa perubahan kode)
 
-Status: **belum ada perubahan kode**. Isi gambar dicatat sebagai aturan acuan agar dipakai pada pekerjaan berikutnya. Berlaku untuk **semua peserta**.
+Status: **tidak ada perubahan kode**. Isi gambar dicatat sebagai aturan acuan untuk pekerjaan berikutnya. Berlaku untuk semua peserta.
 
-## Isi pedoman
+## Isi pedoman (verbatim dari gambar)
 
-Rentang nilai: 81,000 – 83,000
-Nilai tengah: 81,099 untuk peserta **TIDAK clear text**
+RANGE NILAI: 81,000–83,000
+NILAI TENGAH 81,099 (TIDAK clear text)
 
-Tangga sub-rentang untuk peserta **clear text**:
+- 81,301–500 (clear text tapi interpretasi, artikulasi, intonasi masih biasa)
+- 81,501–700 (clear text, lain-lain baik tapi interpretasi kurang tepat)
+- 81,701–800 (clear text, interpretasi baik, artikulasi biasa, gestur kurang, monoton, tidak ada dinamika, irama cenderung sama)
+- 81,801–900 (clear text, interpretasi baik, penghayatan baik, artikulasi baik, intonasi irama masih monoton, kurang gestur/ekspresi/mimik)
+- 81,901–990 (clear text, interpretasi baik, penghayatan baik, intonasi irama baik, vokal belum maksimal/terganggu, gestur/ekspresi/mimik baik, irama & dinamika kurang variatif)
+- 81,991–999 (memenuhi semua kriteria, tinggal 1,2,3,4 dst dibedakan dari rasa/kesan yang tersampaikan ke juri)
 
-| Sub-rentang | Deskripsi kualitas |
-|---|---|
-| 81,301 – 81,500 | Clear text, tetapi interpretasi, artikulasi, dan intonasi masih biasa |
-| 81,501 – 81,700 | Clear text, aspek lain baik, tetapi interpretasi kurang tepat |
-| 81,701 – 81,800 | Interpretasi baik, artikulasi biasa, gestur kurang, monoton, irama cenderung sama |
-| 81,801 – 81,900 | Interpretasi, penghayatan, artikulasi baik; irama masih monoton, gestur/ekspresi/mimik kurang baik |
-| 81,901 – 81,990 | Interpretasi, penghayatan, intonasi/irama baik; vokal belum maksimal atau terganggu; gestur/ekspresi/mimik baik; irama & dinamika kurang variatif |
-| 81,991 – 81,999 | Memenuhi semua kriteria; pembeda peringkat hanya rasa/kesan yang tersampaikan ke juri |
+## Perbedaan dengan sistem penilaian sekarang
 
-## Catatan pemahaman
+| Aspek | Pedoman gambar | Sistem aktif (`hitung_nilai_juri`) |
+|---|---|---|
+| Rentang | tetap 81,000–83,000 untuk semua peserta | per kategori dari tabel `kategori` (P/KB: 81–82,999, tengah 82, standar 82,199) |
+| Tidak clear text | satu angka tetap 81,099 | `bawah + bonus_ratio×(standar−bawah) − penalti`, dibatasi ≤ standar (bisa 81–82,199) |
+| Clear text | pita diskrit 81,301–999 berbasis kualitatif | kurva kontinu `standar + n×(atas−standar)` = 82,199–82,999 |
+| Penentu posisi | juri memilih pita lewat urutan pembeda hierarkis | rumus rasio×bobot, dinormalisasi, kurva pangkat 1,15 |
+| Sifat keluaran | diskrit (kotak pita) | kontinu (3 desimal + jitter anti-seri) |
+| Lantai clear text | 81,301 | 82,199 |
 
-- Peserta tidak clear text ditahan di sekitar 81,099 — jauh di bawah pita clear text yang mulai dari 81,301.
-- Ada celah 81,100 – 81,300 yang tidak dijelaskan pada gambar; perlu ditegaskan nanti bila rumus akan disesuaikan.
-- Urutan pembeda antar pita: clear text → interpretasi → penghayatan/artikulasi → intonasi & dinamika → gestur/ekspresi → vokal → kesan akhir.
+Inti: gambar = rubrik manual berbasis pita kualitatif; sistem sekarang = rumus otomatis kontinu. Keduanya menghasilkan angka yang berbeda untuk clear-text maupun tidak-clear-text.
 
-## Yang akan dikerjakan jika nanti disetujui
+## Yang TIDAK dikerjakan sekarang
+- Tidak ada migrasi database.
+- Tidak ada perubahan `hitung_nilai_juri`.
+- Tidak ada perubahan frontend.
 
-Tidak ada. Bila Anda ingin pedoman ini diterapkan, langkah lanjutannya adalah:
-1. Menyesuaikan pemetaan nilai akhir (`hitung_nilai_juri`) agar hasil jatuh pada pita di atas.
-2. Atau menampilkan tabel pedoman ini di form juri sebagai panduan pemberian grade.
+## Jika nanti disetujui untuk diterapkan, langkah lanjutan
+1. Menyesuaikan `hitung_nilai_juri` agar peserta tidak-clear-text ditahan di 81,099 dan peserta clear-text dipetakan ke pita 81,301–999 sesuai urutan pembeda (interpretasi → penghayatan/artikulasi → intonasi & dinamika → gestur/mimik → vokal → kesan akhir).
+2. Atau, sebagai alternatif ringan, menampilkan tabel pedoman ini di form juri sebagai panduan pemberian grade tanpa mengubah rumus.
