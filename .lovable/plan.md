@@ -32,6 +32,19 @@ Untuk kasus keberatan diterima dengan tindak lanjut VAR.
 - Sebaliknya, jika penilaian sedang dibuka untuk juri (jalur 1), Inspektur VAR tidak dapat membuka koreksi sampai juri mengirim ulang.
 - Peserta yang belum final tidak bisa masuk kedua jalur.
 
+## Jika Admin salah membuka perbaikan
+
+Agar kesalahan klik dapat dibatalkan tanpa merusak nilai:
+
+1. **Pencegahan.** Sebelum perbaikan dibuka, sistem menampilkan dialog konfirmasi berisi nama peserta, nilai akhir saat ini, daftar juri yang terdampak, dan kolom alasan yang wajib diisi.
+2. **Cadangan otomatis.** Saat perbaikan dibuka, sistem menyimpan salinan kiriman dan nilai seluruh juri untuk peserta tersebut (snapshot) sebelum apa pun dihapus.
+3. **Tombol "Batalkan Buka Perbaikan".** Selama belum ada juri yang mengirim nilai baru, Admin dapat membatalkan: sistem memulihkan kiriman dan nilai dari snapshot, menutup kembali sesi, dan peserta kembali final seperti semula.
+4. **Bila sudah terlanjur ada nilai baru.** Pembatalan cepat tidak lagi tersedia. Admin memilih salah satu:
+   - lanjutkan perbaikan sampai semua juri mengirim ulang, atau
+   - ajukan pemulihan ke Inspektur Pertandingan, yang dapat mengembalikan nilai lama dari snapshot dan mencatat keputusannya sebagai bukti.
+5. **Salah jalur.** Jika perbaikan dibuka ke juri padahal kasusnya keberatan berkeputusan VAR, Admin membatalkan dulu (langkah 3), lalu kasus diteruskan ke antrean Inspektur VAR. Aturan penguncian di atas membuat kesalahan ini jarang terjadi karena sistem menolaknya sejak awal.
+6. Setiap pembukaan, pembatalan, dan pemulihan tercatat di log audit beserta nama pelaku, waktu, dan alasan.
+
 ## Rincian teknis
 
 - Fungsi database baru: `juri_ajukan_perbaikan(_peserta, _alasan)`, `admin_list_permintaan_perbaikan()`, `admin_putuskan_perbaikan_juri(_id, _setuju, _catatan)` — yang terakhir menghapus baris `penilaian_submission` milik juri pemohon saja, mengaktifkan kembali sesi, dan mencatat audit.
