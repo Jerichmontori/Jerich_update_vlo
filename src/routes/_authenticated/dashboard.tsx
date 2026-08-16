@@ -3085,7 +3085,14 @@ function PenilaianTab() {
         >
 
           <DialogHeader>
-            <DialogTitle className="font-serif text-2xl">{openKriteria?.nama}</DialogTitle>
+            <DialogTitle className="font-serif text-2xl flex flex-wrap items-center gap-2">
+              {openKriteria?.nama}
+              {openKriteria && activeKey && activeKey !== "catatan" && activeKey !== "perhatian" && currentNilai(openKriteria.id) !== null && (
+                <span className="rounded-full bg-accent px-3 py-1 font-sans text-xs font-semibold text-accent-foreground">
+                  Pilihan saat ini: {ringkasanPilihan(openKriteria)}
+                </span>
+              )}
+            </DialogTitle>
             <DialogDescription>
               {activeKey === "catatan"
                 ? "Pengisian bersifat opsional. Beri nilai 1–5 pada aspek yang ingin dinilai."
