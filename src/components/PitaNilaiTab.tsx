@@ -340,6 +340,8 @@ export default function PitaNilaiTab() {
             <RefreshCw className="size-4" /> Hitung Ulang Nilai
           </Button>
         </div>
+
+        <SkemaPitaNilai kategori={kategori} rows={rows} gunakan={gunakan} />
       </CardContent>
     </Card>
   );
