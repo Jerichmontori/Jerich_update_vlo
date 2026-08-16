@@ -149,10 +149,18 @@ export default function PitaNilaiTab() {
   }
 
   async function hitungUlang() {
+    const t = toast.loading("Menghitung ulang nilai...");
     const { error } = await supabase.rpc("refresh_nilai_cache");
-    if (error) return toast.error(error.message);
-    toast.success("Nilai dihitung ulang mengikuti pita terbaru");
+    toast.dismiss(t);
+    if (error) {
+      const msg = /permission denied|hanya admin/i.test(error.message)
+        ? "Hanya admin yang dapat menghitung ulang nilai"
+        : error.message;
+      return toast.error(msg);
+    }
+    toast.success("Nilai berhasil dihitung ulang mengikuti pita terbaru");
   }
+
 
   function renderGroup(clearText: boolean) {
     const idxs = rows.map((r, i) => i).filter((i) => rows[i].clear_text === clearText);
