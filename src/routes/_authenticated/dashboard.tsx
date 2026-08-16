@@ -39,6 +39,9 @@ import PitaNilaiPanduan from "@/components/PitaNilaiPanduan";
 
 import KeberatanTab from "@/components/KeberatanTab";
 import PerbaikanNotifikasi from "@/components/PerbaikanNotifikasi";
+import PermintaanPerbaikanJuri from "@/components/PermintaanPerbaikanJuri";
+import PerbaikanAktifPanel from "@/components/PerbaikanAktifPanel";
+import JuriAjukanPerbaikan from "@/components/JuriAjukanPerbaikan";
 
 import PeninjauanTab from "@/components/PeninjauanTab";
 
