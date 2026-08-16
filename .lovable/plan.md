@@ -5,19 +5,24 @@ Menambahkan saklar global agar lomba bisa dijalankan dengan **dua inspektur** (s
 ## Perilaku kedua mode
 
 **Mode 2 inspektur (default, seperti sekarang)**
-- Inspektur Pertandingan (IP): monitoring sesi, catat perhatian, ajukan VAR, akhiri sesi, ajukan Live Ranking.
+- Inspektur Pertandingan (IP): monitoring sesi, catat perhatian, ajukan VAR, akhiri sesi.
 - Inspektur VAR (IP2): antrean VAR, buka perbaikan VAR, koreksi per juri, pulihkan nilai, putusan keberatan.
 
 **Mode 1 inspektur**
 - Semua kewenangan IP2 ikut dipegang IP. Halaman Inspektur VAR tetap ada tapi bisa diakses oleh IP.
-- Di halaman Inspektur muncul tab tambahan "VAR & Perbaikan" berisi antrean VAR, koreksi per juri, pulihkan nilai, dan putusan keberatan.
+- Di halaman Inspektur muncul tab tambahan "VAR & Perbaikan" berisi antrean VAR, koreksi per juri, dan pulihkan nilai.
+- **Menu Keberatan otomatis dikunci** (tidak menerima pengajuan keberatan baru dan panel keputusan keberatan disembunyikan/nonaktif). Perbaikan nilai hanya lewat jalur VAR dan permintaan juri.
 - Notifikasi/alur yang selama ini dikirim ke IP2 diarahkan juga ke IP.
 - Jika ada akun ber-peran `inspektur_var`, akun itu tetap bisa bekerja (tidak dikunci), hanya saja tidak wajib ada.
 
-## Alur penyelesaian keberatan/VAR pada mode 1
+## Perubahan lain (berlaku di kedua mode)
+
+Fitur "Ajukan Live Ranking" dihapus dari peran Inspektur Pertandingan — tombol/panel pengajuan beserta akses RPC-nya dicabut dari halaman inspektur.
+
+## Alur penyelesaian VAR pada mode 1
 
 ```text
-Keberatan diterima (keputusan = VAR)
+Potensi VAR terdeteksi / diajukan Inspektur
   -> notifikasi ke Admin + Inspektur (satu orang)
   -> Inspektur buka perbaikan dari tab "VAR & Perbaikan"
   -> Inspektur koreksi nilai per juri (hanya parameter pemicu VAR)
@@ -26,6 +31,7 @@ Keberatan diterima (keputusan = VAR)
 ```
 
 Tidak ada perubahan pada rumus nilai, pita nilai, maupun data yang sudah tersimpan.
+
 
 ## Pengaturan
 
