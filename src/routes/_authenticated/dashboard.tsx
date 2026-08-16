@@ -2164,8 +2164,7 @@ function PenilaianTab() {
     return row ? Number(row.nilai) : null;
   }
 
-  // Clear Text pada kriteria Perhatian menentukan apakah Catatan Juri wajib diisi.
-  // Clear Text = "Ya" → Catatan Juri opsional. Clear Text = "Tidak" → wajib diisi lengkap.
+  // Catatan Juri selalu opsional, terlepas dari jawaban Clear Text.
   const clearTextSaya: boolean | null = (() => {
     if (!juriId || !pesertaId) return null;
     const kPerhatian = kriteria.find(k => kriteriaKey(k.nama) === "perhatian");
@@ -2176,7 +2175,8 @@ function PenilaianTab() {
     const v = d.clearText ?? d.membacaPerikop;
     return v === true || v === false ? Boolean(v) : null;
   })();
-  const catatanWajib = clearTextSaya === false;
+  const catatanWajib = false;
+
 
 
   function openDialog(k: Kriteria) {
@@ -2308,14 +2308,9 @@ function PenilaianTab() {
   }
 
   async function saveCatatan() {
-    // Clear Text = "Tidak" → seluruh aspek Catatan Juri wajib diisi.
+    // Catatan Juri selalu opsional — juri boleh mengisi sebagian aspek saja.
     const skippedFlags = catatanValues.map(v => v === null || v === undefined);
-    if (catatanWajib && skippedFlags.some(Boolean)) {
-      toast.warning("Catatan Juri wajib diisi", {
-        description: "Karena Clear Text dijawab \"Tidak\", seluruh aspek Catatan Juri harus diberi nilai 1–5.",
-      });
-      return; // dialog tetap terbuka
-    }
+
 
     const contributions: number[] = [];
     catatanValues.forEach((v, i) => {
@@ -3090,20 +3085,15 @@ function PenilaianTab() {
                 const val = catatanValues[i];
                 const rAspek = val == null ? null : lookupNilaiClient(val);
                 return (
-                <div key={aspek} className={["rounded-lg border bg-card p-3", catatanWajib && catatanValues[i] == null ? "border-destructive/60" : ""].join(" ")}>
-                  <div className="mb-1 flex items-center justify-between gap-2">
+                <div key={aspek} className="rounded-lg border bg-card p-3">
+                  <div className="mb-2 flex items-center justify-between gap-2">
                     <span className="text-sm font-medium">{i + 1}. {aspek}</span>
                     <span className="text-[10px] font-semibold rounded-full px-2 py-0.5 bg-muted text-muted-foreground">
-                      {catatanWajib ? "Wajib" : "Opsional"}
+                      Opsional
                     </span>
                   </div>
-                  <div className="mb-2 text-[11px] text-muted-foreground">
-                    ×{rInduk.toFixed(2)} ({INDUK_LABEL[indukKey]} bobot {bobotIndukOf(indukKey)}
-                    {gi == null ? ", belum dinilai" : `, grade ${gi.toFixed(gi % 1 ? 1 : 0)}`}) · bobot aspek <b>{bobotAspekOf(indukKey).toFixed(3)}</b>
-                    {rAspek != null && (
-                      <> · kontribusi = {rAspek.toFixed(3)} × {rInduk.toFixed(2)} × {bobotAspekOf(indukKey).toFixed(3)} = <b>{(rAspek * rInduk * bobotAspekOf(indukKey)).toFixed(4)}</b></>
-                    )}
-                  </div>
+
+
 
 
                   <div className="grid grid-cols-5 gap-2">
@@ -3127,9 +3117,9 @@ function PenilaianTab() {
                 );
               })}
               <div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
-                Bobot tiap aspek mengikuti kriteria induk: (bobot induk ÷ {bobotCat}) ÷ jumlah aspek dalam induk itu.
-                Terisi <b>{terisi}</b> aspek · total bonus <b>{totalBonus.toFixed(3)}</b> dari maksimum <b>{bobotMaks.toFixed(3)}</b>.
+                Semua aspek bersifat opsional — isi hanya yang perlu. Terisi <b>{terisi}</b> aspek.
               </div>
+
 
               <p className="text-xs text-muted-foreground pt-2">
                 Perubahan disimpan otomatis saat dialog ditutup.
