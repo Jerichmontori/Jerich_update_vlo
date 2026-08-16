@@ -6,6 +6,7 @@
 2. Penalti dari kriteria Perhatian dihapus — tidak lagi mengurangi nilai.
 3. Menambah pertanyaan baru **Mengulang kata** pada kriteria Perhatian.
 4. Semua jawaban Perhatian selain Clear Text hanya bersifat **informasi** (menunjukkan letak kesalahan pada ayat), tanpa pengaruh ke nilai dan tanpa memicu VAR.
+5. Bila semua juri menjawab sama — sama-sama "Tidak clear" maupun sama-sama "Clear" — **tidak ada potensi VAR**, walaupun penandaan ayat antar juri berbeda.
 
 ## Perubahan Perilaku
 
