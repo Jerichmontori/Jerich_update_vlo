@@ -2164,8 +2164,7 @@ function PenilaianTab() {
     return row ? Number(row.nilai) : null;
   }
 
-  // Clear Text pada kriteria Perhatian menentukan apakah Catatan Juri wajib diisi.
-  // Clear Text = "Ya" → Catatan Juri opsional. Clear Text = "Tidak" → wajib diisi lengkap.
+  // Catatan Juri selalu opsional, terlepas dari jawaban Clear Text.
   const clearTextSaya: boolean | null = (() => {
     if (!juriId || !pesertaId) return null;
     const kPerhatian = kriteria.find(k => kriteriaKey(k.nama) === "perhatian");
@@ -2176,7 +2175,8 @@ function PenilaianTab() {
     const v = d.clearText ?? d.membacaPerikop;
     return v === true || v === false ? Boolean(v) : null;
   })();
-  const catatanWajib = clearTextSaya === false;
+
+
 
 
   function openDialog(k: Kriteria) {
@@ -2308,14 +2308,9 @@ function PenilaianTab() {
   }
 
   async function saveCatatan() {
-    // Clear Text = "Tidak" → seluruh aspek Catatan Juri wajib diisi.
+    // Catatan Juri selalu opsional — juri boleh mengisi sebagian aspek saja.
     const skippedFlags = catatanValues.map(v => v === null || v === undefined);
-    if (catatanWajib && skippedFlags.some(Boolean)) {
-      toast.warning("Catatan Juri wajib diisi", {
-        description: "Karena Clear Text dijawab \"Tidak\", seluruh aspek Catatan Juri harus diberi nilai 1–5.",
-      });
-      return; // dialog tetap terbuka
-    }
+
 
     const contributions: number[] = [];
     catatanValues.forEach((v, i) => {
@@ -2996,9 +2991,8 @@ function PenilaianTab() {
             <DialogTitle className="font-serif text-2xl">{openKriteria?.nama}</DialogTitle>
             <DialogDescription>
               {activeKey === "catatan"
-                ? (catatanWajib
-                    ? "Clear Text = \"Tidak\" → seluruh aspek WAJIB diisi (nilai 1–5)."
-                    : "Clear Text = \"Ya\" → pengisian bersifat opsional. Beri nilai 1–5 pada aspek yang ingin dinilai.")
+                ? "Pengisian bersifat opsional. Beri nilai 1–5 pada aspek yang ingin dinilai."
+
 
                 : activeKey === "perhatian"
                 ? "Centang setiap ayat yang mengalami masalah pada aspek terkait."
@@ -3044,30 +3038,8 @@ function PenilaianTab() {
           )}
 
           {activeKey === "catatan" && (() => {
-            const gradeIndukOf = (key: string): number | null => {
-              const k = kriteria.find(x => kriteriaKey(x.nama) === key);
-              if (!k || !juriId || !pesertaId) return null;
-              const row = penilaian.find(x => x.juri_id === juriId && x.peserta_id === pesertaId && x.kriteria_id === k.id);
-              if (!row) return null;
-              const d: any = row.detail;
-              const g = d && d.type === "grade" ? Number(d.grade) : Number(row.nilai) / 20;
-              return Number.isFinite(g) && g > 0 ? g : null;
-            };
-            const bobotCat = Number(openKriteria?.bobot ?? 10) || 10;
-            const bobotIndukOf = (key: string): number => {
-              const k = kriteria.find(x => kriteriaKey(x.nama) === key);
-              return Number(k?.bobot ?? 0) || 0;
-            };
-            const bobotAspekOf = (key: string) => bobotAspekCatatan(key, bobotIndukOf(key), bobotCat);
             const terisi = catatanValues.filter(v => v != null).length;
-            let totalBonus = 0;
-            catatanValues.forEach((v, i) => {
-              if (v == null) return;
-              const gi = gradeIndukOf(CATATAN_INDUK[i]);
-              const rInduk = gi == null ? 1 : lookupNilaiClient(gi);
-              totalBonus += lookupNilaiClient(v) * rInduk * bobotAspekOf(CATATAN_INDUK[i]);
-            });
-            const bobotMaks = CATATAN_ASPEK.reduce((s, _a, i) => s + bobotAspekOf(CATATAN_INDUK[i]), 0);
+
 
             return (
             <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
@@ -3084,26 +3056,17 @@ function PenilaianTab() {
                 </Button>
               </div>
               {CATATAN_ASPEK.map((aspek, i) => {
-                const indukKey = CATATAN_INDUK[i];
-                const gi = gradeIndukOf(indukKey);
-                const rInduk = gi == null ? 1 : lookupNilaiClient(gi);
-                const val = catatanValues[i];
-                const rAspek = val == null ? null : lookupNilaiClient(val);
                 return (
-                <div key={aspek} className={["rounded-lg border bg-card p-3", catatanWajib && catatanValues[i] == null ? "border-destructive/60" : ""].join(" ")}>
-                  <div className="mb-1 flex items-center justify-between gap-2">
+
+                <div key={aspek} className="rounded-lg border bg-card p-3">
+                  <div className="mb-2 flex items-center justify-between gap-2">
                     <span className="text-sm font-medium">{i + 1}. {aspek}</span>
                     <span className="text-[10px] font-semibold rounded-full px-2 py-0.5 bg-muted text-muted-foreground">
-                      {catatanWajib ? "Wajib" : "Opsional"}
+                      Opsional
                     </span>
                   </div>
-                  <div className="mb-2 text-[11px] text-muted-foreground">
-                    ×{rInduk.toFixed(2)} ({INDUK_LABEL[indukKey]} bobot {bobotIndukOf(indukKey)}
-                    {gi == null ? ", belum dinilai" : `, grade ${gi.toFixed(gi % 1 ? 1 : 0)}`}) · bobot aspek <b>{bobotAspekOf(indukKey).toFixed(3)}</b>
-                    {rAspek != null && (
-                      <> · kontribusi = {rAspek.toFixed(3)} × {rInduk.toFixed(2)} × {bobotAspekOf(indukKey).toFixed(3)} = <b>{(rAspek * rInduk * bobotAspekOf(indukKey)).toFixed(4)}</b></>
-                    )}
-                  </div>
+
+
 
 
                   <div className="grid grid-cols-5 gap-2">
@@ -3127,9 +3090,9 @@ function PenilaianTab() {
                 );
               })}
               <div className="rounded-lg border bg-muted/40 p-3 text-xs text-muted-foreground">
-                Bobot tiap aspek mengikuti kriteria induk: (bobot induk ÷ {bobotCat}) ÷ jumlah aspek dalam induk itu.
-                Terisi <b>{terisi}</b> aspek · total bonus <b>{totalBonus.toFixed(3)}</b> dari maksimum <b>{bobotMaks.toFixed(3)}</b>.
+                Semua aspek bersifat opsional — isi hanya yang perlu. Terisi <b>{terisi}</b> aspek.
               </div>
+
 
               <p className="text-xs text-muted-foreground pt-2">
                 Perubahan disimpan otomatis saat dialog ditutup.
