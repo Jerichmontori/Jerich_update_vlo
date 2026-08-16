@@ -7,8 +7,10 @@ Admin dapat memilih, untuk tiap kategori, apakah perhitungan nilai memakai **pit
 - Di tab **Pita Nilai** (halaman Pengaturan Admin) ditambahkan satu saklar: **"Gunakan pita nilai untuk kategori ini"**.
 - Saklar **aktif** → nilai juri dipetakan ke pita yang sudah diatur (perilaku sekarang).
 - Saklar **nonaktif** → nilai dihitung dengan rumus lama, yaitu interpolasi memakai `batas_bawah`, `nilai_standart`, dan `batas_atas` kategori:
-  - Tidak clear text: `batas_bawah + n × (nilai_standart − batas_bawah)`
-  - Clear text: `nilai_standart + n × (batas_atas − nilai_standart)`
+  - Tidak clear text: `batas_bawah + bonus_ratio × (nilai_standart − batas_bawah)` — **hanya memakai rasio catatan juri**, grade inti diabaikan (perilaku kode lama yang sudah ada).
+  - Clear text: `nilai_standart + n × (batas_atas − nilai_standart)` — `n` sudah mencakup grade inti + catatan.
+
+**Perbedaan perilaku yang penting:** di jalur pita, nilai tidak-clear-text memakai grade inti + catatan. Di rumus lama, nilai tidak-clear-text hanya ditentukan catatan juri (grade inti diabaikan). Mematikan pita untuk kategori tidak-clear-text karena itu mengubah apa yang sebenarnya dihitung, bukan sekadar menghaluskan angka.
 - Daftar pita tetap tersimpan saat saklar dimatikan, jadi bisa dihidupkan lagi kapan saja tanpa mengisi ulang.
 - Saat saklar mati, tabel pita di tab admin tetap bisa diedit tetapi diberi keterangan "tidak sedang dipakai", dan panel panduan pita di form juri disembunyikan.
 - Setelah mengubah saklar, admin menekan **Hitung Ulang Nilai** agar nilai yang sudah ada menyesuaikan.
