@@ -1235,6 +1235,7 @@ export type Database = {
       get_klarifikasi_status: { Args: { _peserta: string }; Returns: Json }
       get_live_ranking_kategori: { Args: never; Returns: Json }
       get_live_ranking_top10: { Args: never; Returns: boolean }
+      get_mode_inspektur: { Args: never; Returns: number }
       get_pita_nilai: { Args: { _kategori: string }; Returns: Json }
       get_ranking: {
         Args: never
@@ -1402,6 +1403,7 @@ export type Database = {
         }
         Returns: string
       }
+      is_inspektur_var: { Args: { _uid: string }; Returns: boolean }
       is_peserta_final: { Args: { _peserta: string }; Returns: boolean }
       is_peserta_uji: { Args: { _peserta: string }; Returns: boolean }
       is_vmix_viewer: { Args: { _uid: string }; Returns: boolean }
@@ -1463,6 +1465,7 @@ export type Database = {
         Returns: Json
       }
       set_live_ranking_top10: { Args: { _on: boolean }; Returns: Json }
+      set_mode_inspektur: { Args: { _jumlah: number }; Returns: number }
       set_pengumuman_state: {
         Args: { _peserta: string; _running: boolean }
         Returns: undefined
