@@ -1546,6 +1546,19 @@ function PenilaianTab() {
   const perhatianBaselineRef = useRef<boolean[][] | null>(null);
   const PERHATIAN_VAR_TRIGGER_IDX = new Set([0, 1, 2, 3, 4]);
   const [saving, setSaving] = useState(false);
+  // Auto-scroll ke grade terpilih: dijalankan sekali per elemen, dibungkus try/catch
+  // karena sebagian browser tablet (Samsung Internet lawas) tidak stabil dengan
+  // scrollIntoView beropsi saat elemen baru dipasang.
+  const sudahScrollRef = useRef<Element | null>(null);
+  const scrollKePilihan = useCallback((el: HTMLButtonElement | null) => {
+    if (!el || sudahScrollRef.current === el) return;
+    sudahScrollRef.current = el;
+    try {
+      requestAnimationFrame(() => {
+        try { el.scrollIntoView({ block: "center" }); } catch { /* abaikan */ }
+      });
+    } catch { /* abaikan */ }
+  }, []);
   // Aturan #3 — nama juri otomatis dari user yang login (juri tidak bisa memilih juri lain)
   const [myJuriId, setMyJuriId] = useState<string>("");
   const [myJuriNama, setMyJuriNama] = useState<string>("");
