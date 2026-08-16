@@ -2210,6 +2210,42 @@ function PenilaianTab() {
     return row ? Number(row.nilai) : null;
   }
 
+  function currentDetail(kId: string): any {
+    if (!juriId || !pesertaId) return null;
+    const row = penilaian.find(x => x.juri_id === juriId && x.peserta_id === pesertaId && x.kriteria_id === kId);
+    return (row?.detail as any) ?? null;
+  }
+
+  function gradeLabel(grade: number): string {
+    return Number.isInteger(grade) ? `Grade ${grade}` : `Grade ${Math.floor(grade)}½`;
+  }
+
+  // Ringkasan pilihan juri yang tampil di tombol kriteria (agar terlihat saat
+  // penilaian dibuka kembali sebelum dikirim).
+  function ringkasanPilihan(k: Kriteria): string | null {
+    const val = currentNilai(k.id);
+    if (val === null) return null;
+    const key = kriteriaKey(k.nama);
+    const d = currentDetail(k.id);
+    if (key === "catatan") {
+      const terisi = Array.isArray(d?.aspek)
+        ? d.aspek.filter((a: any) => a && !a.skipped && Number(a.nilai) > 0).length
+        : 0;
+      return terisi > 0 ? `${terisi} aspek terisi` : "Tidak ada aspek diisi";
+    }
+    if (key === "perhatian") {
+      const v = d?.clearText ?? d?.membacaPerikop;
+      if (v === true) return "Clear Text: Ya";
+      if (v === false) return "Clear Text: Tidak";
+      return "Sudah diisi";
+    }
+    const g = Number(d?.grade);
+    if (Number.isFinite(g) && g > 0) return gradeLabel(g);
+    return gradeLabel(val / 20);
+  }
+
+
+
   // Catatan Juri selalu opsional, terlepas dari jawaban Clear Text.
   const clearTextSaya: boolean | null = (() => {
     if (!juriId || !pesertaId) return null;
