@@ -41,6 +41,8 @@ export default function PitaNilaiTab() {
   const [rows, setRows] = useState<PitaRow[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [gunakan, setGunakan] = useState(true);
+  const [toggleLoading, setToggleLoading] = useState(false);
 
   const batasKategori = useMemo(
     () => kategoriList.find((k) => k.kategori.toLowerCase() === kategori.trim().toLowerCase()),
@@ -72,7 +74,9 @@ export default function PitaNilaiTab() {
     const { data, error } = await supabase.rpc("get_pita_nilai", { _kategori: kat });
     setLoading(false);
     if (error) return toast.error(error.message);
-    const arr = (data as any[]) ?? [];
+    const obj = (data as any) ?? {};
+    setGunakan(obj.gunakan !== false);
+    const arr: any[] = Array.isArray(obj) ? obj : obj.pita ?? [];
     setRows(
       arr.map((p) => ({
         clear_text: !!p.clear_text,
@@ -84,6 +88,24 @@ export default function PitaNilaiTab() {
         aktif: p.aktif !== false,
       })),
     );
+  }
+
+  async function toggleGunakan(on: boolean) {
+    if (!kategori) return;
+    setToggleLoading(true);
+    const { error } = await supabase.rpc("admin_set_gunakan_pita", {
+      _kategori: kategori,
+      _on: on,
+    });
+    setToggleLoading(false);
+    if (error) {
+      const msg = /hanya admin/i.test(error.message)
+        ? "Hanya admin yang dapat mengubah pengaturan pita"
+        : error.message;
+      return toast.error(msg);
+    }
+    setGunakan(on);
+    toast.success(on ? "Pita nilai diaktifkan untuk kategori ini" : "Pita nilai dimatikan; nilai kini memakai rumus lama");
   }
 
   useEffect(() => {
