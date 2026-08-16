@@ -36,7 +36,7 @@ export default function AdminBackToDashboard() {
     };
   }, [pathname]);
 
-  const hidden = pathname.startsWith("/dashboard") || pathname.startsWith("/auth") || pathname.startsWith("/vmix");
+  const hidden = pathname.startsWith("/dashboard") || pathname.startsWith("/auth");
   if (!isAdmin || hidden) return null;
 
   return (
