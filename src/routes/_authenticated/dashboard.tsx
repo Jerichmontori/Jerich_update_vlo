@@ -1480,11 +1480,13 @@ function CriteriaPillButton({
   active,
   disabled,
   onClick,
+  subLabel,
 }: {
   label: string;
   active: boolean;
   disabled?: boolean;
   onClick: () => void;
+  subLabel?: string | null;
 }) {
   return (
     <button
@@ -1503,10 +1505,22 @@ function CriteriaPillButton({
       ].join(" ")}
     >
       <span className="pointer-events-none absolute inset-x-6 top-2 h-[3px] rounded-full bg-white/50 blur-[1px]" />
-      <div className="relative flex items-center justify-center">
+      <div className="relative flex flex-col items-center justify-center gap-2">
         <span className="text-xl sm:text-2xl font-semibold tracking-wide">
           {label}
         </span>
+        {subLabel ? (
+          <span
+            className={[
+              "rounded-full px-3 py-1 text-xs font-sans font-semibold tracking-wide",
+              active ? "bg-accent-foreground/15 text-accent-foreground" : "bg-muted text-muted-foreground",
+            ].join(" ")}
+          >
+            {subLabel}
+          </span>
+        ) : (
+          <span className="text-xs font-sans text-muted-foreground">Belum dinilai</span>
+        )}
       </div>
     </button>
   );
@@ -2196,6 +2210,42 @@ function PenilaianTab() {
     return row ? Number(row.nilai) : null;
   }
 
+  function currentDetail(kId: string): any {
+    if (!juriId || !pesertaId) return null;
+    const row = penilaian.find(x => x.juri_id === juriId && x.peserta_id === pesertaId && x.kriteria_id === kId);
+    return (row?.detail as any) ?? null;
+  }
+
+  function gradeLabel(grade: number): string {
+    return Number.isInteger(grade) ? `Grade ${grade}` : `Grade ${Math.floor(grade)}½`;
+  }
+
+  // Ringkasan pilihan juri yang tampil di tombol kriteria (agar terlihat saat
+  // penilaian dibuka kembali sebelum dikirim).
+  function ringkasanPilihan(k: Kriteria): string | null {
+    const val = currentNilai(k.id);
+    if (val === null) return null;
+    const key = kriteriaKey(k.nama);
+    const d = currentDetail(k.id);
+    if (key === "catatan") {
+      const terisi = Array.isArray(d?.aspek)
+        ? d.aspek.filter((a: any) => a && !a.skipped && Number(a.nilai) > 0).length
+        : 0;
+      return terisi > 0 ? `${terisi} aspek terisi` : "Tidak ada aspek diisi";
+    }
+    if (key === "perhatian") {
+      const v = d?.clearText ?? d?.membacaPerikop;
+      if (v === true) return "Clear Text: Ya";
+      if (v === false) return "Clear Text: Tidak";
+      return "Sudah diisi";
+    }
+    const g = Number(d?.grade);
+    if (Number.isFinite(g) && g > 0) return gradeLabel(g);
+    return gradeLabel(val / 20);
+  }
+
+
+
   // Catatan Juri selalu opsional, terlepas dari jawaban Clear Text.
   const clearTextSaya: boolean | null = (() => {
     if (!juriId || !pesertaId) return null;
@@ -2565,6 +2615,7 @@ function PenilaianTab() {
                         <CriteriaPillButton
                           label={k.nama}
                           active={val !== null}
+                          subLabel={ringkasanPilihan(k)}
                           disabled={isDisabled}
                           onClick={() => openDialog(k)}
                         />
@@ -3034,7 +3085,14 @@ function PenilaianTab() {
         >
 
           <DialogHeader>
-            <DialogTitle className="font-serif text-2xl">{openKriteria?.nama}</DialogTitle>
+            <DialogTitle className="font-serif text-2xl flex flex-wrap items-center gap-2">
+              {openKriteria?.nama}
+              {openKriteria && activeKey && activeKey !== "catatan" && activeKey !== "perhatian" && currentNilai(openKriteria.id) !== null && (
+                <span className="rounded-full bg-accent px-3 py-1 font-sans text-xs font-semibold text-accent-foreground">
+                  Pilihan saat ini: {ringkasanPilihan(openKriteria)}
+                </span>
+              )}
+            </DialogTitle>
             <DialogDescription>
               {activeKey === "catatan"
                 ? "Pengisian bersifat opsional. Beri nilai 1–5 pada aspek yang ingin dinilai."
@@ -3062,13 +3120,28 @@ function PenilaianTab() {
                     });
                   }
                 }
-                return items.map(({ grade, label, desc }) => (
+                const nilaiTersimpan = openKriteria ? currentNilai(openKriteria.id) : null;
+                const detailTersimpan = openKriteria ? currentDetail(openKriteria.id) : null;
+                const gradeTersimpan = (() => {
+                  const g = Number(detailTersimpan?.grade);
+                  if (Number.isFinite(g) && g > 0) return g;
+                  return nilaiTersimpan !== null ? nilaiTersimpan / 20 : null;
+                })();
+                return items.map(({ grade, label, desc }) => {
+                  const dipilih = gradeTersimpan !== null && Math.abs(gradeTersimpan - grade) < 1e-6;
+                  return (
                   <button
                     key={grade}
                     type="button"
                     disabled={saving}
+                    ref={dipilih ? (el) => { el?.scrollIntoView({ block: "center" }); } : undefined}
                     onClick={() => saveNilai(grade * 20, { type: "grade", grade, label, desc })}
-                    className="flex items-start gap-4 text-left rounded-xl border-2 border-primary/20 bg-card p-4 hover:border-accent hover:bg-accent/5 transition disabled:opacity-60"
+                    className={[
+                      "flex items-start gap-4 text-left rounded-xl border-2 p-4 transition disabled:opacity-60",
+                      dipilih
+                        ? "border-accent bg-accent/10 ring-2 ring-accent/40"
+                        : "border-primary/20 bg-card hover:border-accent hover:bg-accent/5",
+                    ].join(" ")}
                   >
                     <div className="grid place-items-center size-12 shrink-0 rounded-full bg-primary text-primary-foreground font-serif text-lg font-bold shadow">
                       {Number.isInteger(grade) ? grade : `${Math.floor(grade)}½`}
@@ -3077,8 +3150,14 @@ function PenilaianTab() {
                       <div className="font-semibold text-foreground">{label}</div>
                       <p className="text-sm text-muted-foreground mt-1">{desc}</p>
                     </div>
+                    {dipilih && (
+                      <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-accent-foreground">
+                        <Check className="size-3.5" /> Pilihan Anda
+                      </span>
+                    )}
                   </button>
-                ));
+                  );
+                });
               })()}
             </div>
           )}
