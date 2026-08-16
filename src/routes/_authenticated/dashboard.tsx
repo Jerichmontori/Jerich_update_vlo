@@ -2615,6 +2615,7 @@ function PenilaianTab() {
                         <CriteriaPillButton
                           label={k.nama}
                           active={val !== null}
+                          subLabel={ringkasanPilihan(k)}
                           disabled={isDisabled}
                           onClick={() => openDialog(k)}
                         />
