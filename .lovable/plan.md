@@ -1,20 +1,22 @@
-# Konsistensi Nilai Pita P/KB
+# Tampilkan Pilihan Juri pada 4 Kriteria Inti
 
-## Temuan terverifikasi
+Saat juri membuka kembali penilaian yang belum dikirim, pilihan grade yang sudah tersimpan tidak terlihat: tombol kriteria hanya berubah warna (aktif), dan di dalam dialog semua grade tampil netral tanpa tanda mana yang dipilih.
 
-- Batas bawah pita clear text pertama P/KB sudah diturunkan menjadi **82,199**.
-- Namun pengaturan kategori P/KB saat ini adalah **`gunakan_pita = false`**, sehingga nilai aktif masih dihitung dengan rumus tanpa pita.
-- Walaupun batas bawah sudah sama, hasil kedua mode tetap berbeda karena mekanismenya berbeda:
-  - mode pita memilih satu dari enam pita berdasarkan empat kriteria induk, lalu catatan juri menentukan posisi di dalam pita;
-  - mode tanpa pita memetakan skor secara kontinu dari nilai standar sampai batas atas kategori.
-- Ada pula jitter anti-seri hingga sekitar **±0,0009**, tetapi setelah pembulatan tiga desimal pengaruhnya hanya sekitar **±0,001** dan bukan sumber selisih utama.
+## Yang akan diubah (tampilan saja)
 
-## Tindakan
+1. **Tombol kriteria (Vokal, Penghayatan, Intonasi, Penampilan)**
+   - Menampilkan grade yang sudah dipilih, mis. "Grade 4" atau "Grade 4½", sebagai label kecil di bawah nama kriteria.
+   - Tombol yang belum diisi tetap seperti sekarang ("Belum dinilai" implisit / polos).
 
-1. Aktifkan kembali penggunaan pita untuk kategori **P/KB** tanpa mengubah rumus, rentang pita, bobot, atau aturan catatan juri.
-2. Jalankan penghitungan ulang cache nilai agar nilai lama mengikuti mode pita yang aktif.
-3. Verifikasi konfigurasi P/KB, cache submission, dan hasil ranking setelah penyegaran.
+2. **Dialog pilih grade**
+   - Baris grade yang sedang tersimpan ditandai jelas: border aksen, latar aksen tipis, dan ikon centang di sisi kanan.
+   - Dialog otomatis menggulir ke pilihan tersimpan saat dibuka.
+   - Judul dialog menampilkan status "Pilihan saat ini: Grade X".
 
-## Hasil yang diharapkan
+3. **Kriteria Catatan Juri & Perhatian** sudah memulihkan pilihan sebelumnya; tidak diubah, hanya diberi indikator ringkas pada tombolnya (mis. "3 aspek terisi" / "Clear Text: Ya") agar konsisten.
 
-Nilai tetap mengikuti sistem pita seperti sekarang. Perbedaan terhadap mode tanpa pita tetap wajar dan disengaja; seluruh halaman hanya akan konsisten menampilkan hasil mode pita yang aktif.
+## Catatan teknis
+
+- Semua perubahan di `src/routes/_authenticated/dashboard.tsx` pada komponen `CriteriaPillButton`, grid kriteria, dan blok render dialog grade.
+- Sumber data sudah ada: `currentNilai(k.id)` (nilai = grade x 20) dan `penilaian[].detail.grade`; tidak perlu perubahan database, RPC, maupun logika perhitungan/pengiriman.
+- Aturan penguncian yang ada (sudah dikirim / mode perbaikan) tetap berlaku tanpa perubahan.
