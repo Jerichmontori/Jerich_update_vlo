@@ -36,6 +36,8 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import AdminSidebar, { ADMIN_SECTION_LABEL, type AdminSection } from "@/components/AdminSidebar";
 import PitaNilaiTab from "@/components/PitaNilaiTab";
 import PitaNilaiPanduan from "@/components/PitaNilaiPanduan";
+import PratinjauPita from "@/components/PratinjauPita";
+
 
 import KeberatanTab from "@/components/KeberatanTab";
 import PerbaikanNotifikasi from "@/components/PerbaikanNotifikasi";
@@ -2492,9 +2494,24 @@ function PenilaianTab() {
             </div>
           </div>
 
+          {juriId && pesertaId && (
+            <div className="mb-4">
+              <PratinjauPita
+                pesertaId={pesertaId}
+                juriId={juriId}
+                refreshKey={penilaian
+                  .filter(x => x.juri_id === juriId && x.peserta_id === pesertaId)
+                  .map(x => `${x.kriteria_id}:${x.nilai}:${JSON.stringify(x.detail ?? null)}`)
+                  .sort()
+                  .join("|")}
+              />
+            </div>
+          )}
+
           <div className="mb-6">
             <PitaNilaiPanduan kategori={peserta.find(p => p.id === pesertaId)?.kategori ?? null} />
           </div>
+
 
 
 
