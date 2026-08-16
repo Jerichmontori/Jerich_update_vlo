@@ -1459,7 +1459,10 @@ const PERHATIAN_ASPEK = [
 
 /** True bila ada minimal satu ayat ditandai pada pertanyaan selain Clear Text. */
 function adaPenandaanAyat(checks: boolean[][]): boolean {
-  return checks.slice(1).some((row) => row.some(Boolean));
+  if (!Array.isArray(checks)) return false;
+  return checks
+    .slice(1)
+    .some((row) => (Array.isArray(row) ? row.some(Boolean) : false));
 }
 
 
