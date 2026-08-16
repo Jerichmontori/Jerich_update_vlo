@@ -12,7 +12,10 @@ import { Toaster, toast } from "sonner";
 import GantiPasswordButton from "@/components/GantiPasswordButton";
 import VarBadge from "@/components/VarBadge";
 import { useVarStatus } from "@/hooks/useVarStatus";
-import { Shield, RefreshCw, BookOpenText, AlertTriangle, Eye, Square, Siren, CheckCircle2, XCircle } from "lucide-react";
+import IpVarKoreksi from "@/components/IpVarKoreksi";
+import PerbaikanNotifikasi from "@/components/PerbaikanNotifikasi";
+import PerbaikanAktifPanel from "@/components/PerbaikanAktifPanel";
+import { Shield, RefreshCw, BookOpenText, AlertTriangle, Eye, Square, Siren, CheckCircle2, XCircle, Gavel } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/inspektur")({
   component: InspekturPage,
