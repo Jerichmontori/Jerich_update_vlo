@@ -216,7 +216,13 @@ export default function PitaNilaiTab() {
                       />
                     </TableCell>
                     <TableCell>
-                      <Input value={r.deskripsi} onChange={(e) => update(i, { deskripsi: e.target.value })} />
+                      <Textarea
+                        value={r.deskripsi}
+                        onChange={(e) => update(i, { deskripsi: e.target.value })}
+                        rows={3}
+                        className="min-w-72 resize-y"
+                        placeholder="Deskripsi pita…"
+                      />
                     </TableCell>
                     <TableCell className="text-center">
                       <Switch checked={r.aktif} onCheckedChange={(v) => update(i, { aktif: v })} />
