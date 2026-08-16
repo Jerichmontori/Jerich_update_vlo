@@ -3175,35 +3175,44 @@ function PenilaianTab() {
                       )}
                     </div>
                     {i === 0 ? (
-                      <div className="grid grid-cols-2 gap-2">
-                        {[
-                          { label: "Ya", val: true },
-                          { label: "Tidak", val: false },
-                        ].map(opt => {
-                          const active = row[0] === opt.val;
-                          return (
-                            <button
-                              key={opt.label}
-                              type="button"
-                              disabled={locked}
-                              onClick={() =>
-                                setPerhatianChecks(prev => prev.map((r, idx) => idx === 0 ? [opt.val] : r))
-                              }
-                              className={[
-                                "rounded-md border-2 py-2 text-sm font-semibold transition",
-                                active
-                                  ? (opt.val
-                                      ? "border-accent bg-accent text-accent-foreground"
-                                      : "border-destructive bg-destructive text-destructive-foreground")
-                                  : "border-primary/20 bg-background hover:border-accent/60",
-                                locked ? "cursor-not-allowed opacity-70 hover:border-primary/20" : "",
-                              ].join(" ")}
-                            >
-                              {opt.label}
-                            </button>
-                          );
-                        })}
-                      </div>
+                      <>
+                        <div className="grid grid-cols-2 gap-2">
+                          {[
+                            { label: "Ya", val: true },
+                            { label: "Tidak", val: false },
+                          ].map(opt => {
+                            const active = adaTandaDlg ? opt.val === false : row[0] === opt.val;
+                            const optDisabled = locked || (adaTandaDlg && opt.val === true);
+                            return (
+                              <button
+                                key={opt.label}
+                                type="button"
+                                disabled={optDisabled}
+                                onClick={() => {
+                                  if (optDisabled) return;
+                                  setPerhatianChecks(prev => prev.map((r, idx) => idx === 0 ? [opt.val] : r));
+                                }}
+                                className={[
+                                  "rounded-md border-2 py-2 text-sm font-semibold transition",
+                                  active
+                                    ? (opt.val
+                                        ? "border-accent bg-accent text-accent-foreground"
+                                        : "border-destructive bg-destructive text-destructive-foreground")
+                                    : "border-primary/20 bg-background hover:border-accent/60",
+                                  optDisabled ? "cursor-not-allowed opacity-70 hover:border-primary/20" : "",
+                                ].join(" ")}
+                              >
+                                {opt.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        {adaTandaDlg && (
+                          <p className="text-xs text-destructive mt-2">
+                            Otomatis <b>Tidak clear</b> karena ada penandaan kesalahan pada ayat. Hapus semua penandaan untuk memilih kembali.
+                          </p>
+                        )}
+                      </>
                     ) : (
                       <div className={["grid grid-cols-5 sm:grid-cols-8 gap-2", locked ? "pointer-events-none" : ""].join(" ")}>
                         {row.map((checked, ayatIdx) => (
