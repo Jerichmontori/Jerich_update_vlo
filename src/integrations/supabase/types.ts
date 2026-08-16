@@ -622,6 +622,62 @@ export type Database = {
           },
         ]
       }
+      perbaikan_snapshot: {
+        Row: {
+          alasan: string | null
+          created_at: string
+          data: Json
+          dibuka_at: string
+          dibuka_nama: string | null
+          dibuka_oleh: string | null
+          ditutup_at: string | null
+          id: string
+          jenis: string
+          juri_id: string | null
+          peserta_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          alasan?: string | null
+          created_at?: string
+          data?: Json
+          dibuka_at?: string
+          dibuka_nama?: string | null
+          dibuka_oleh?: string | null
+          ditutup_at?: string | null
+          id?: string
+          jenis?: string
+          juri_id?: string | null
+          peserta_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          alasan?: string | null
+          created_at?: string
+          data?: Json
+          dibuka_at?: string
+          dibuka_nama?: string | null
+          dibuka_oleh?: string | null
+          ditutup_at?: string | null
+          id?: string
+          jenis?: string
+          juri_id?: string | null
+          peserta_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "perbaikan_snapshot_peserta_id_fkey"
+            columns: ["peserta_id"]
+            isOneToOne: false
+            referencedRelation: "peserta"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       peserta: {
         Row: {
           asal: string | null
@@ -1086,6 +1142,10 @@ export type Database = {
       }
     }
     Functions: {
+      admin_batal_buka_perbaikan: {
+        Args: { _alasan?: string; _peserta: string }
+        Returns: Json
+      }
       admin_buka_penilaian_ulang: {
         Args: { _catatan?: string; _peserta: string }
         Returns: string
@@ -1132,10 +1192,15 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      admin_list_permintaan_perbaikan: { Args: never; Returns: Json }
       admin_notifikasi_perbaikan: { Args: never; Returns: Json }
       admin_putuskan_peninjauan: {
         Args: { _catatan: string; _id: string; _setuju: boolean }
         Returns: undefined
+      }
+      admin_putuskan_perbaikan_juri: {
+        Args: { _catatan?: string; _id: string; _setuju: boolean }
+        Returns: Json
       }
       admin_reset_all_penilaian: { Args: never; Returns: undefined }
       admin_set_juri_aktif: {
@@ -1148,6 +1213,15 @@ export type Database = {
       }
       akhiri_sesi: { Args: { _id: string }; Returns: undefined }
       all_juri_submitted: { Args: { _peserta: string }; Returns: boolean }
+      buat_perbaikan_snapshot: {
+        Args: {
+          _alasan: string
+          _jenis: string
+          _juri: string
+          _peserta: string
+        }
+        Returns: string
+      }
       detect_potensi_var: { Args: { _peserta: string }; Returns: string }
       get_branding: { Args: never; Returns: Json }
       get_keberatan_deadline: { Args: never; Returns: Json }
@@ -1308,6 +1382,10 @@ export type Database = {
         Args: { _catatan: string; _perjuri: Json; _peserta: string }
         Returns: string
       }
+      ip2_pulihkan_nilai: {
+        Args: { _catatan?: string; _peserta: string }
+        Returns: Json
+      }
       ip2_putuskan_var: {
         Args: {
           _catatan: string
@@ -1320,12 +1398,17 @@ export type Database = {
       is_peserta_final: { Args: { _peserta: string }; Returns: boolean }
       is_peserta_uji: { Args: { _peserta: string }; Returns: boolean }
       is_vmix_viewer: { Args: { _uid: string }; Returns: boolean }
+      juri_ajukan_perbaikan: {
+        Args: { _alasan: string; _peserta: string }
+        Returns: string
+      }
       juri_hasil_final: { Args: never; Returns: Json }
       juri_in_pool: {
         Args: { _juri: string; _peserta: string }
         Returns: boolean
       }
       juri_live_ranking_pending: { Args: never; Returns: Json }
+      juri_permintaan_perbaikan_saya: { Args: never; Returns: Json }
       juri_pool_count: { Args: { _peserta: string }; Returns: number }
       juri_vote_live_ranking: {
         Args: { _catatan?: string; _sesi: number; _setuju: boolean }
@@ -1345,9 +1428,13 @@ export type Database = {
         Returns: string
       }
       operator_var_status: { Args: never; Returns: Json }
+      perbaikan_aktif_list: { Args: never; Returns: Json }
+      perbaikan_juri_aktif: { Args: { _peserta: string }; Returns: boolean }
+      perbaikan_var_aktif: { Args: { _peserta: string }; Returns: boolean }
       peserta_pool_cutoff: { Args: { _peserta: string }; Returns: string }
       public_live_state: { Args: never; Returns: Json }
       public_pengumuman_state: { Args: never; Returns: Json }
+      pulihkan_dari_snapshot: { Args: { _snap: string }; Returns: number }
       refresh_nilai_cache: { Args: never; Returns: undefined }
       sekretariat_set_sesi: {
         Args: { _peserta: string; _sesi: number }

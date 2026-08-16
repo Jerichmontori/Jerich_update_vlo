@@ -39,6 +39,9 @@ import PitaNilaiPanduan from "@/components/PitaNilaiPanduan";
 
 import KeberatanTab from "@/components/KeberatanTab";
 import PerbaikanNotifikasi from "@/components/PerbaikanNotifikasi";
+import PermintaanPerbaikanJuri from "@/components/PermintaanPerbaikanJuri";
+import PerbaikanAktifPanel from "@/components/PerbaikanAktifPanel";
+import JuriAjukanPerbaikan from "@/components/JuriAjukanPerbaikan";
 
 import PeninjauanTab from "@/components/PeninjauanTab";
 
@@ -135,12 +138,14 @@ function App() {
         <Header />
         <main className="mx-auto max-w-6xl px-4 pb-16">
           <Tabs defaultValue="penilaian" className="w-full">
-            <TabsList className="grid w-full grid-cols-2 h-auto bg-secondary/60 p-1">
+            <TabsList className="grid w-full grid-cols-3 h-auto bg-secondary/60 p-1">
               <TabsTrigger value="penilaian" className="gap-2"><ClipboardCheck className="size-4" />Penilaian</TabsTrigger>
               <TabsTrigger value="hasil" className="gap-2"><FileText className="size-4" />Hasil Saya</TabsTrigger>
+              <TabsTrigger value="perbaikan" className="gap-2"><RotateCcw className="size-4" />Perbaikan</TabsTrigger>
             </TabsList>
             <TabsContent value="penilaian"><PenilaianTab /></TabsContent>
             <TabsContent value="hasil"><JuriHasilFinalTab /></TabsContent>
+            <TabsContent value="perbaikan"><JuriAjukanPerbaikan /></TabsContent>
           </Tabs>
         </main>
       </div>
@@ -167,6 +172,8 @@ function App() {
             {section === "dashboard" && (
               <div className="space-y-4">
                 <PerbaikanNotifikasi />
+                {roles.isAdm && <PermintaanPerbaikanJuri />}
+                {roles.isAdm && <PerbaikanAktifPanel mode="admin" />}
                 <DashboardTab />
               </div>
             )}
@@ -470,10 +477,16 @@ function PesertaTab() {
   }
 
   async function bukaPenilaianUlang(p: Peserta) {
-    if (!confirm(`Aktifkan kembali penilaian untuk ${p.nomor_urut}. ${p.nama}? Juri dapat memperbaiki dan mengirim ulang nilai.`)) return;
-    const { error } = await supabase.rpc("admin_buka_penilaian_ulang" as any, { _peserta: p.id, _catatan: null });
+    const alasan = window.prompt(
+      `Buka kembali penilaian untuk ${p.nomor_urut}. ${p.nama}?\n` +
+      `Seluruh kiriman juri untuk peserta ini akan dibuka kembali (nilai lama dicadangkan otomatis).\n\n` +
+      `Tulis alasan (wajib):`
+    );
+    if (alasan === null) return;
+    if (!alasan.trim()) return toast.error("Alasan buka perbaikan wajib diisi");
+    const { error } = await supabase.rpc("admin_buka_penilaian_ulang" as any, { _peserta: p.id, _catatan: alasan.trim() });
     if (error) return toast.error(error.message);
-    toast.success("Penilaian dibuka kembali untuk perbaikan juri");
+    toast.success("Penilaian dibuka kembali — dapat dibatalkan selama belum ada nilai baru");
     load();
   }
 
