@@ -3113,13 +3113,28 @@ function PenilaianTab() {
                     });
                   }
                 }
-                return items.map(({ grade, label, desc }) => (
+                const nilaiTersimpan = openKriteria ? currentNilai(openKriteria.id) : null;
+                const detailTersimpan = openKriteria ? currentDetail(openKriteria.id) : null;
+                const gradeTersimpan = (() => {
+                  const g = Number(detailTersimpan?.grade);
+                  if (Number.isFinite(g) && g > 0) return g;
+                  return nilaiTersimpan !== null ? nilaiTersimpan / 20 : null;
+                })();
+                return items.map(({ grade, label, desc }) => {
+                  const dipilih = gradeTersimpan !== null && Math.abs(gradeTersimpan - grade) < 1e-6;
+                  return (
                   <button
                     key={grade}
                     type="button"
                     disabled={saving}
+                    ref={dipilih ? (el) => { el?.scrollIntoView({ block: "center" }); } : undefined}
                     onClick={() => saveNilai(grade * 20, { type: "grade", grade, label, desc })}
-                    className="flex items-start gap-4 text-left rounded-xl border-2 border-primary/20 bg-card p-4 hover:border-accent hover:bg-accent/5 transition disabled:opacity-60"
+                    className={[
+                      "flex items-start gap-4 text-left rounded-xl border-2 p-4 transition disabled:opacity-60",
+                      dipilih
+                        ? "border-accent bg-accent/10 ring-2 ring-accent/40"
+                        : "border-primary/20 bg-card hover:border-accent hover:bg-accent/5",
+                    ].join(" ")}
                   >
                     <div className="grid place-items-center size-12 shrink-0 rounded-full bg-primary text-primary-foreground font-serif text-lg font-bold shadow">
                       {Number.isInteger(grade) ? grade : `${Math.floor(grade)}½`}
@@ -3128,8 +3143,14 @@ function PenilaianTab() {
                       <div className="font-semibold text-foreground">{label}</div>
                       <p className="text-sm text-muted-foreground mt-1">{desc}</p>
                     </div>
+                    {dipilih && (
+                      <span className="shrink-0 inline-flex items-center gap-1 rounded-full bg-accent px-2.5 py-1 text-[11px] font-semibold text-accent-foreground">
+                        <Check className="size-3.5" /> Pilihan Anda
+                      </span>
+                    )}
                   </button>
-                ));
+                  );
+                });
               })()}
             </div>
           )}
