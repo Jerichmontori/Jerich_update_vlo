@@ -33,13 +33,25 @@ export class PanelErrorBoundary extends React.Component<Props, State> {
         <p className="mt-1 text-sm text-muted-foreground">
           Data Anda tetap tersimpan. Coba tampilkan ulang panel ini.
         </p>
-        <button
-          type="button"
-          onClick={() => this.setState({ error: null })}
-          className="mt-4 inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
-        >
-          Coba lagi
-        </button>
+        <p className="mx-auto mt-3 max-w-xl break-words rounded-md bg-background/70 p-2 text-left font-mono text-[11px] text-destructive">
+          {this.state.error.message || String(this.state.error)}
+        </p>
+        <div className="mt-4 flex flex-wrap justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => this.setState({ error: null })}
+            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground"
+          >
+            Coba lagi
+          </button>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground"
+          >
+            Muat ulang halaman
+          </button>
+        </div>
       </div>
     );
   }
