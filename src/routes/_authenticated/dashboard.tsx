@@ -2476,6 +2476,12 @@ function PenilaianTab() {
             </div>
           </div>
 
+          <div className="mb-6">
+            <PitaNilaiPanduan kategori={peserta.find(p => p.id === pesertaId)?.kategori ?? null} />
+          </div>
+
+
+
           {/* Nilai Akhir juri ini (muncul saat seluruh kriteria terisi) */}
           {nilaiJuriPreview !== null && (
             <div className="mb-6 rounded-xl border-2 border-accent/50 bg-gradient-to-br from-accent/10 via-card to-primary/5 p-4 flex items-center justify-between shadow-sm">
