@@ -38,6 +38,7 @@
 - `src/routes/_authenticated/dashboard.tsx`
   - `PERHATIAN_ASPEK` menjadi: Clear Text, Salah kata, Menambah kata, Mengurangi kata, **Mengulang kata**.
   - Skor Perhatian (`perhatianNilai`) menjadi 0/informasional; simpan `detail` penandaan seperti biasa.
+  - Tombol Ya pada Clear Text dinonaktifkan dan pilihan dipaksa ke Tidak saat ada centang ayat; tampilkan keterangan alasannya. Nilai `clearText` yang dikirim mengikuti aturan otomatis ini.
   - Mode Perbaikan Perhatian: hanya baris **Clear Text** yang dapat diubah; baris penandaan tetap dapat diisi sebagai catatan, diberi label "informasi saja".
   - Teks bantuan: penandaan ayat dijelaskan sebagai penanda lokasi kesalahan, bukan pengurang nilai.
 - `src/components/VarPersepsiDetail.tsx`, `AdminVarTab.tsx`, `IpVarKoreksi.tsx`, `IpVarKoreksiPerJuri.tsx`, `src/routes/_authenticated/inspektur.tsx`, `vmix.tsx`: label komponen ditambah `mengulang_kata`; badge "komponen berbeda" praktis hanya Clear Text; panel koreksi ayat ditandai "tidak mempengaruhi nilai".
