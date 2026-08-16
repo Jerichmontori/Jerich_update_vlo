@@ -19,7 +19,7 @@ export const Route = createFileRoute("/live")({
 const ALL = "__all__";
 
 function LivePublic() {
-  const { state, error } = useLiveState(4000);
+  const { state, error } = useLiveState(6000);
   const [kategori, setKategori] = useState<string>(ALL);
   const [sesi, setSesi] = useState<string>(ALL);
 
