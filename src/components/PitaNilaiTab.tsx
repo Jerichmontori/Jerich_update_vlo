@@ -10,6 +10,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Plus, Trash2, Save, RefreshCw } from "lucide-react";
+import SkemaPitaNilai from "@/components/SkemaPitaNilai";
+
 
 export type PitaRow = {
   clear_text: boolean;
@@ -338,6 +340,8 @@ export default function PitaNilaiTab() {
             <RefreshCw className="size-4" /> Hitung Ulang Nilai
           </Button>
         </div>
+
+        <SkemaPitaNilai kategori={kategori} rows={rows} gunakan={gunakan} />
       </CardContent>
     </Card>
   );
