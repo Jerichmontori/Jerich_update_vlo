@@ -4,31 +4,34 @@ Tujuan: setiap pita punya label singkat + deskripsi yang jelas menggambarkan mut
 
 Kategori yang ada saat ini: P/KB (1 pita non-clear text, 6 pita clear text).
 
-## Usulan keterangan baru
+## Usulan keterangan baru (tanpa menyebut aspek penilaian)
+
+Keterangan ditulis sebagai kesan menyeluruh atas penampilan peserta, bukan uraian per aspek (vokal, intonasi, artikulasi, gestur, dsb.).
 
 ### Tidak clear text — 81,099 s/d 81,999
 - Label: Tidak clear text
-- Deskripsi: Terdapat kesalahan teks (salah kata, menambah, mengurangi, atau mengulang kata). Penilaian mutu lain (vokal, penghayatan, intonasi, penampilan) tetap dihitung, namun posisi nilai peserta dibatasi pada rentang ini. Posisi di dalam rentang menunjukkan seberapa baik aspek non-teks peserta.
+- Deskripsi: Pembawaan mazmur terganggu karena teks tidak utuh, sehingga pesan yang sampai ke pendengar belum utuh.
 
 ### Clear text — 6 pita
 
 1. Clear text — dasar (82,301–82,500)
-   Teks dibawakan benar seluruhnya, namun interpretasi, artikulasi, dan intonasi masih pada taraf biasa. Penampilan aman tetapi belum menonjol; pesan mazmur belum terasa hidup.
+   Teks dibawakan utuh, namun pesan mazmur belum terasa hidup.
 
 2. Interpretasi kurang tepat (82,501–82,600)
-   Teks benar dan aspek teknis lain sudah baik, tetapi pemahaman/penafsiran isi mazmur belum tepat sehingga penekanan kalimat tidak sesuai maksud teks.
+   Pembawaan sudah rapi, tetapi maksud pesan mazmur belum tersampaikan sebagaimana mestinya.
 
 3. Interpretasi baik, artikulasi biasa (82,601–82,700)
-   Isi mazmur dipahami dan disampaikan dengan tepat, namun artikulasi masih biasa, gestur minim, serta irama dan dinamika cenderung datar/monoton.
+   Pesan mazmur mulai tersampaikan, namun pembawaannya masih datar dan belum menyentuh.
 
 4. Interpretasi & penghayatan baik (82,701–82,800)
-   Isi dipahami dan dihayati dengan baik, artikulasi jelas; kekurangan tinggal pada irama yang masih monoton serta gestur, ekspresi, dan mimik yang belum mendukung.
+   Pesan mazmur tersampaikan dengan jelas dan mulai terasa, meski belum sepenuhnya memikat.
 
 5. Vokal belum maksimal (82,801–82,900)
-   Interpretasi, penghayatan, intonasi, gestur, ekspresi, dan mimik sudah baik; hanya kualitas vokal yang belum maksimal atau terganggu, dan variasi irama/dinamika masih kurang.
+   Pembawaan sudah menyentuh dan meyakinkan, hanya belum tampil dalam kondisi terbaiknya.
 
 6. Memenuhi semua kriteria (82,901–82,999)
-   Seluruh kriteria terpenuhi dengan baik: teks benar, interpretasi dan penghayatan tepat, vokal dan intonasi prima, gestur serta ekspresi mendukung. Pembeda antar peserta tinggal rasa/kesan yang tersampaikan kepada juri.
+   Pesan mazmur hidup dan berkesan kuat; pembeda tinggal rasa yang tertinggal pada pendengar.
+
 
 ## Teknis
 
