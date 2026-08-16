@@ -1459,7 +1459,10 @@ const PERHATIAN_ASPEK = [
 
 /** True bila ada minimal satu ayat ditandai pada pertanyaan selain Clear Text. */
 function adaPenandaanAyat(checks: boolean[][]): boolean {
-  return checks.slice(1).some((row) => row.some(Boolean));
+  if (!Array.isArray(checks)) return false;
+  return checks
+    .slice(1)
+    .some((row) => (Array.isArray(row) ? row.some(Boolean) : false));
 }
 
 
@@ -3148,7 +3151,11 @@ function PenilaianTab() {
           {activeKey && activeKey !== "catatan" && activeKey !== "perhatian" && (
             <div className="grid gap-3 py-2 flex-1 min-h-0 overflow-y-auto pr-2">
               {(() => {
-                const descs = GRADE_DESCRIPTIONS[activeKey];
+                // Kriteria baru yang belum punya deskripsi grade tidak boleh
+                // menjatuhkan panel — pakai label generik sebagai cadangan.
+                const descs = GRADE_DESCRIPTIONS[activeKey] ?? [
+                  "Sangat kurang.", "Kurang.", "Cukup.", "Baik.", "Sangat baik.",
+                ];
                 const items: { grade: number; label: string; desc: string }[] = [];
                 for (let i = 0; i < descs.length; i++) {
                   items.push({ grade: i + 1, label: `Grade ${i + 1}`, desc: descs[i] });
