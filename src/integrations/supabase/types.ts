@@ -65,6 +65,7 @@ export type Database = {
           batas_bawah: number
           bobot: number
           created_at: string
+          gunakan_pita: boolean
           id: string
           kategori: string | null
           kriteria_penilaian: string | null
@@ -78,6 +79,7 @@ export type Database = {
           batas_bawah?: number
           bobot?: number
           created_at?: string
+          gunakan_pita?: boolean
           id?: string
           kategori?: string | null
           kriteria_penilaian?: string | null
@@ -91,6 +93,7 @@ export type Database = {
           batas_bawah?: number
           bobot?: number
           created_at?: string
+          gunakan_pita?: boolean
           id?: string
           kategori?: string | null
           kriteria_penilaian?: string | null
@@ -1203,6 +1206,10 @@ export type Database = {
         Returns: Json
       }
       admin_reset_all_penilaian: { Args: never; Returns: undefined }
+      admin_set_gunakan_pita: {
+        Args: { _kategori: string; _on: boolean }
+        Returns: Json
+      }
       admin_set_juri_aktif: {
         Args: { _aktif: boolean; _juri: string }
         Returns: undefined
@@ -1228,7 +1235,7 @@ export type Database = {
       get_klarifikasi_status: { Args: { _peserta: string }; Returns: Json }
       get_live_ranking_kategori: { Args: never; Returns: Json }
       get_live_ranking_top10: { Args: never; Returns: boolean }
-      get_pita_nilai: { Args: { _kategori?: string }; Returns: Json }
+      get_pita_nilai: { Args: { _kategori: string }; Returns: Json }
       get_ranking: {
         Args: never
         Returns: {
