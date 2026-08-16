@@ -27,8 +27,14 @@ export default function PitaNilaiPanduan({ kategori }: { kategori?: string | nul
       }
       const { data, error } = await supabase.rpc("get_pita_nilai", { _kategori: kategori });
       if (cancel || error) return;
-      const arr = ((data as any[]) ?? []).filter((p) => p.aktif !== false) as Pita[];
-      setRows(arr);
+      const obj = (data as any) ?? {};
+      // Kategori dengan pita dimatikan tidak menampilkan panduan.
+      if (obj.gunakan === false) {
+        setRows([]);
+        return;
+      }
+      const arr: any[] = Array.isArray(obj) ? obj : obj.pita ?? [];
+      setRows(arr.filter((p) => p.aktif !== false) as Pita[]);
     })();
     return () => {
       cancel = true;
