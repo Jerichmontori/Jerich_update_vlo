@@ -2354,31 +2354,26 @@ function PenilaianTab() {
     await saveNilai(nilai, detail);
   }
 
-  // Aspek 0 = Clear Text (Ya/Tidak) tidak dihitung sebagai penanda; hanya aspek pemicu VAR (baris 1..) yang menghitung.
-  const perhatianTotal = perhatianChecks.slice(1).reduce((s, row) => s + row.length, 0);
-  const perhatianChecked = perhatianChecks.slice(1).reduce((s, row) => s + row.filter(Boolean).length, 0);
-  const perhatianNilai = perhatianTotal === 0
-    ? 0
-    : Math.round(((perhatianTotal - perhatianChecked) / perhatianTotal) * 100 * 100) / 100;
+  // Penandaan ayat kini hanya informasi lokasi kesalahan — tidak mempengaruhi nilai.
+  const perhatianAdaTanda = adaPenandaanAyat(perhatianChecks);
 
   async function savePerhatian() {
-    // Wajibkan jawaban "Clear Text" (Ya/Tidak) sebelum menyimpan.
-    if (perhatianChecks[0]?.[0] === undefined) {
-      return toast.warning("Pilih jawaban untuk 'Clear Text' terlebih dahulu.");
-    }
     // Guard: bila mode Perbaikan Perhatian aktif, paksa baris non-pemicu kembali ke baseline saat dialog dibuka.
     const perbaikanAktifNow = !!(pesertaId && perbaikanAktifIds.has(pesertaId));
     const baseline = perhatianBaselineRef.current;
     const effective = (perbaikanAktifNow && baseline)
       ? perhatianChecks.map((row, i) => PERHATIAN_VAR_TRIGGER_IDX.has(i) ? row : (baseline[i] ? [...baseline[i]] : row))
       : perhatianChecks;
-    // Skor hanya berdasarkan 3 pertanyaan pemicu VAR (bukan Clear Text).
-    const totalAll = effective.slice(1).reduce((s, row) => s + row.length, 0);
-    const checkedAll = effective.slice(1).reduce((s, row) => s + row.filter(Boolean).length, 0);
-    const nilaiAll = totalAll === 0 ? 0 : Math.round(((totalAll - checkedAll) / totalAll) * 100 * 100) / 100;
+    // Ada penandaan ayat → status otomatis "tidak clear".
+    const adaTanda = adaPenandaanAyat(effective);
+    const clearText = adaTanda ? false : ((effective[0]?.[0] as unknown as boolean) ?? null);
+    // Wajibkan jawaban "Clear Text" (Ya/Tidak) bila tidak ada penandaan.
+    if (clearText === null) {
+      return toast.warning("Pilih jawaban untuk 'Clear Text' terlebih dahulu.");
+    }
     const detail: PenilaianDetail = {
       type: "perhatian",
-      clearText: (effective[0]?.[0] as unknown as boolean) ?? null,
+      clearText,
       aspek: PERHATIAN_ASPEK.slice(1).map((nama, idx) => {
         const row = effective[idx + 1] ?? [];
         const ditandai: number[] = [];
@@ -2386,7 +2381,8 @@ function PenilaianTab() {
         return { nama, ayat: row, ditandai };
       }),
     };
-    await saveNilai(nilaiAll, detail);
+    // Nilai kriteria Perhatian hanya informatif (tanpa penalti).
+    await saveNilai(0, detail);
   }
 
 
