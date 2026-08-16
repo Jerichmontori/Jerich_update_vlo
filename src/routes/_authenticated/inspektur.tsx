@@ -513,6 +513,23 @@ function InspekturPage() {
           </CardContent>
         </Card>
 
+        {/* Tool VAR — hanya tampil saat Mode 1 (IP menangani VAR) */}
+        {modeInsp === 1 && (
+          <Card className="border-rose-500/40">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Gavel className="size-5 text-rose-600" /> Tool VAR (Mode 1)</CardTitle>
+              <CardDescription>
+                Mode 1 aktif — Anda menangani keputusan VAR, koreksi per juri, dan pemulihan nilai langsung dari halaman ini.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <PerbaikanNotifikasi canOpen />
+              <PerbaikanAktifPanel mode="inspektur" />
+              <IpVarKoreksi />
+            </CardContent>
+          </Card>
+        )}
+
       </main>
 
       <Dialog open={detailOpen} onOpenChange={setDetailOpen}>
