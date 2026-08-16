@@ -53,3 +53,6 @@ Agar kesalahan klik dapat dibatalkan tanpa merusak nilai:
 - UI: `PerbaikanNotifikasi` dipakai read-only di dashboard admin (`canOpen` selalu false di sana), tetap `canOpen` di halaman Inspektur VAR.
 - UI baru: kartu "Permintaan Perbaikan Juri" di dashboard admin, dan form pengajuan perbaikan di dashboard juri.
 - GRANT EXECUTE untuk fungsi baru hanya ke `authenticated`, dengan pemeriksaan role di dalam fungsi.
+- Snapshot pembatalan: tabel `perbaikan_snapshot` (peserta, dibuka_oleh, alasan, isi kiriman + nilai per juri dalam JSON, status aktif/dibatalkan/selesai) dengan RLS admin/inspektur dan GRANT yang sesuai.
+- Fungsi `admin_batal_buka_perbaikan(_peserta, _alasan)`: hanya berjalan bila belum ada kiriman baru sesudah snapshot; memulihkan `penilaian_submission`, menutup sesi, menyegarkan cache nilai, mencatat audit.
+- Fungsi `ip2_pulihkan_nilai(_peserta, _catatan)` untuk pemulihan setelah ada nilai baru, menyimpan perbandingan sebelum/sesudah seperti mekanisme snapshot VAR.
