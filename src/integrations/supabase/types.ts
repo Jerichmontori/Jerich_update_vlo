@@ -1439,6 +1439,10 @@ export type Database = {
       perbaikan_juri_aktif: { Args: { _peserta: string }; Returns: boolean }
       perbaikan_var_aktif: { Args: { _peserta: string }; Returns: boolean }
       peserta_pool_cutoff: { Args: { _peserta: string }; Returns: string }
+      preview_pita_juri: {
+        Args: { _juri: string; _peserta: string }
+        Returns: Json
+      }
       public_live_state: { Args: never; Returns: Json }
       public_pengumuman_state: { Args: never; Returns: Json }
       pulihkan_dari_snapshot: { Args: { _snap: string }; Returns: number }
